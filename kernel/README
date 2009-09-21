@@ -1,0 +1,2 @@
+Please use dot-config to setup your kernel sources:
+cp -a dot-config /usr/src/linux

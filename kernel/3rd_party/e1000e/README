@@ -1,0 +1,27 @@
+# (c) 2003-2007 Linbox FAS, http://linbox.com
+# (c) 2008-2009 Mandriva, http://www.mandriva.com
+#
+# $Id$
+#
+# This file is part of Pulse 2, http://pulse2.mandriva.org
+#
+# Pulse 2 is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# Pulse 2 is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Pulse 2; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+# MA 02110-1301, USA.
+#
+# Intel e1000e 0.5.18.3 2009/03/23 / PRO/1000 PCI-E (82571/2/3/4 or 82566/7) gigabit
+wget http://downloadmirror.intel.com/15817/eng/e1000e-0.5.18.3.tar.gz
+
+# Patch kernel (same stuff but reverted)
+http://www.mail-archive.com/e1000-devel%40lists.sourceforge.net/msg00747.html
