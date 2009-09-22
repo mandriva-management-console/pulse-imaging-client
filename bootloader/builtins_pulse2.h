@@ -53,7 +53,7 @@ static struct builtin builtin_inc = {
   BUILTIN_CMDLINE,
 #ifdef HELP_ON
   "inc [MESSAGE ...]",
-  "increment a LBS backup number."
+  "increment a Pulse 2 backup number."
 #endif
 };
 

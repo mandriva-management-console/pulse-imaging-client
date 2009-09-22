@@ -1208,13 +1208,13 @@ pxe_unload (void)
   close toto;
   int ret;
 
-  /* tell the LBS that we have restored the partition */
+  /* tell Pulse 2 that we have restored the partition */
   if (imgname[0] != '\0') {
     char name[64];
 
     udp_init ();
     grub_sprintf(name, "L3-%s", imgname);
-    udp_send_lbs (name, grub_strlen(name));
+    udp_send_to_pulse2 (name, grub_strlen(name));
     udp_close ();
   }
 

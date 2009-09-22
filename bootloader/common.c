@@ -21,7 +21,7 @@
 
 #include <shared.h>
 #include "pci.h"
-#include "builtins_lbs.h"
+#include "builtins_pulse2.h"
 
 #ifdef SUPPORT_DISKLESS
 # include <etherboot.h>
@@ -106,31 +106,31 @@ mmap_avail_at (unsigned long bottom)
   unsigned long long top;
   unsigned long addr;
   int cont;
-  
+
   top = bottom;
   do
     {
       for (cont = 0, addr = mbi.mmap_addr;
-	   addr < mbi.mmap_addr + mbi.mmap_length;
-	   addr += *((unsigned long *) addr) + 4)
-	{
-	  struct AddrRangeDesc *desc = (struct AddrRangeDesc *) addr;
-	  
-	  if (desc->Type == MB_ARD_MEMORY
-	      && desc->BaseAddr <= top
-	      && desc->BaseAddr + desc->Length > top)
-	    {
-	      top = desc->BaseAddr + desc->Length;
-	      cont++;
-	    }
-	}
+           addr < mbi.mmap_addr + mbi.mmap_length;
+           addr += *((unsigned long *) addr) + 4)
+        {
+          struct AddrRangeDesc *desc = (struct AddrRangeDesc *) addr;
+
+          if (desc->Type == MB_ARD_MEMORY
+              && desc->BaseAddr <= top
+              && desc->BaseAddr + desc->Length > top)
+            {
+              top = desc->BaseAddr + desc->Length;
+              cont++;
+            }
+        }
     }
   while (cont);
 
   /* For now, GRUB assumes 32bits addresses, so...  */
   if (top > 0xFFFFFFFF)
     top = 0xFFFFFFFF;
-  
+
   return (unsigned long) top - bottom;
 }
 
@@ -151,23 +151,23 @@ setup_diskless_environment (void)
   char hex[]="0123456789ABCDEF";
 
   void iphex(unsigned char *ptr)
-  { 
-	ip[0]=hex[((*ptr)&0xF0)>>4]; ip[1]=hex[(*ptr++)&0x0F];
-	ip[2]=hex[((*ptr)&0xF0)>>4]; ip[3]=hex[(*ptr++)&0x0F];
-	ip[4]=hex[((*ptr)&0xF0)>>4]; ip[5]=hex[(*ptr++)&0x0F];
-	ip[6]=hex[((*ptr)&0xF0)>>4]; ip[7]=hex[(*ptr++)&0x0F];
-	ip[8]=0;
+  {
+        ip[0]=hex[((*ptr)&0xF0)>>4]; ip[1]=hex[(*ptr++)&0x0F];
+        ip[2]=hex[((*ptr)&0xF0)>>4]; ip[3]=hex[(*ptr++)&0x0F];
+        ip[4]=hex[((*ptr)&0xF0)>>4]; ip[5]=hex[(*ptr++)&0x0F];
+        ip[6]=hex[((*ptr)&0xF0)>>4]; ip[7]=hex[(*ptr++)&0x0F];
+        ip[8]=0;
   }
 
   void machex(unsigned char *ptr)
-  { 
-	ip[ 0]=hex[((*ptr)&0xF0)>>4]; ip[ 1]=hex[(*ptr++)&0x0F];
-	ip[ 2]=hex[((*ptr)&0xF0)>>4]; ip[ 3]=hex[(*ptr++)&0x0F];
-	ip[ 4]=hex[((*ptr)&0xF0)>>4]; ip[ 5]=hex[(*ptr++)&0x0F];
-	ip[ 6]=hex[((*ptr)&0xF0)>>4]; ip[ 7]=hex[(*ptr++)&0x0F];
-	ip[ 8]=hex[((*ptr)&0xF0)>>4]; ip[ 9]=hex[(*ptr++)&0x0F];
-	ip[10]=hex[((*ptr)&0xF0)>>4]; ip[11]=hex[(*ptr++)&0x0F];
-	ip[12]=0;
+  {
+        ip[ 0]=hex[((*ptr)&0xF0)>>4]; ip[ 1]=hex[(*ptr++)&0x0F];
+        ip[ 2]=hex[((*ptr)&0xF0)>>4]; ip[ 3]=hex[(*ptr++)&0x0F];
+        ip[ 4]=hex[((*ptr)&0xF0)>>4]; ip[ 5]=hex[(*ptr++)&0x0F];
+        ip[ 6]=hex[((*ptr)&0xF0)>>4]; ip[ 7]=hex[(*ptr++)&0x0F];
+        ip[ 8]=hex[((*ptr)&0xF0)>>4]; ip[ 9]=hex[(*ptr++)&0x0F];
+        ip[10]=hex[((*ptr)&0xF0)>>4]; ip[11]=hex[(*ptr++)&0x0F];
+        ip[12]=0;
   }
 
   /* For now, there is no difference between BOOTP and DHCP in GRUB.  */
@@ -180,22 +180,22 @@ setup_diskless_environment (void)
   /* This will be erased soon, though...  */
 
   print_network_configuration ();
-  
+
   imgname[0] = '\0';
   grub_printf("Base Dir : %s\n",basedir);
- 
+
   machex((char *)nic_macaddr);
   grub_sprintf(config_file,"%s/cfg/%s",basedir,ip);
   grub_printf("Testing : %s\n",config_file);
   if (new_tftpdir(config_file) < 0)
   {
-	iphex((char *)&arptable[ARP_CLIENT].ipaddr);
-  	grub_sprintf(config_file,"%s/cfg/%s",basedir,ip);
-  	grub_printf("Testing : %s\n",config_file);
-  	if (new_tftpdir(config_file) < 0)
-	{
-  		grub_sprintf(config_file,"%s/cfg/default",basedir);
-	}
+        iphex((char *)&arptable[ARP_CLIENT].ipaddr);
+        grub_sprintf(config_file,"%s/cfg/%s",basedir,ip);
+        grub_printf("Testing : %s\n",config_file);
+        if (new_tftpdir(config_file) < 0)
+        {
+                grub_sprintf(config_file,"%s/cfg/default",basedir);
+        }
   }
 
   printf("Using : %s as configfile\n",config_file);
@@ -230,7 +230,7 @@ init_bios_info (void)
   /* Store the size of extended memory in EXTENDED_MEMORY, in order to
      tell it to non-Multiboot OSes.  */
   extended_memory = mbi.mem_upper;
-  
+
   /*
    *  The "mbi.mem_upper" variable only recognizes upper memory in the
    *  first memory region.  If there are multiple memory regions,
@@ -249,7 +249,7 @@ init_bios_info (void)
 
       /* If the returned buffer's length is zero, quit. */
       if (! *((unsigned long *) addr))
-	break;
+        break;
 
       mbi.mmap_length += *((unsigned long *) addr) + 4;
       addr += *((unsigned long *) addr) + 4;
@@ -259,7 +259,7 @@ init_bios_info (void)
   if (mbi.mmap_length)
     {
       unsigned long long max_addr;
-      
+
       /*
        *  This is to get the lower memory, and upper memory (up to the
        *  first memory hole), into the "mbi.mem_{lower,upper}"
@@ -271,15 +271,15 @@ init_bios_info (void)
 
       /* Find the maximum available address. Ignore any memory holes.  */
       for (max_addr = 0, addr = mbi.mmap_addr;
-	   addr < mbi.mmap_addr + mbi.mmap_length;
-	   addr += *((unsigned long *) addr) + 4)
-	{
-	  struct AddrRangeDesc *desc = (struct AddrRangeDesc *) addr;
-	  
-	  if (desc->Type == MB_ARD_MEMORY
-	      && desc->BaseAddr + desc->Length > max_addr)
-	    max_addr = desc->BaseAddr + desc->Length;
-	}
+           addr < mbi.mmap_addr + mbi.mmap_length;
+           addr += *((unsigned long *) addr) + 4)
+        {
+          struct AddrRangeDesc *desc = (struct AddrRangeDesc *) addr;
+
+          if (desc->Type == MB_ARD_MEMORY
+              && desc->BaseAddr + desc->Length > max_addr)
+            max_addr = desc->BaseAddr + desc->Length;
+        }
 
       extended_memory = (max_addr - 0x100000) >> 10;
     }
@@ -289,22 +289,22 @@ init_bios_info (void)
       memtmp = memtmp & 0xFFFF;
 
       if (cont != 0)
-	extended_memory = (cont >> 10) + 0x3c00;
+        extended_memory = (cont >> 10) + 0x3c00;
       else
-	extended_memory = memtmp;
-      
-      if (!cont || (memtmp == 0x3c00))
-	memtmp += (cont >> 10);
-      else
-	{
-	  /* XXX should I do this at all ??? */
+        extended_memory = memtmp;
 
-	  mbi.mmap_addr = (unsigned long) fakemap;
-	  mbi.mmap_length = sizeof (fakemap);
-	  fakemap[0].Length = (mbi.mem_lower << 10);
-	  fakemap[1].Length = (memtmp << 10);
-	  fakemap[2].Length = cont;
-	}
+      if (!cont || (memtmp == 0x3c00))
+        memtmp += (cont >> 10);
+      else
+        {
+          /* XXX should I do this at all ??? */
+
+          mbi.mmap_addr = (unsigned long) fakemap;
+          mbi.mmap_length = sizeof (fakemap);
+          fakemap[0].Length = (mbi.mem_lower << 10);
+          fakemap[1].Length = (memtmp << 10);
+          fakemap[2].Length = cont;
+        }
 
       mbi.mem_upper = memtmp;
     }
@@ -331,91 +331,91 @@ init_bios_info (void)
   /* INFO AT STARTUP to PORT 1001 */
   if (!done_inventory)
   {
-	char *buffer; unsigned int i;
-	extern unsigned char X86;
-	unsigned char *ptr=&X86;
-	extern unsigned char *udp_packet_r;
-	extern char lbsname[];
-	int sz=0, port;
+        char *buffer; unsigned int i;
+        extern unsigned char X86;
+        unsigned char *ptr=&X86;
+        extern unsigned char *udp_packet_r;
+        extern char pulse2name[];
+        int sz=0, port;
 
-	udp_init();
+        udp_init();
 
-	/* tell the LBS that we have booted */
-	udp_send_lbs("L0", 2);
+        /* tell Pulse 2 that we have booted */
+        udp_send_to_pulse2("L0", 2);
 
-	/* begin */
-	buffer=(char *)PASSWORD_BUF;
-	*buffer++=0xAA;
-	buffer += grub_sprintf(buffer,"M:%x,U:%x\n",mbi.mem_lower,mbi.mem_upper);
-	eth_pci_init(buffer); while (*buffer) buffer++;
+        /* begin */
+        buffer=(char *)PASSWORD_BUF;
+        *buffer++=0xAA;
+        buffer += grub_sprintf(buffer,"M:%x,U:%x\n",mbi.mem_lower,mbi.mem_upper);
+        eth_pci_init(buffer); while (*buffer) buffer++;
 
-	drive_info(buffer);
-	while (*buffer) buffer++;
+        drive_info(buffer);
+        while (*buffer) buffer++;
 
-	/* smbios infos */
-	if ( smbios_init() )
-	    {
-	      unsigned char *p1, *p2, *p3, *p4, *p;
-	      int i, i1, i2, i3, i4;
-	      char hex[]="0123456789ABCDEF";
+        /* smbios infos */
+        if ( smbios_init() )
+            {
+              unsigned char *p1, *p2, *p3, *p4, *p;
+              int i, i1, i2, i3, i4;
+              char hex[]="0123456789ABCDEF";
 
-	      smbios_get_biosinfo(&p1, &p2, &p3);
-	      buffer += grub_sprintf(buffer, "S0:%s|%s|%s\n",p1, p2, p3);
+              smbios_get_biosinfo(&p1, &p2, &p3);
+              buffer += grub_sprintf(buffer, "S0:%s|%s|%s\n",p1, p2, p3);
 
-	      smbios_get_sysinfo(&p1, &p2, &p3, &p4, &p);
-	      buffer += grub_sprintf(buffer, "S1:%s|%s|%s|%s|",p1, p2, p3, p4);
+              smbios_get_sysinfo(&p1, &p2, &p3, &p4, &p);
+              buffer += grub_sprintf(buffer, "S1:%s|%s|%s|%s|",p1, p2, p3, p4);
 
-	      /* while (*buffer) buffer++; */
-	      for (i = 0; i<16; i++)	/* UUID */
-		{
-		  *buffer++ = hex[p[i]>>4];
-		  *buffer++ = hex[p[i]&15];
-		}
+              /* while (*buffer) buffer++; */
+              for (i = 0; i<16; i++)    /* UUID */
+                {
+                  *buffer++ = hex[p[i]>>4];
+                  *buffer++ = hex[p[i]&15];
+                }
 
-	      smbios_get_enclosure(&p1, &p2);
-	      buffer += grub_sprintf(buffer, "\nS3:%s|%d\n",p1, *p2 & 0x7F);
+              smbios_get_enclosure(&p1, &p2);
+              buffer += grub_sprintf(buffer, "\nS3:%s|%d\n",p1, *p2 & 0x7F);
 
-	      while (smbios_get_memory(&i1, &i2, &p1, &i3, &i4)) {
-		 buffer += grub_sprintf(buffer, "SM:%d:%x:%s:%x:%d\n", i1, i2, p1, i3, i4);
-	      }
-     	      buffer += grub_sprintf(buffer, "S4:%d\n", smbios_get_numcpu());
-	}
+              while (smbios_get_memory(&i1, &i2, &p1, &i3, &i4)) {
+                 buffer += grub_sprintf(buffer, "SM:%d:%x:%s:%x:%d\n", i1, i2, p1, i3, i4);
+              }
+              buffer += grub_sprintf(buffer, "S4:%d\n", smbios_get_numcpu());
+        }
 
-	buffer += grub_sprintf(buffer,"C:");
-	cpuinfo(); 
-	for (i=0;i<24;i++) {
-		buffer += grub_sprintf(buffer,"%x,",ptr[i]);
-	}
-	buffer--;
-	buffer += grub_sprintf(buffer,"\nF:%d\n",cpuspeed()); 
+        buffer += grub_sprintf(buffer,"C:");
+        cpuinfo();
+        for (i=0;i<24;i++) {
+                buffer += grub_sprintf(buffer,"%x,",ptr[i]);
+        }
+        buffer--;
+        buffer += grub_sprintf(buffer,"\nF:%d\n",cpuspeed());
 
-	/* send inventory */
-	buffer=(char *)PASSWORD_BUF;
-	udp_send_withmac((char *)PASSWORD_BUF,strlen(buffer)+1,1001,1001);
+        /* send inventory */
+        buffer=(char *)PASSWORD_BUF;
+        udp_send_withmac((char *)PASSWORD_BUF,strlen(buffer)+1,1001,1001);
 
-	/* I want my name */
-	/* Some buggy PXE bioses need a read before sending... (SMC cards) */ 
-	udp_get(NULL, &sz, 1001, &port);
-	udp_send_lbs("\x1A", 1);
-	i = currticks();
-	/* wait one sec */
-	while (i+15 > currticks()) {
-	    sz = 0;
-	    udp_get(NULL, &sz, 1001, &port);
-	    if (sz) break;
-	};
+        /* I want my name */
+        /* Some buggy PXE bioses need a read before sending... (SMC cards) */
+        udp_get(NULL, &sz, 1001, &port);
+        udp_send_to_pulse2("\x1A", 1);
+        i = currticks();
+        /* wait one sec */
+        while (i+15 > currticks()) {
+            sz = 0;
+            udp_get(NULL, &sz, 1001, &port);
+            if (sz) break;
+        };
 
-	if (sz) {
-		/* grub_strcpy does not work here ?!? */
-		for (i = 0; i < 32; i++) {
-		    lbsname[i] = udp_packet_r[i];
-		}
-        	lbsname[MIN(sz,31)] = 0;
-	}
-	udp_close();
-	done_inventory = 1;
+        if (sz) {
+                /* grub_strcpy does not work here ?!? */
+                for (i = 0; i < 32; i++) {
+                    pulse2name[i] = udp_packet_r[i];
+                }
+                pulse2name[MIN(sz,31)] = 0;
+        }
+        udp_close();
+        done_inventory = 1;
   }
-  
+
 
   current_drive = saved_drive;
   errnum=ERR_NONE;

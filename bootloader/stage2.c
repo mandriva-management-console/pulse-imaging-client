@@ -24,7 +24,7 @@
 
 grub_jmp_buf restart_env;
 
-char lbsname[32];
+char pulse2name[32];
 extern int nosecurity;
 char *desc_entries;
 
@@ -228,10 +228,10 @@ print_border (int y, int size)
   for (i = 0; i < 42; i++) grub_putchar (DISP_HORIZ);
   grub_putchar (DISP_LR);
 
-  s = strlen(lbsname);
+  s = strlen(pulse2name);
   if (s) {
     gotoxy((80-s-2)/2, 3);
-    grub_printf(" %s ", lbsname);
+    grub_printf(" %s ", pulse2name);
     gotoxy (18, y + size + 1);
   }
 }
@@ -639,10 +639,10 @@ restart:
   /* Enable the auto fill mode.  */
   auto_fill = 1;
 
-  /* tell the LBS that we will execute a menu entry */
+  /* tell Pulse 2 that we will execute a menu entry */
   udp_init();
   log[2] = (first_entry + entryno) & 255;               /* entry number */
-  udp_send_lbs(log, 3);
+  udp_send_to_pulse2(log, 3);
   udp_close();
 
   cls ();

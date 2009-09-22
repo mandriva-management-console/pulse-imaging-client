@@ -461,11 +461,11 @@ partcopy_func (char *arg, int flags)
   new_type = -1;
   curr = new_start;
 
-  /* tell the LBS that we will restore a partition */
+  /* tell Pulse 2 that we will restore a partition */
   if (sendlog) {
     udp_init ();
     grub_sprintf(name, "L2-%s", imgname);
-    udp_send_lbs (name, grub_strlen(name));
+    udp_send_to_pulse2 (name, grub_strlen(name));
     udp_close ();
     sendlog = 0;
   }
@@ -564,7 +564,7 @@ ptabs_func (char *arg, int flags)
 void fatal(void)
 {
   udp_init ();
-  udp_send_lbs ("L8", 2);
+  udp_send_to_pulse2 ("L8", 2);
   udp_close ();
 }
 

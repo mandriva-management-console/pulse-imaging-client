@@ -2,7 +2,7 @@
  *  $Id: udp.c,v 1.4 2003/04/10 09:37:14 ludo Exp $
  */
 /*
- *  GRUB LBS functions
+ *  GRUB Pulse 2 functions
  *  Copyright (C) 2002 Linbox Free & Alter Soft
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -107,13 +107,13 @@ int udp_send(char *buf,int size,int s_port,int d_port)
 
 /*
  * Same as udp_send but put the mac address appended to the packet
- * (needed for LBS's getClientResponse)
+ * (needed for Pulse 2 getClientResponse)
  */
 int udp_send_withmac(char *buf,int size,int s_port,int d_port)
 {
     char ip[] = "Mc:xx:xx:xx:xx:xx:xx";
     char hex[]="0123456789ABCDEF";
-    char newbuf[1500];          /* LBS command strings should not be bigger than 512 chars */
+    char newbuf[1500];          /* Pulse 2 command strings should not be bigger than 512 chars */
     unsigned char *ptr = (char *)nic_macaddr;
     int i;
 
@@ -144,8 +144,8 @@ int udp_send_withmac(char *buf,int size,int s_port,int d_port)
     return (udp_send(newbuf,size+grub_strlen(ip)+1,s_port,d_port));
 }
 
-/* send a control packet to the LBS */
-int udp_send_lbs(char *buf,int size)
+/* send a control packet to Pulse 2 */
+int udp_send_to_pulse2(char *buf,int size)
 {
     return (udp_send_withmac(buf, size, 1001, 1001));
 }
