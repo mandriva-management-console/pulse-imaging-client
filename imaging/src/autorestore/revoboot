@@ -1,0 +1,379 @@
+#!/bin/sh
+#
+# (c) 2003-2007 Linbox FAS, http://linbox.com
+# (c) 2008-2009 Mandriva, http://www.mandriva.com
+#
+# $Id$
+#
+# This file is part of Pulse 2, http://pulse2.mandriva.org
+#
+# Pulse 2 is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# Pulse 2 is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Pulse 2; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+# MA 02110-1301, USA.
+#
+# First script that's launched. Takes all the main decisions
+#
+
+# Wait for the interface to be configured
+checkip()
+{
+# CDROM restore ?
+grep -q revosavedir=/cdrom /proc/cmdline && return
+
+SEC=0
+MAXSEC=45
+# if CDROM boot, then be less patient
+grep -q revocdrom /etc/cmdline && MAXSEC=5
+# CDROM + static ip mode
+grep -q revocdromstatic /etc/cmdline && staticip
+
+# check if eth0 is up
+while true
+do
+    sleep 1
+    if ifconfig $ETH|grep RUNNING >/dev/null ;then
+        break
+    else
+        echo "*** $ETH: not yet configured ($SEC) ***"
+        SEC=$(($SEC+1))
+        if [ $SEC -gt $MAXSEC ]; then
+            whiptail --title "Fatal Error" --backtitle "Linbox Rescue Server" --menu "I cannot configure the NIC
+
+Possible causes:
+1- No DHCP server has responded
+2- More than one NIC and DHCP requests are sent on the wrong NIC
+3- No suitable driver found for the NIC
+
+What should I do ?" 20 70 4 1 "Retry to configure the NIC via DHCP" 2 "Manualy set the IP address" 3 "Put some log files on a floppy disk to Debug the problem" 2>/tmp/res
+            case "`cat /tmp/res`" in
+            1)
+                /etc/init.d/network start
+                ;;
+            2)
+                staticip
+                ;;
+            3)
+                wechow "Insert a blank MSDOS formatted floppy and press Enter"
+                floppysave
+                sleep 3
+                wechow "Now you can send the 'messages' file to support@linbox.com"
+                ;;
+            esac
+            SEC=0
+        fi
+        continue
+    fi
+    if ifconfig $ETH|grep inet.addr >/dev/null ;then
+        echo "*** IP configuration ***"
+        cat /etc/netinfo.log
+        break
+    else
+        echo "*** $ETH: no IP received !!! ***"
+    fi
+done
+sleep 1
+}
+
+# static ip configuration
+staticip()
+{
+    IP=192.168.0.100
+    NM=255.255.255.0
+    while true; do
+        whiptail --title "Static IP" --backtitle "Linbox Rescue Server" --inputbox "Please enter the IP address:" 10 70 "$IP" 2>/tmp/res
+        IP=`cat /tmp/res`
+        whiptail --title "Static IP" --backtitle "Linbox Rescue Server" --inputbox "Please enter the netmask:" 10 70 "$NM" 2>/tmp/res
+        NM=`cat /tmp/res`
+        DEFGW=`echo $IP|cut -d. -f1-3`".1"
+        whiptail --title "Static IP" --backtitle "Linbox Rescue Server" --inputbox "Please enter the default gateway:" 10 70 "$DEFGW" 2>/tmp/res
+        GW=`cat /tmp/res`
+        whiptail --title "Static IP" --backtitle "Linbox Rescue Server" --inputbox "Please enter the LRS IP address:" 10 70 "$DEFGW" 2>/tmp/res
+        LRS=`cat /tmp/res`
+        ifconfig $ETH $IP netmask $NM
+        route add default gw $GW
+        sleep 5
+        ping -c 1 $LRS >/dev/null && break
+        wecho "Cannot reach \"$LRS\". Please check the network configuration again."
+        sleep 10
+    done
+    echo "Device $ETH
+        IP: $IP
+        Netmask: $NM
+        Boot server: $LRS
+        Next server: $LRS
+        Boot file: /tftpboot/revoboot/bin/revoboot.pxe
+" > /etc/netinfo.fake
+}
+
+# get the warning message
+get_warn_message()
+{
+    cd /etc
+    /bin/atftp --tftp-timeout 1 -g -r $BASE/etc/warning.txt $SRV 69 2>/dev/null
+    cd /
+}
+
+# Pre-install (init-inst in fact)
+do_pre_inst()
+{
+    if grep -q revopost /etc/cmdline ; then
+        /bin/postmount
+        MAC=`cat /etc/shortmac`
+        echo -e "\n=== `date` ===" >> /revoinfo/$MAC/postinst.log
+        /bin/doinitinst 2>&1 | tee -a /revoinfo/$MAC/postinst.log
+        umount /mnt 2>/dev/null
+        sleep 5
+        umount /opt
+        umount /revoinfo
+        umount /revosave
+    fi
+}
+
+# Restore
+do_restore()
+{
+    OPTS=
+    grep -q revorestorenfs /etc/cmdline || OPTS="--mtftp"
+    grep -q revontblfix /etc/cmdline && OPTS="--ntblfix $OPTS"
+    grep -q revonospc /etc/cmdline && OPTS="--nospc $OPTS"
+
+    /bin/mount.sh
+    /bin/autorestore $OPTS
+}
+
+# Backup
+do_backup()
+{
+    grep -q revoraw /etc/cmdline && OPTS=--raw
+
+    /bin/revoinc
+    /bin/mount.sh
+    /bin/autosave $OPTS
+}
+
+# Post-install
+do_postinst()
+{
+    if grep -q revorestore /etc/cmdline ;then
+        umount /revoinfo
+        umount /revosave
+    fi
+    /bin/postmount
+    echo -e "\n=== `date` ===" >> /revoinfo/$MAC/postinst.log
+    /bin/dopostinst 2>&1 | tee -a /revoinfo/$MAC/postinst.log
+    grep -q revodebug /etc/cmdline || umount /mnt 2>/dev/null
+    sleep 5
+}
+
+# whiptail echo
+wecho()
+{
+    LINES=10
+    [ `echo -e "$1" | wc -l` -gt 8 ] && LINES=20
+    whiptail --title "Info" --backtitle "Linbox Rescue Server" --infobox "$1" $LINES 70
+}
+
+# whiptail echo with wait
+wechow()
+{
+    LINES=10
+    [ `echo -e "$1" | wc -l` -gt 8 ] && LINES=20
+    whiptail --title "Info" --backtitle "Linbox Rescue Server" --msgbox "$1" $LINES 70
+}
+
+# print the menu
+parse_menu()
+{
+    NUM=0
+
+    while read TYPE ARGS
+    do
+        ARGS=`echo $ARGS|tr '"\201\202\203\204\205\207\210\211\212' ' ьйвдазкли' `
+        case $TYPE in
+            title)
+                NUM=$(($NUM+1))
+                eval LTITLE_$NUM=\"$ARGS\"
+            ;;
+            desc)
+                eval LDESC_$NUM=\"$ARGS\"
+            ;;
+            kernel)
+                eval LKERN_$NUM=\"$ARGS\"
+            ;;
+        esac
+    done < /tmp/menu
+
+    CMD="whiptail --title \"Boot Menu for `cat /etc/lbxname`\" --backtitle \"Linbox Rescue Server\" --menu \" \" 20 70 12 "
+    I=1
+    while [ $I -le $NUM ]
+    do
+        CMD="$CMD $I \"\$LTITLE_$I\" "
+        I=$(($I+1))
+    done
+    eval $CMD 2>/tmp/ret
+}
+
+# CDROM boot
+do_cdrom()
+{
+    # tell the LRS we have booted
+    /bin/revoinv
+    /bin/revosendlog 0
+    # tftp test
+    while true
+    do
+        cd /tmp
+        rm -f default
+        /bin/atftp --tftp-timeout 1 -g -r $BASE/cfg/default -l default $SRV 69 2>/dev/null
+        [ -f default -a -n "`cat default`" ] && break
+        whiptail --title "TFTP problem" --backtitle "Linbox Rescue Server" --inputbox "Possible DHCP server configuration problem. Cannot download the boot menu over TFTP. Got $SRV as the LRS server.\n\n`cat /etc/netinfo.log|grep -v time:`\n\nPlease enter the LRS IP address below:" 22 70 2>/tmp/res
+        SRV=`cat /tmp/res`
+        echo -e "\n\tOption_177: $SRV:/tftpboot/revoboot" >>/etc/netinfo.log
+        echo -e "\nOption_177=$SRV:/tftpboot/revoboot" >>/etc/netinfo.sh
+    done
+    while true
+    do
+        # get the menu
+        wecho "Downloading menu for `cat /etc/lbxname`"
+        cd /tmp
+        rm -f menu
+        /bin/atftp --tftp-timeout 1 -g -r $BASE/cfg/$MAC -l menu $SRV 69 2>/dev/null
+        wecho "Downloaded the menu"
+        # no menu => stop
+        [ ! -f menu -o -z "`cat menu`" ] && identify
+        [ -f menu -a -n "`cat menu`" ] && break
+    done
+    while true
+    do
+        parse_menu
+        eval CMDLINE=\$LKERN_`cat /tmp/ret`
+        # check if this action can be done
+        [ "$CMDLINE" ] && break
+        wechow "Sorry this entry can only be used with a PXE boot.\nBecause you are booting from a CDROM, some LRS features are not available. To set-up PXE network boot, please refer to the LRS manual."
+    done
+    # fake /proc/cmdline
+    echo $CMDLINE | cut -f 2- -d " "> /etc/cmdline
+
+    # recurse
+    $0
+    exit
+}
+
+# Send the identify command
+identify()
+{
+    cd /tmp
+    rm -f default res
+    /bin/atftp --tftp-timeout 1 -g -r $BASE/cfg/default -l default $SRV 69 2>/dev/null
+    [ ! -f default -o -z "`cat default`" ] && wechow "Cannot download the boot menu over TFTP. Cannot continue." && reboot
+    # enter the client name
+    whiptail --title "Client name" --backtitle "Linbox Rescue Server" --inputbox "Please enter client name:" 10 70 2>/tmp/res
+    NAME=`cat /tmp/res|tr ' ' _`
+    # enter the password
+    whiptail --title "Password" --backtitle "Linbox Rescue Server" --passwordbox "Please enter LRS password" 10 70 2>/tmp/res
+    PASS=`cat /tmp/res`
+    # send the packet
+    echo -en "\255ID$NAME:$PASS\00Mc:`cat /etc/mac`" | nc -p 1001 -w 1 $SRV 1001
+    # resend the inventory
+    /bin/revoinv
+
+}
+
+# mount a CDROM drive for restoration
+mount_cdrom()
+{
+    cd /lib/modules/cd/
+    for i in *; do insmod $i; done
+    sleep 5
+    for i in hdc hda hdb hdd scd0 scd1
+    do
+        wecho "Trying to find CDROM on $i"
+        ln -sf /dev/$i /dev/cdrom
+        mount -t iso9660 /dev/$i /revosave
+        [ -r /revosave/conf.txt ] && break
+        sleep 2
+    done
+    cp /revosave/conf.txt /tmp
+}
+
+#
+# Env Set-up
+#
+ulimit -c 100000
+[ ! -f /etc/cmdline ] && cp -f /proc/cmdline /etc
+ETH=`cat /etc/eth`
+BASE="/tftpboot/revoboot"
+grep -q revodebug /etc/cmdline || checkip
+MAC=`cat /etc/shortmac`
+[ ! -f /etc/netinfo.log ] && pump -i $ETH -s >/etc/netinfo.log
+[ -f /etc/netinfo.fake ] && mv -f /etc/netinfo.fake /etc/netinfo.log
+sed -e "s/Device/#/" -e "s/: */=/" -e "s/       //" -e "s/ /_/g" </etc/netinfo.log >/etc/netinfo.sh
+. /etc/netinfo.sh
+
+# LRS server IP
+SRV=$Next_server
+[ -n "$Option_177" ] && SRV=`echo $Option_177|cut -d : -f 1`
+
+# IP check
+if [ "$SRV" = "0.0.0.0" ]; then
+    whiptail --title "DHCP problem" --backtitle "Linbox Rescue Server" --inputbox "Possible DHCP server configuration problem !\nGot $SRV as the LRS server !\n\n`cat /etc/netinfo.log`\n\nPlease enter the LRS IP address below:" 22 70 2>/tmp/res
+    SRV=`cat /tmp/res`
+fi
+
+# date
+echo -n "*** Getting current time from \"$SRV\"..."
+[ -n "$SRV" ] && rdate $SRV
+
+# try to get the name
+revogetname >/etc/lbxname
+
+# get the warning message
+get_warn_message
+
+# Restore => mount a tmpfs
+grep -q revorestore /etc/cmdline && mount -t tmpfs -o size=96M tmpfs /tmpfs
+
+# compression level
+grep -q revonocomp /etc/cmdline && echo 0 >/etc/complevel
+
+# Restore from CDROM ?
+grep -q revosavedir=/cdrom /etc/cmdline && mount_cdrom
+
+# Debug ?
+grep -q revodebug /etc/cmdline && exit 0
+
+# Launch the UI
+[ -x /bin/uinewt ] && /bin/uinewt &
+
+# CDROM boot ?
+grep -q revocdrom /etc/cmdline && do_cdrom
+
+# Backup / Restore
+if grep -q revosavedir /etc/cmdline ;then
+    # launch initial pre-inst scripts
+    [ -x /bin/postmount ] && do_pre_inst
+    # Now backup/restore
+    if grep -q revorestore /etc/cmdline ;then
+        do_restore
+    else
+        grep -q revopost /etc/cmdline || do_backup
+    fi
+fi
+
+# Postinstall
+if grep -q revopost /etc/cmdline ; then
+    [ -x /bin/postmount ] && do_postinst
+fi
+
+grep -q revodebug /etc/cmdline || reboot
