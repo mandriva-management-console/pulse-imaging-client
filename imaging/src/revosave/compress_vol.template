@@ -1,0 +1,110 @@
+/*
+ * (c) 2003-2007 Linbox FAS, http://linbox.com
+ * (c) 2008-2009 Mandriva, http://www.mandriva.com
+ *
+ * $Id$
+ *
+ * This file is part of Pulse 2, http://pulse2.mandriva.org
+ *
+ * Pulse 2 is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * Pulse 2 is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with Pulse 2; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301, USA.
+ */
+
+void compress_vol(FILE *fi,unsigned char *nameprefix,PARAMS *p)
+{
+        int i,j,k,nb;
+        IMAGE_HEADER header;
+        COMPRESS *c;
+        unsigned char buffer[TOTALLG],*ptr,*dataptr;
+        unsigned long remaining,used,skip;
+        unsigned short lg,datalg;
+        FILE *fo;
+        unsigned char filename[128],firststring[200];
+
+        printf("Compressing Image :\n");
+
+        printf("- Bitmap lg    : %ld\n",p->bitmaplg);
+        printf("- Nb of blocks : %d\n",nb=((p->bitmaplg+ALLOCLG-1)/ALLOCLG));
+
+        remaining=p->bitmaplg;
+        ptr=p->bitmap;
+
+        skip=0;
+
+        sprintf(firststring,"NTFS=1\nTYPE=%d\nSECTORS=%lld\nBLOCKS=%d\n",type,p->boot.sectors,nb);
+
+        for (i=0;i<nb;i++)
+        {
+                used=0;
+
+                printf("- Block %d : O",i+1);
+
+                sprintf(filename,"%s%03d",nameprefix,i);
+                fo=fopen(filename,"wb");
+
+                printf("H");
+
+                if (remaining>ALLOCLG) lg=ALLOCLG;
+                                else   lg=remaining;
+
+                bzero(header.header,HEADERLG);
+                sprintf(header.header,"%sALLOCTABLELG=%d\n",firststring,lg);
+                firststring[0]=0;
+                bzero(header.bitmap,ALLOCLG);
+                memcpy(header.bitmap,ptr,lg);
+
+                remaining-=lg;
+                ptr+=lg;
+
+                compress_init(&c);
+                compress_data(c,(unsigned char *)&header,TOTALLG,fo,0);
+
+                printf("D");
+                dataptr=buffer;
+                datalg=0;
+
+                for(j=0;j<lg;j++)
+                 {
+                  printf("%3d\b\b\b",(100*j)/lg);
+
+                  for(k=1;k<256;k+=k)
+                   {
+                    if (!(header.bitmap[j]&k))
+                         {skip+=512; if (skip>30*1024*1024) {fseek(fi,skip,SEEK_CUR);skip=0;}}
+                    else {
+                            if (skip) fseek(fi,skip,SEEK_CUR);
+                            fread(dataptr,512,1,fi);
+                            skip=0; dataptr+=512; datalg+=512; used++;
+
+                            if (datalg==TOTALLG)
+                                    { compress_data(c,buffer,TOTALLG,fo,0);
+                                      dataptr=buffer;
+                                      datalg=0;}
+                                    }
+                         }
+                   }
+
+                printf("F");
+
+                if (datalg>0) compress_data(c,buffer,datalg,fo,1);
+
+                printf("C");
+
+                compress_end(c,fo);
+                fclose(fo);
+
+                printf(". (used : %ld)\n",used);
+        }
+}

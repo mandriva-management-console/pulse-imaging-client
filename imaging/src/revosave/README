@@ -1,0 +1,2 @@
+* for e2fsprogs, compiling "libs" is sufficent, against gcc-3.3: CC=gcc-3.3 ./configure; make libs
+* for reiserfsprogs, compiling "reiserfscore" and "libs" is sufficent, against gcc-2.95: CC=gcc-2.95 ./configure; make -C reiserfscore; make -C libs
