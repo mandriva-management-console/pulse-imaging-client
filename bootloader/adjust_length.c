@@ -1,8 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void main(int argc,char *argv[])
-{
+int  main(int argc,char *argv[]) {
  unsigned char command[132];
  unsigned long lg;
  FILE *fi;

@@ -29,12 +29,12 @@
 #include "etherboot.h"
 
 #ifdef SUPPORT_NETBOOT
-#include "zlib.h"
-#define INBUFF 8192
-#define OUTBUFF 24064
-unsigned char *zcalloc (long toto, int nb, int size);
-void zcfree (long toto, unsigned char *zone);
-#include "pxe.h"
+    #include "zlib.h"
+    #define INBUFF 8192
+    #define OUTBUFF 24064
+    unsigned char *zcalloc (long toto, int nb, int size);
+    void zcfree (long toto, unsigned char *zone);
+    #include "pxe.h"
 #endif
 
 /* ugly global vars */

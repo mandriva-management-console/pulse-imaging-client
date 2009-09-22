@@ -36,4 +36,7 @@ void pxe_emulation(void);
 
 void set_pxe_entry(unsigned short,unsigned short);
 void pxe_unload(void);
+long new_tftpdir(char *filename);
 
+int tftpclose (void);
+int tftpopen (void);

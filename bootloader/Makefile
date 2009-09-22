@@ -21,48 +21,33 @@
 # MA 02110-1301, USA.
 #
 
-VER=$(shell grep VERSION config.h|tr -dc [0-9])
+SVNREV:=$(shell echo $Rev: 4491 $ | tr -cd [[:digit:]])
 
-OBJ=asm.o bios.o boot.o pci.o \
-    char_io.o builtins.o \
-    common.o stage2.o \
-    cmdline.o disk_io.o graphics.o console.o \
-    fsys_fat.o fsys_ext2fs.o builtins_lbs.o
-
-OBJNET= pxe.o udp.o
-
-OBJZLIB=adler32.o inflate.o infblock.o infcodes.o inftrees.o inffast.o infutil.o zfunc.o
-
+OBJ 	= asm.o bios.o boot.o pci.o char_io.o builtins.o common.o stage2.o cmdline.o disk_io.o graphics.o console.o fsys_fat.o fsys_ext2fs.o builtins_lbs.o
+OBJNET	= pxe.o udp.o
 DEFINES = -DNO_DECOMPRESSION -DSUPPORT_NETBOOT -DSUPPORT_DISKLESS -DFSYS_TFTP -DFSYS_EXT2FS -DFSYS_FAT -DNO_INT13_FALLBACK -DSUPPORT_GRAPHICS=1
-#-DDEBUG
+HELP	= -DHELP_ON
+ARCH	= i386
+CFLAGS	= -I. -Os -Wall $(HELP) $(DEFINES) -nostdinc -falign-jumps=1 -falign-loops=1 -falign-functions=1 -march=$(ARCH) -m32
+CC		= gcc-3.4
 
-HELP=-DHELP_ON
-#HELP=
+OBJZLIB		= adler32.o inflate.o infblock.o infcodes.o inftrees.o inffast.o infutil.o zfunc.o
+CFLAGSZLIB	= -I. -DMAX_WBITS=14 -DMAX_MEM_LEVEL=7 -DMY_ZCALLOC -DNO_ERRNO_H -O9 -march=$(ARCH) -m32
 
-ARCH=pentium
-ARCH=i386
 
-CFLAGS=-I. -Os -Wall $(HELP) $(DEFINES) -nostdinc -malign-jumps=1 -malign-loops=1 -malign-functions=1 -mcpu=$(ARCH) -march=$(ARCH) -m32
-
-###################################
-
-CC=gcc-3.4
-
-###################################
-
-CFLAGSZLIB=-I. -DMAX_WBITS=14 -DMAX_MEM_LEVEL=7 -DMY_ZCALLOC -DNO_ERRNO_H -O9 -mcpu=$(ARCH) -march=$(ARCH) -m32
+all: revoboot.pxe
+	mv revoboot.pxe revoboot.pxe.$(SVNREV)
 
 revoboot.pxe:	$(OBJ) $(OBJZLIB) $(OBJNET) adjust_length
 	$(CC) -o revoboot.pxe.exec -nostdlib -Wl,-N -Wl,-Ttext -Wl,7C00 $(OBJ) $(OBJZLIB) $(OBJNET) -m32
 	objcopy -O binary revoboot.pxe.exec revoboot.pxe
 	./adjust_length
-	[ ! -f revoboot.pxe.$(VER) ] && cp revoboot.pxe revoboot.pxe.$(VER)
 
 adjust_length: adjust_length.c
 	$(CC) -o adjust_length adjust_length.c
 
 clean:
-	rm -r -f $(OBJ) $(OBJZLIB) $(OBJNET) revoboot.pxe revoboot.pxe.exec adjust_length revoboot.pxe.$(VER)
+	rm -r -f $(OBJ) $(OBJZLIB) $(OBJNET) revoboot.pxe revoboot.pxe.* adjust_length
 
 char_io.c: config.h
 char_io.o: config.h

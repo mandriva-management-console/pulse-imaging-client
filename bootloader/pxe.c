@@ -24,7 +24,9 @@
 
 #include "etherboot.h"
 #include "generic.h"
-#define FSYS_TFTP
+#ifndef FSYS_TFTP
+    #define FSYS_TFTP
+#endif
 #include <filesys.h>
 #include <shared.h>
 #include "pxe.h"
@@ -722,7 +724,7 @@ unsigned int nextpacket;
 int
 tftpopen (void)
 {
-  int ret, len = 2, sz;
+  int ret, len = 2;
   char str[200];
   const char strappend[] = "octet";
 
@@ -1034,10 +1036,8 @@ getsize;
 
 getsize t_dir;
 
-long
-new_tftpdir (char *filename)
-{
-  char str[1000], *ptr, sz;
+long new_tftpdir (char *filename) {
+  char str[1000], *ptr;
   int res;
   const char strappend[] = "octet\000tsize\0000";
   int ret, len = 2, timeout = 0, sec;
@@ -1618,31 +1618,25 @@ pxe_oeb (int func, void *packet)
       return 1;
     }
 
-  if (func == 0x70)
+    if (func == 0x70)
     {
-      return 0;
+        return 0;
     }
-  if (func == 0x5)
+    if (func == 0x5)
     {
-      return 0;
+        return 0;
     }
-  if (func == 0x2)
+    if (func == 0x2)
     {
-      return 0;
+        return 0;
     }
-  if (func == 0x15)
+    if (func == 0x15)
     {
-      void (*disable) (struct nic * nic);
-
-      /*disable = *(int (*)()) (nic->disable);*/
-      disable = nic->disable;
-      (*disable) (nic);
-      return 0;
     }
 
-  printf ("Pxe emulation : %x %x\n", func, packet);
-err:
-  getkey ();
-  *(unsigned short *) packet = 1;
-  return 1;
+    printf ("Pxe emulation : %x %x\n", func, packet);
+
+    getkey ();
+    *(unsigned short *) packet = 1;
+    return 1;
 }
