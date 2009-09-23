@@ -21,11 +21,21 @@
 # MA 02110-1301, USA.
 #
 
-SVNREV = $($Rev$)
+SVNREV:=$(shell echo $Rev$ | tr -cd [[:digit:]])
+
+FOLDER_BOOTLOADER=bootloader/
+FOLDER_KERNEL=kernel/
 
 help:
 	@echo -e Available options:
 	@echo -e \\t	+ bootloader \\t: PXE-related stuff
 
-bootloader :
-	make -C bootloader
+kernel:
+	make -C $(FOLDER_KERNEL) SVNREV=$(SVNREV)
+
+bootloader:
+	make -C $(FOLDER_BOOTLOADER) SVNREV=$(SVNREV)
+
+clean:
+	make clean -C $(FOLDER_BOOTLOADER) SVNREV=$(SVNREV)
+	make clean -C $(FOLDER_KERNEL) SVNREV=$(SVNREV)
