@@ -21,6 +21,8 @@
 # MA 02110-1301, USA.
 #
 
+SVNREV:=$(shell echo $Rev: 4491 $ | tr -cd [[:digit:]])
+
 include consts.mk
 
 all: kernel modules
@@ -30,9 +32,13 @@ kernel:
 	[ -d $(FOLDER_LINUXKERNEL) ] || tar jxf $(TARGET_LINUXKERNEL)/$(TARBALL_LINUXKERNEL) -C $(TARGET_LINUXKERNEL)
 	[ -f $(FOLDER_LINUXKERNEL)/.config ] || cp -a $(CONFIGS_LINUXKERNEL)/dot-config-$(VERSION_LINUXKERNEL) $(FOLDER_LINUXKERNEL)/.config
 	$(MAKE) -C $(FOLDER_LINUXKERNEL) ARCH=$(ARCHITECTURE) silentoldconfig
-	$(MAKE) -C $(FOLDER_LINUXKERNEL) all CC=$(CC) ARCH=$(ARCHITECTURE)
+	$(MAKE) -C $(FOLDER_LINUXKERNEL) ARCH=$(ARCHITECTURE) all
+	@cp -f $(FOLDER_LINUXKERNEL)/arch/i386/boot/bzImage build/bzImage-$(VERSION_LINUXKERNEL)-r$(SVNREV)
+	@/usr/sbin/rdev build/bzImage-$(VERSION_LINUXKERNEL)-r$(SVNREV) /dev/ram0
+	@ln -sf build/bzImage-$(VERSION_LINUXKERNEL)-r$(SVNREV) build/bzImage
 
-modules: module_e1000 module_e1000e module_igb module_r8168 module_r8169 module_atl1 module_atl1e module_atl2 module_570x module_nxii module_sk98lin
+modules: module_e1000 module_e1000e
+	# others disebaled for now : module_igb module_r8168 module_r8169 module_atl1 module_atl1e module_atl2 module_570x module_nxii module_sk98lin
 
 module_e1000:
 	# If build fails comment 'get_perm_addr' ifdef in e1000_ethtool.c
@@ -99,8 +105,12 @@ module_sk98lin:
 	mkdir -p build/modules && cp -f $(SRC_SK98LIN)/sk98lin.ko build/modules
 
 clean: modules_clean
-	$(MAKE) -C $(KSRC) clean
+	$(MAKE) -C $(FOLDER_LINUXKERNEL) clean
+	$(MAKE) -C $(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../../../$(FOLDER_E1000) KSRC=../../../$(FOLDER_LINUXKERNEL)
+	$(MAKE) -C $(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../../../$(FOLDER_E1000e) KSRC=../../../$(FOLDER_LINUXKERNEL)
 	rm -fr build/bzImage build/modules/*
+
+dist-clean:
 
 modules_clean:
 	rm -fr $(SRC_E1000) $(SRC_SK98LIN) $(SRC_NXII) $(SRC_570X) $(SRC_ATL2) $(SRC_ATL1e) $(SRC_ATL1) $(SRC_R8169) $(SRC_R8168) $(SRC_IGB) $(SRC_E1000e)
