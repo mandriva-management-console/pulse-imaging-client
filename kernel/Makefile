@@ -20,93 +20,33 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 #
-# The kernel source should be decompressed in /usr/src, with a 'linux' link
-# pointing to the right directory, or be given using SRC on command line
-#
 
-SRC	:= /usr/src
-HERE	:= `pwd`
-CC	:= gcc-4.1
-KSRC	:= $(SRC)/linux
-
-FOLDER_E1000 := $(PWD)/3rd_party/e1000
-SRC_E1000 := $(FOLDER_E1000)/e1000-8.0.9/src
-TARBALL_E1000 := e1000-8.0.9.tar.gz
-
-FOLDER_E1000e := $(PWD)/3rd_party/e1000e
-SRC_E1000e := $(FOLDER_E1000e)/e1000e-0.5.18.3/src
-TARBALL_E1000e := e1000e-0.5.18.3.tar.gz
-
-FOLDER_IGB := $(PWD)/3rd_party/igb
-SRC_IGB := $(FOLDER_IGB)/igb-1.3.19.3/src
-TARBALL_IGB := igb-1.3.19.3.tar.gz
-
-FOLDER_R8168 := $(PWD)/3rd_party/r8168
-SRC_R8168 := $(FOLDER_R8168)/r8168-8.012.00/src
-TARBALL_R8168 := r8168-8.012.00.tar.bz2
-
-FOLDER_R8169 := $(PWD)/3rd_party/r8169
-SRC_R8169 := $(FOLDER_R8169)/r8169-6.010.00/src
-TARBALL_R8169 := r8169-6.010.00.tar.bz2
-
-FOLDER_ATL1 := $(PWD)/3rd_party/atl1
-SRC_ATL1 := $(FOLDER_ATL1)/atl1-2.1.3-linux-2.6.23
-TARBALL_ATL1 := atl1-2.1.3-linux-2.6.23-standalone.tar.gz
-
-FOLDER_ATL1e := $(PWD)/3rd_party/atl1e
-SRC_ATL1e := $(FOLDER_ATL1e)/459-AR813X-linux-v1.0.0.9/src
-TARBALL_ATL1e := 459-AR813X-linux-v1.0.0.9.tar.gz
-
-FOLDER_ATL2 := $(PWD)/3rd_party/atl2
-SRC_ATL2 := $(FOLDER_ATL2)/atl2-2.0.5
-TARBALL_ATL2 := atl2-2.0.5.tar.bz2
-
-FOLDER_570X := $(PWD)/3rd_party/570x
-SRC_570X := $(FOLDER_570X)/tg3-3.92n
-PKG_570X := linux-3.92n.zip
-TARBALL_570X := tg3-3.92n.tar.gz
-
-FOLDER_NXII := $(PWD)/3rd_party/nxii
-SRC_NXII := $(FOLDER_NXII)/netxtreme2-4.8.10/bnx2/src
-PKG_NXII := linux-1.8.5b_1.48.53.zip
-TARBALL_NXII := Server/Linux/Driver/netxtreme2-4.8.10.tar.gz
-
-FOLDER_SK98LIN := $(PWD)/3rd_party/sk98lin
-SRC_SK98LIN := $(FOLDER_SK98LIN)/build
-PKG_SK98LIN := install_v10.70.7.3.tar.bz2
-TARBALL_SK98LIN := DriverInstall/sk98lin.tar.bz2
+include consts.mk
 
 all: kernel modules
 
 kernel:
-	@echo -e "\n\nCurrent linux is:\n"
-	@ls -l $(SRC)/linux
-	@echo -e "\nContinue ?(y/n)"
-	@(read ANS; [ "$$ANS" != "n" ])
-# kernel compile
-	[ -f $(SRC)/linux/.config ]
-	# FB disabled, do not need to copy this file anymore
-	# cp -f media/logo_linux_vga16.ppm $(SRC)/linux/drivers/video/logo/
-	$(MAKE) -C $(SRC)/linux all CC=$(CC)
-	mkdir -p build
-	cp -f $(SRC)/linux/arch/i386/boot/bzImage build
-	/usr/sbin/rdev build/bzImage /dev/ram0
-	mkdir -p build/modules
-	find $(SRC)/linux/drivers/net $(SRC)/linux/lib $(SRC)/linux/drivers/pcmcia -name "*.ko" -exec cp -a {} build/modules \;
+	[ -e $(TARGET_LINUXKERNEL)/$(TARBALL_LINUXKERNEL) ] || wget $(URI_LINUXKERNEL)/$(TARBALL_LINUXKERNEL) -P $(TARGET_LINUXKERNEL)
+	[ -d $(FOLDER_LINUXKERNEL) ] || tar jxf $(TARGET_LINUXKERNEL)/$(TARBALL_LINUXKERNEL) -C $(TARGET_LINUXKERNEL)
+	[ -f $(FOLDER_LINUXKERNEL)/.config ] || cp -a $(CONFIGS_LINUXKERNEL)/dot-config-$(VERSION_LINUXKERNEL) $(FOLDER_LINUXKERNEL)/.config
+	$(MAKE) -C $(FOLDER_LINUXKERNEL) ARCH=$(ARCHITECTURE) silentoldconfig
+	$(MAKE) -C $(FOLDER_LINUXKERNEL) all CC=$(CC) ARCH=$(ARCHITECTURE)
 
 modules: module_e1000 module_e1000e module_igb module_r8168 module_r8169 module_atl1 module_atl1e module_atl2 module_570x module_nxii module_sk98lin
 
 module_e1000:
 	# If build fails comment 'get_perm_addr' ifdef in e1000_ethtool.c
-	[ -d $(SRC_E1000) ] || (cd $(FOLDER_E1000) && tar zxf $(TARBALL_E1000))
-	make CC=$(CC) -C $(KSRC) SUBDIRS=$(SRC_E1000)
-	mkdir -p build/modules && cp -f $(SRC_E1000)/e1000.ko build/modules
+	[ -e $(TARGET_E1000)/$(TARBALL_E1000) ] || wget $(URI_E1000)/$(TARBALL_E1000) -P $(TARGET_E1000)
+	[ -d $(FOLDER_E1000) ] || tar zxf $(TARGET_E1000)/$(TARBALL_E1000) -C $(TARGET_E1000)
+	$(MAKE) -C $(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../../../$(FOLDER_E1000) KSRC=../../../$(FOLDER_LINUXKERNEL)
+	mkdir -p build/modules && cp -f $(FOLDER_E1000)/e1000.ko build/modules
 
 module_e1000e:
-	[ -d $(SRC_E1000e) ] || (cd $(FOLDER_E1000e) && tar zxf $(TARBALL_E1000e))
-	patch -p1 -d $(SRC_E1000e) < $(SRC_E1000e)/../../patch_for_2.6.23_kernel.diff
-	make CC=$(CC) -C $(KSRC) SUBDIRS=$(SRC_E1000e)
-	mkdir -p build/modules && cp -f $(SRC_E1000e)/e1000e.ko build/modules
+	[ -e $(TARGET_E1000e)/$(TARBALL_E1000e) ] || wget $(URI_E1000e)/$(TARBALL_E1000e) -P $(TARGET_E1000e)
+	[ -d $(FOLDER_E1000e) ] || tar zxf $(TARGET_E1000e)/$(TARBALL_E1000e) -C $(TARGET_E1000e)
+	patch -p1 -d $(FOLDER_E1000e) < $(TARGET_E1000e)/patch_for_2.6.23_kernel.diff
+	$(MAKE) -C $(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../../../$(FOLDER_E1000e) KSRC=../../../$(FOLDER_LINUXKERNEL)
+	mkdir -p build/modules && cp -f $(FOLDER_E1000e)/e1000e.ko build/modules
 
 module_igb:
 	[ -d $(SRC_IGB) ] || (cd $(FOLDER_IGB) && tar zxf $(TARBALL_IGB))
@@ -164,4 +104,3 @@ clean: modules_clean
 
 modules_clean:
 	rm -fr $(SRC_E1000) $(SRC_SK98LIN) $(SRC_NXII) $(SRC_570X) $(SRC_ATL2) $(SRC_ATL1e) $(SRC_ATL1) $(SRC_R8169) $(SRC_R8168) $(SRC_IGB) $(SRC_E1000e)
-
