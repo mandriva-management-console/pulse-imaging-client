@@ -22,9 +22,11 @@
 # MA 02110-1301, USA.
 #
 
-CFLAGS=-I../zlib  -Wall -DLBLIMAGEVER=\"1.4\"  -Os -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wall
-LIBS=-L.. -llrs -s
-CC=gcc-3.4
+CFLAGS	= -DLBLIMAGEVER='1.4' -Os -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wall -I$(LRS_DIR) -I$(ZLIB_DIR)
+LIBS	= -s -L$(LRS_DIR) -llrs -L$(ZLIB_DIR) -lz
 
-autorestore: autorestore.o
-	$(CC) $(CFLAGS) -o $@ autorestore.o $(LIBS)
+autorestore: autorestore.c
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
+
+clean:
+	rm -f autorestore

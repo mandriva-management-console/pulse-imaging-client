@@ -20,6 +20,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 
-CC=gcc-3.4
 autosave: autosave.c
-	$(CC) -Os -s -Wall -o autosave autosave.c -L.. -llrs
+	$(CC) -Os -s -Wall -o $@ autosave.c -L$(LRS_DIR) -I$(LRS_DIR) -llrs
+
+clean:
+	rm -f autosave

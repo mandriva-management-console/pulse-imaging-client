@@ -24,7 +24,7 @@
 
 /* How it works:
  * - opens and interprets /revosave/conf.txt
- * - logs and info are taken from /revoinfo/*
+ * - logs and info are taken from /revoinfo
  */
 
 char *cvsid = "$Id: autorestore.c 4039 2007-02-20 09:59:46Z root $";
@@ -53,7 +53,7 @@ char *cvsid = "$Id: autorestore.c 4039 2007-02-20 09:59:46Z root $";
 #include <linux/sockios.h>
 
 //#include "autosave.h"
-#include "../client.h"
+#include "client.h"
 
 #define DEBUG(a)
 //#define TEST 1

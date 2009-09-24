@@ -62,7 +62,7 @@ char *cvsid = "$Id: autosave.c 4790 2008-03-10 17:18:24Z nicolas $";
 #include <linux/sockios.h>
 
 #include "autosave.h"
-#include "../client.h"
+#include "client.h"
 
 #define DEBUG(a)
 #define PARTONLY 1
