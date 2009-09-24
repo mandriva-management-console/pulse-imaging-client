@@ -58,8 +58,7 @@
         }
 
       bzero (header.header, HEADERLG);
-      sprintf (header.header, "%s%sALLOCTABLELG=%d\n", firststring,
-               filestring, lg);
+      sprintf (header.header, "%s%sALLOCTABLELG=%d\n", firststring, filestring, lg);
       //debug("%s",header.header);
       firststring[0] = 0;
       bzero (header.bitmap, ALLOCLG);

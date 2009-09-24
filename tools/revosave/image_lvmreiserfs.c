@@ -43,10 +43,11 @@
 #include <stdint.h>
 #include <sys/vfs.h>
 
-#include "./reiserfsprogs/include/io.h"
-#include "./reiserfsprogs/include/misc.h"
-#include "./reiserfsprogs/include/reiserfs_lib.h"
-#include "./reiserfsprogs/version.h"
+#include "include/io.h"
+#include "include/misc.h"
+#include "include/reiserfs_lib.h"
+#include "include/reiserfs_fs.h"
+#include "version.h"
 
 //#include <linux/lvm.h>
 

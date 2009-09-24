@@ -20,99 +20,73 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 
-OBJ=compress.o
-LIBOBJ=compress.o easy_sock.o client.o
-IMGFILES=image_swap image_lvmreiserfs image_fat image_ntfs image_e2fs image_xfs image_jfs image_lvm decompress decompress-test image_raw decompress-bitmap
+OBJ			= compress.o
+LIBOBJ		= compress.o easy_sock.o client.o
+OBJS		= decompress-bitmap.o decompress.o decompress-test.o image_e2fs.o image_fat.o image_jfs.o image_lvm.o image_ntfs.o image_raw.o image_swap.o image_xfs.o lvm.o
+IMGFILES	= image_swap image_fat image_ntfs image_e2fs image_xfs image_jfs image_lvm decompress decompress-test image_raw decompress-bitmap
+# image_lvmreiserfs do not compile yet /o\
 
-3RDPARTY=zlib newt slang
+CFLAGS	= -Wall -O2 -DLBLIMAGEVER='1.2' -I$(ZLIB_DIR) -I$(E2FS_DIR)/lib
+LDFLAGS	= -s
+LIBLRS	= -L. -llrs
+LIBZ	= -L$(ZLIB_DIR) -lz
+RFSLIBS	= -L$(RFS_DIR)/lib -lcore -lmisc
+LIBE2FS	= -L$(E2FS_DIR)/lib -lext2fs -le2p -luuid -lcom_err
 
-ZLIB_DIR=../zlib
-ZLIB_ARC=../../3rd_party/zlib-1.2.3.tar.gz
-ZLIB_OBJ=$(wildcard $(ZLIB)/*.o)
-
-NEWT=3rd_party/newt/newt-0.52.10
-SLANG=3rd_party/slang/slang-2.0.6
-UINEWT=ui_newt
-
-CC=gcc-3.4
-CFLAGS=-Wall -O2 -DLBLIMAGEVER='1.2' -I$(ZLIB_DIR) -I./e2fsprogs/lib/ -m32
-LDFLAGS=-s
-LIBS= -L. -llrs
-RFSLIBS=-L./reiserfsprogs/lib -lcore -lmisc
-
-all: $(OBJ) $(LIBOBJ) liblrs.so.1 liblrs.a $(IMGFILES) $(3RDPARTY)
+all: $(OBJ) $(LIBOBJ) liblrs.so.1 liblrs.a $(IMGFILES)
 
 depend:
 	$(CC) -M $(CFLAGS) *.c >.depend
 
 image_fat: image_fat.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
 
 image_swap: image_swap.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
 
 image_raw: image_raw.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
 
 image_ntfs: image_ntfs.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
 
 image_e2fs: image_e2fs.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS) -L./e2fsprogs/lib -lext2fs -le2p -luuid -lcom_err
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS) $(LIBE2FS)
 
 image_xfs: image_xfs.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
 
 image_jfs: image_jfs.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
 
 image_lvm: image_lvm.o lvm.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
 
 image_lvmreiserfs: lvm.o image_lvmreiserfs.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS) $(RFSLIBS)
 
 decompress: decompress.o $(OBJ)
-	$(CC) $(CFLAGS) $(LDFLAGS) -L. -llrs -lnewt -o $@ $^
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS) $(LIBZ)
 
 decompress-test: decompress-test.o $(OBJ)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< --static -L. -llrs
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< --static $(LIBZ)
 
 decompress-bitmap: decompress-bitmap.o $(OBJ)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< -L. -llrs -lnewt
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< $(LIBZ)
 
-image_e2fs.o: image_e2fs.c compress.h compress-loop.h config.h e2fsprogs
-	$(CC) $(CFLAGS) -o image_e2fs.o -c image_e2fs.c -I./e2fsprogs/lib
+image_lvmreiserfs.o: image_lvmreiserfs.c
+	$(CC) $(CFLAGS) -o image_lvmreiserfs.o -c image_lvmreiserfs.c -I$(RFS_DIR)
 
-liblrs.so.1: $(LIBOBJ) $(ZLIB_DIR)
-	$(CC) -shared -Wl,-soname,liblrs.so.1 -o liblrs.so.1 $^ $(ZLIB_OBJ)
+liblrs.so.1: $(LIBOBJ)
+	$(CC) -shared -Wl,-soname,$@ -o $@ $^ $(LIBZ)
 	strip $@
 	ln -sf $@ liblrs.so
 
 liblrs.a: $(LIBOBJ)
-	ar rc $@ $^ $(ZLIB_OBJ)
+	ar rc $@ $^ $(LIBOBJ)
 	ranlib $@
-
-zlib:
-	(cd $(ZLIB_DIR); tar zxf $(ZLIB_ARC) --strip 1; patch -p 0 < Makefile.diff)
-	$(MAKE) -C $(ZLIB_DIR) clean
-	$(MAKE) -C $(ZLIB_DIR)
-
-newt: slang
-	(cd $(NEWT); env CC=$(CC) ./configure -quiet)
-	$(MAKE) -C $(NEWT) CPPFLAGS="-D_GNU_SOURCE -I../../$(SLANG)/src/elfobjs" whiptail
-
-slang:
-	(cd $(SLANG); env CC=$(CC) ./configure -quiet)
-	$(MAKE) -C $(SLANG) elf
-
-ui_newt: newt
-	$(MAKE) -C $(UINEWT)
 
 include .depend
 
 clean:
-	-$(MAKE) -C $(NEWT) clean
-	-$(MAKE) -C $(SLANG) clean
-	-$(MAKE) -C $(UINEWT) clean
-	rm -f liblrs.so.1 liblrs.so liblrs.a $(IMGFILES)
+	rm -f liblrs.so.1 liblrs.so liblrs.a $(LIBOBJ) $(IMGFILES) $(OBJS)
