@@ -22,7 +22,7 @@
  * MA 02110-1301, USA.
  */
 
-#include "../config.h"
+/*#include "../config.h"*/
 
 #include <stdlib.h>
 #include <string.h>
@@ -31,8 +31,9 @@
 #include <newt.h>
 #include <time.h>
 #include <sys/ioctl.h>
-#include <linux/fs.h>
+#include <sys/stat.h>
 #include <sys/types.h>
+#include <linux/fs.h>
 #include <unistd.h>
 #include <fcntl.h>
 
