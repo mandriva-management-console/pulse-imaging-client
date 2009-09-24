@@ -1,5 +1,3 @@
-#!/bin/sh
-#
 # (c) 2003-2007 Linbox FAS, http://linbox.com
 # (c) 2008-2009 Mandriva, http://www.mandriva.com
 #
@@ -22,12 +20,13 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 
-ETH=`cat /etc/eth`
-MAC=`cat /etc/mac`
+#
+# NT bootloader fix
+#
+CFLAGS=-Os -Wall -s -fpic
 
-. /etc/netinfo.sh
-SRV=$Next_server
-[ -n "$Option_177" ] && SRV=`echo $Option_177|cut -d : -f 1`
+ntblfix: ntblfix.c vm86.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ $^
 
-ping -c 10 $SRV
-ping -c 10 -s 512 $SRV
+clean:
+	rm -f ntblfix
