@@ -1,0 +1,8 @@
+#!/bin/sh
+TMPTIME=0
+SULOGIN=no
+DELAYLOGIN=yes
+GMT="-u"
+VERBOSE=no
+EDITMOTD=yes
+FSCKFIX=no

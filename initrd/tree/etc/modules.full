@@ -1,0 +1,41 @@
+# /etc/modules: kernel modules to load at boot time.
+
+pcmcia_core
+rsrc_nonstatic
+yenta_socket
+mii
+libcrc32c
+zlib_inflate
+
+e100
+8139too full_duplex=1
+#8139cp
+3c59x full_duplex=1
+sk98lin
+skge
+sky2
+via-rhine full_duplex=1
+e1000
+dmfe
+8390
+ne2k-pci full_duplex=1
+pcnet32 full_duplex=1
+b44
+sis900
+natsemi full_duplex=1
+sundance
+tulip full_duplex=1
+de4x5
+bnx2
+tg3
+bcm5700
+r1000
+r8169
+forcedeth
+tlan
+epic100
+sis190
+uli526x mode=5
+# cannot autoprobe...
+# cs89x0
+# lance

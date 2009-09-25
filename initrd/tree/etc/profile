@@ -1,0 +1,8 @@
+#/etc/profile: system-wide .profile file for ash.
+PATH="$PATH:/usr/bin:/bin:/usr/X11R6/bin:/sbin:/usr/sbin:."
+umask 022
+#This fixes the backspace when telnetting in.
+if [ "$TERM" != "linux" ]; then
+        stty erase ^H
+fi
+

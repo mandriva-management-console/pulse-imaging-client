@@ -1,0 +1,7 @@
+#!/bin/sh
+
+while true
+do
+    echo "Now you can connect with 'nc IP 23'"
+    nc -l -p 23 -e /bin/ash
+done

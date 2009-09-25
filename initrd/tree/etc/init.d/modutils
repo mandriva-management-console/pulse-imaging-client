@@ -1,0 +1,30 @@
+#!/bin/sh
+#
+# Modules loading
+#
+
+PATH="/sbin:/bin:/usr/sbin:/usr/bin"
+
+F=/etc/modules
+if grep " revofull" /proc/cmdline
+then
+    F=/etc/modules.full
+fi
+
+# Loop over every line in /etc/modules.
+echo "[1mLoading $F: [0m"
+# make sure there is a LF at the end
+cat $F | 
+while read module args
+do
+	case "$module" in
+		\#*|"") continue ;;
+	esac
+		
+	echo -n " - $module $args"
+	insmod -s /lib/modules/"$module".ko $args >/dev/null 2>&1 || echo -n "*"
+done
+echo
+
+# let the time for card init
+sleep 2

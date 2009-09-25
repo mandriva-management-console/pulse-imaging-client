@@ -1,0 +1,30 @@
+# default rl.
+id:2:initdefault:
+
+# first except in emergency (-b) mode.
+si::sysinit:/etc/init.d/rcS
+
+# single-user mode.
+~~:S:wait:/sbin/sulogin
+
+# /etc/init.d executes the S and K scripts upon change
+# 0:halt 1:single-user 2-5:multi-user (5 may be X with xdm or other) 6:reboot.
+l0:0:wait:/etc/init.d/rc 0
+l1:1:wait:/etc/init.d/rc 1
+l2:2:wait:/etc/init.d/rc 2
+l3:3:wait:/etc/init.d/rc 3
+l4:4:wait:/etc/init.d/rc 4
+l5:5:wait:/etc/init.d/rc 5
+l6:6:wait:/etc/init.d/rc 6
+
+# CTRL-ALT-DEL pressed.
+ca:12345:ctrlaltdel:/sbin/shutdown -t1 -r now
+
+# Action on special keypress (ALT-UpArrow).
+kb::kbrequest:/bin/echo "Keyboard Request--edit /etc/inittab to let this work."
+
+# /sbin/mingetty invocations for runlevels.
+1:2345:respawn:/sbin/getty 9600 tty1
+2:23:respawn:/sbin/getty 9600 tty2
+3:23:respawn:/sbin/getty 9600 tty3
+#4:23:respawn:/bin/ash

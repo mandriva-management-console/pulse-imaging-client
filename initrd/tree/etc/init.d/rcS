@@ -1,0 +1,27 @@
+#!/bin/ash
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+runlevel=S
+prevlevel=N
+umask 022
+export PATH runlevel prevlevel
+./etc/default/rcS
+export VERBOSE
+# Trap CTRL-C &c only in this shell so we can interrupt subprocesses.
+trap ":" 2 3 20
+# Call all parts in order.
+for i in /etc/rcS.d/S??*
+do
+	[ ! -f "$i" ] && continue
+	case "$i" in
+		*.sh)
+			(
+				trap - 2 3 20
+				. $i start
+			)
+			;;
+		*)
+			$i start
+			;;
+	esac
+done
+

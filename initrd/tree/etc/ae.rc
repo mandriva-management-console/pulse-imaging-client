@@ -1,0 +1,156 @@
+Debian Configuration File 
+Modeless Interface with TERMINFO Function Keys
+Anthony's Editor Feb 96
+Copyright 1993, 1996 by Anthony Howe.  All rights reserved.  No warranty.
+This file by Bill Mitchell.  Any errors are mine, not Anthony's.
+
+Fixed by Dave Cinege, with better keys, and more universal scancodes
+(yes it now works in xterm) 
+
+1:\
+Save/Write file     Ctrl/Alt-s/w       Left, down, up, right     Arrow keys\n\
+Read in file        Ctrl/Alt-r         Page down and up          PgDn PgUp\n\
+Quit                Ctrl-c  Alt-q      Front and end of line     Home End\n\
+                                       Top and bottom of file    Ctrl/Alt t b\n\
+Block, Cut, Paste   F2  F3  F4         Delete left and right     Backspace Del\n\
+Undo                Ctrl-z  F9         Literal escape            Ins\n\
+                                       Invert case               F7\n\
+Kill/Abort          Ctrl-k             Redraw screen             F8\n\
+
+.help_off
+.literal	$(kich1)
+.literal	^[[2~
+
+.cursor_up	$(kcuu1)
+.cursor_up	^[[A
+
+.cursor_down	$(kcud1)
+.cursor_down	^[[B
+
+.cursor_left	$(kcub1)
+.cursor_left	^[[D
+
+.cursor_right	$(kcuf1)
+.cursor_right	^[[C
+
+
+.page_up	$(kpp)
+.page_up	^[[5~
+
+.page_down	$(knp)
+.page_down	^[[6~
+
+.word_left	$(kf5)
+.word_right	$(kf6)
+
+.line_left	$(khome)
+.line_left	^[[H
+
+.line_right	$(kend)
+.line_right	^[[F
+
+.file_top	^t
+.file_top	^[t
+.file_top	ô
+
+.file_bottom	^b
+.file_bottom	^[b
+.file_bottom	â
+
+.delete_left	$(kbs)
+
+.delete_right	$(kdch1)
+.delete_right	^?
+.delete_right	^[[3~
+
+.help		$(kf1)
+.help		^[f1
+.help		^[OP
+.help		^[[11~ 
+
+.block		$(kf2)
+.block		^[f2
+.block		^[OQ
+.block		^[[12~
+
+.cut		$(kf3)
+.cut		^[f3
+.cut		^[OR
+.cut		^[[13~
+
+.paste		$(kf4)
+.paste		^[f4
+.paste		^[OS
+.paste		^[[14~
+
+.flip_case	$(kf7)
+
+.undo		$(kf9)
+.undo		^z
+
+.file_read	^r
+.file_read	^[r
+.file_read	ò
+
+.file_write	^w
+.file_write	^[w
+.file_write	÷
+.file_write	^s
+.file_write	^[s
+.file_write	ó
+
+.redraw		$(kf8)
+
+.quit_ask	$(kf10)
+.quit_ask	^c
+.quit_ask	^[q
+.quit_ask	ñ
+
+.quit		^k
+
+.macro		$(kf12)
+.macro_define
+.macro_define
+.macro_define
+.macro_define
+.macro_define
+
+2:Terminated successfully.\n
+3:Unspecified error.\n
+4:usage: %s [-f <config>] [file]\n
+5:Failed to initialize the screen.\n
+6:Problem with configuration file, line %lu.\n
+7:Failed to allocate required memory.\n
+8:Ok.
+9:An error occured.
+10:No more memory available.
+11:File \"%s\" is too big to load.
+12:Scrap is empty.  Nothing to paste.
+13:Failed to find file \"%s\".
+14:Failed to open file \"%s\".
+15:Failed to close file \"%s\".
+16:Failed to read file \"%s\".
+17:Failed to write file \"%s\".
+18:Not a portable POSIX file name.
+19:File \"%s\" %ld bytes.  Press F1 to toggle help.
+20:File \"%s\" %ld bytes saved.  Press F1 to toggle help.
+21:File \"%s\" %ld bytes read.  Press F1 to toggle help.
+22:File \"%s\" modified.  Press F1 to toggle help.
+23:Invalid control character or \\number not 0..255.
+24:No such macro defined.
+25:No more macro space.
+26:Interrupt.
+27:<< EOF >>
+28:Macro :
+29:File not saved.  Quit (y/n) ?
+30:[ Press a key to continue. ]
+31:Read file :
+32:Write file :
+33:Write block :
+34:\smore\s
+35:\sy\b
+36:\sn\b
+37:\sq\b
+38:Nothing to undo.
+
+

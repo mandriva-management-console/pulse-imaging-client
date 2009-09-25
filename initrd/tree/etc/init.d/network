@@ -1,0 +1,56 @@
+#!/bin/sh
+
+echo -n "Configuring and Starting Network..."
+
+# Localhost
+ifconfig lo 127.0.0.1 && echo -n "lo "                                       
+
+# CDROM restore ?
+grep -q revosavedir=/cdrom /proc/cmdline && NOPUMP=1
+# CDROM + staticip ?
+grep -q revocdromstatic /proc/cmdline && NOPUMP=1
+
+#
+ETH=eth0
+# If revomac is found try to find the linux interface which corresponds to the
+# pxe interface
+if grep -q revomac= /proc/cmdline
+then
+    REVOMAC=`sed -e 's/.*revomac=\([^ ]*\).*/\1/' </proc/cmdline`
+    for int in 0 1 2 3 4 5 6 7
+    do
+	MAC=`ifconfig eth$int 2>/dev/null|grep HWaddr|sed 's/.*HWaddr //'|sed 's/[ ]//g'|sed 's/[: ]//g'`
+	if [ "$MAC" = "$REVOMAC" ] ;then
+	    ETH=eth$int
+	    break
+	fi
+    done
+fi
+
+case "`cat /proc/cmdline`" in
+    *revoeth1*)
+	ETH=eth1
+    ;;
+    *revoeth2*)
+	ETH=eth2
+    ;;
+    *revoeth3*)
+    	ETH=eth3
+    ;;
+esac
+
+# save it
+echo $ETH >/etc/eth
+# dhcp
+ifconfig $ETH up && echo "$ETH"
+[ -z $NOPUMP ] && pump -i $ETH -h lrsclient --win-client-ident
+# multicast
+[ -z $NOPUMP ] && route add -net 224.0.0.0 netmask 240.0.0.0 dev $ETH
+
+# save the mac address
+if [ "$REVOMAC" ] ;then
+    echo $REVOMAC|sed 's/\(..\)/\1:/g'|sed 's/:$//' >/etc/mac
+else
+    ifconfig $ETH|grep HWaddr|sed 's/.*HWaddr //'|sed 's/[ ]//g' >/etc/mac
+fi
+sed 's/[: ]//g'</etc/mac >/etc/shortmac

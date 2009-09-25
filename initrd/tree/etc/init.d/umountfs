@@ -1,0 +1,16 @@
+#!/bin/sh
+PATH=/sbin:/bin:/usr/sbin:/usr/bin
+# Write a reboot record to /var/log/wtmp before unmounting
+
+echo -n "Deactivating LVM... "
+lvm vgchange -an 2>/dev/null
+echo "done."
+
+#echo -n "Deactivating swap... "
+#swapoff -a
+#echo "done."
+
+echo -n "Unmounting file systems... "
+umount -a
+echo "done."
+mount -n -o remount ro /

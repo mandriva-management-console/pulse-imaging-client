@@ -1,0 +1,37 @@
+#!/bin/sh
+
+[ -c /dev/urandom ] || exit 0
+
+case "$1" in
+	start|"")
+		# Load and then save 512 bytes,
+		# which is the size of the entropy pool
+		if [ -f /var/lib/random-seed ]
+		then
+			cat /var/lib/random-seed >/var/run/random-seed
+			cat /var/run/random-seed >/dev/urandom
+		fi
+		rm /var/run/random-seed
+		umask 077
+		
+		cat /dev/urandom | dd bs=512 count=1 >/var/run/random-seed \
+		2>/dev/null || echo "urandom start: failed."
+		cat /var/run/random-seed >/var/lib/random-seed
+		
+		umask 022
+		;;
+	stop)
+		# Carry a random seed from shut-down to start-up;
+		# see documentation in linux/drivers/char/random.c
+		umask 077
+				
+		cat /dev/urandom | dd bs=512 count=1 >/var/run/random-seed \
+		2>/dev/null || echo "urandom stop: failed."	
+		cat /var/run/random-seed >/var/lib/random-seed
+		;;
+	*)
+		echo "Usage: urandom {start|stop}" >&2
+		exit 1
+		;;
+esac
+

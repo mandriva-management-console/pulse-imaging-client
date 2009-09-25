@@ -1,0 +1,5 @@
+* /lib/libc* (including ptheead) come from a Debian Etch libc6 2.3.6
+* /bin/busybox come from a busybox v.61
+* /lib/libnewt come from a Debian Etch libnewt 0.52
+* /lib/libslang come from a Debian Etch libslang 2.0.4
+* /lib/libgcc_s.so.1 from a Debian Etch libgcc1 4.1.1

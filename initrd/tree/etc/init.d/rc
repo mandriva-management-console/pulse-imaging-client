@@ -1,0 +1,80 @@
+#!/bin/ash
+
+startup () {
+  case "$1" in
+	*.sh)
+		$debug sh "$@"
+		;;
+	*)
+		$debug "$@"
+		;;
+  esac
+}
+
+  # Ignore CTRL-C only in this shell, so we can interrupt subprocesses.
+  trap ":" 2 3 20
+
+  # Set onlcr to avoid staircase effect.
+  stty onlcr 0>&1
+
+  # Now find out what the current and what the previous runlevel are.
+
+  runlevel=$RUNLEVEL
+  # Get first argument. Set new runlevel to this argument.
+  [ "$1" != "" ] && runlevel=$1
+
+  previous=$PREVLEVEL
+
+  export runlevel previous
+
+  # Is there an rc directory for this new runlevel?
+  if [ -d /etc/rc$runlevel.d ]
+  then
+	# First, run the KILL scripts.
+	if [ "$previous" != "N" ]
+	then
+		for i in /etc/rc$runlevel.d/K[0-9][0-9]*
+		do
+			# Check if the script is there.
+			[ ! -f $i ] && continue
+
+			# Stop the service.
+			startup $i stop
+		done
+	fi
+	# Now run the START scripts for this runlevel.
+	for i in /etc/rc$runlevel.d/S*
+	do
+		[ ! -f $i ] && continue
+
+		if [ "$previous" != "N" ]
+		then
+			#
+			# Find start script in previous runlevel and
+			# stop script in this runlevel.
+			#
+			#sh can't pattern match
+			#suffix=${i#/etc/rc$runlevel.d/S[0-9][0-9]}
+			
+			suffix=`IFS=" 0123456789"; set $i; echo $3`
+			
+			stop=/etc/rc$runlevel.d/K[0-9][0-9]$suffix
+			previous_start=/etc/rc$previous.d/S[0-9][0-9]$suffix
+			#
+			# If there is a start script in the previous level
+			# and _no_ stop script in this level, we don't
+			# have to re-start the service.
+			#
+			[ -f $previous_start ] && [ ! -f $stop ] && continue
+		fi
+		case "$runlevel" in
+			0|6)
+				startup $i stop
+				;;
+			*)
+				startup $i start
+				;;
+		esac
+	done
+  fi
+# eof /etc/init.d/rc

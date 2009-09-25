@@ -1,0 +1,7 @@
+#!/bin/sh
+if [ "$VERBOSE" != no ]
+then
+	echo
+	echo "Local time ("`cat /etc/timezone`"): `date`"
+	echo
+fi

@@ -1,0 +1,12 @@
+#!/bin/sh
+# Set SULOGIN to yes if you want a sulogin to be spawned from
+# this script *before anything else* with a timeout, like on SCO.
+[ "$SULOGIN" = yes ] && sulogin -t 30 $CONSOLE
+
+# Mount /proc
+mount -t proc /proc /proc
+
+# Modify some kernel params
+# write core files on the server
+echo "/revosave/core.%p.%e" >/proc/sys/kernel/core_pattern
+echo "1" >/proc/sys/kernel/sysrq

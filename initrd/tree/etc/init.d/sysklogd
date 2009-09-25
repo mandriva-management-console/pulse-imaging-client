@@ -1,0 +1,34 @@
+#!/bin/sh
+test -f /sbin/klogd || exit 0
+test -f /sbin/syslogd || exit 0
+
+# Options for start/restart the daemons
+#   For remote UDP logging use SYSLOGD="-r"
+#
+SYSLOGD=""
+
+#  Use KLOGD="-k /boot/System.map-$(uname -r)" to specify System.map
+#
+KLOGD=""
+
+sleep 1
+case "$1" in
+  start)
+    echo -n "Starting system log daemon: syslogd"
+    /sbin/syslogd $SYSLOGD
+    echo -n " klogd"
+    /sbin/klogd $KLOGD
+    echo "."
+    ;;
+  stop)
+    echo -n "Stopping system log daemon: klogd"
+#    start-stop-daemon --stop --quiet --pidfile /var/run/klogd.pid
+    echo -n " syslogd"
+#    start-stop-daemon --stop --quiet --pidfile /var/run/syslogd.pid
+    echo "."
+    ;;
+  *)
+    echo "Usage: /etc/init.d/sysklogd {start|stop}"
+    exit 1
+esac
+exit 0

@@ -1,0 +1,9 @@
+#!/bin/sh
+echo -e "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+echo -en "\033[1;31m"
+echo -n "LRS Backup/Postinstall embedded Linux. "
+cut -f -3 -d " " < /proc/version
+echo -e "\033[0m"
+
+# disable console blank
+echo -e "\033[9;0]"

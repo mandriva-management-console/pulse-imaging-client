@@ -1,0 +1,14 @@
+#!/bin/sh
+
+. /etc/default/rcS
+
+# Mount local file systems in /etc/fstab.
+mount -n -o remount rw /
+
+# We might have mounted something over /dev, see if /dev/initctl is there.
+if [ ! -p /dev/initctl ]
+then
+	rm -f /dev/initctl
+	mknod -m 600 /dev/initctl p
+fi
+kill -USR1 1
