@@ -106,11 +106,10 @@ module_sk98lin:
 
 clean: modules_clean
 	$(MAKE) -C $(FOLDER_LINUXKERNEL) clean
-	$(MAKE) -C $(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../../../$(FOLDER_E1000) KSRC=../../../$(FOLDER_LINUXKERNEL)
-	$(MAKE) -C $(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../../../$(FOLDER_E1000e) KSRC=../../../$(FOLDER_LINUXKERNEL)
-	rm -fr build/bzImage build/modules/*
 
 dist-clean:
 
 modules_clean:
-	rm -fr $(SRC_E1000) $(SRC_SK98LIN) $(SRC_NXII) $(SRC_570X) $(SRC_ATL2) $(SRC_ATL1e) $(SRC_ATL1) $(SRC_R8169) $(SRC_R8168) $(SRC_IGB) $(SRC_E1000e)
+	$(MAKE) -C $(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../../../$(FOLDER_E1000) KSRC=../../../$(FOLDER_LINUXKERNEL)
+	$(MAKE) -C $(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../../../$(FOLDER_E1000e) KSRC=../../../$(FOLDER_LINUXKERNEL)
+

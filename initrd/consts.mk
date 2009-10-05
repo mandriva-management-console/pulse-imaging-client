@@ -36,4 +36,36 @@ POPT_FOLDER			= $(POPT_TARGET)/popt-$(POPT_VERSION)
 POPT_TARBALL		= popt-$(POPT_VERSION).tar.gz
 
 # Busybox
-http://www.busybox.net/downloads/legacy/busybox-0.60.5.tar.gz
+BUSYBOX_VERSION		= 0.60.5
+BUSYBOX_URI			= http://www.busybox.net/downloads/legacy
+BUSYBOX_TARGET		= build
+BUSYBOX_FOLDER		= $(BUSYBOX_TARGET)/busybox-$(BUSYBOX_VERSION)
+BUSYBOX_TARBALL		= busybox-$(BUSYBOX_VERSION).tar.gz
+
+# SysVInit
+SYSV_VERSION		= 2.84
+SYSV_URI			= ??
+SYSV_TARGET			= build
+SYSV_FOLDER			= $(SYSV_TARGET)/sysvinit-$(SYSV_VERSION)/src
+SYSV_TARBALL		= sysvinit-$(SYSV_VERSION).tar.gz
+
+# ATFTP
+ATFTP_VERSION		= ??
+ATFTP_URI			= ??
+ATFTP_TARGET		= build
+ATFTP_FOLDER		= $(ATFTP_TARGET)/atftp-$(ATFTP_VERSION)
+ATFTP_TARBALL		= atftp-$(ATFTP_VERSION).tar.gz
+
+# LVM
+LVM_VERSION			= 2.01.04
+LVM_URI				= ??
+LVM_TARGET			= build
+LVM_FOLDER			= $(LVM_TARGET)/LVM2.$(LVM_VERSION)
+LVM_TARBALL			= lvm2-$(LVM_VERSION).tar.gz
+
+# Dev Mapper
+DEVMAP_VERSION		= 1.01.00
+DEVMAP_URI			= ??
+DEVMAP_TARGET		= build
+DEVMAP_FOLDER		= $(DEVMAP_TARGET)/device-mapper.$(DEVMAP_VERSION)
+DEVMAP_TARBALL		= devmapper-$(DEVMAP_VERSION).tar.gz

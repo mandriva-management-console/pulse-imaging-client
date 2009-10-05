@@ -23,12 +23,29 @@
 
 SVNREV:=$(shell echo $Rev$ | tr -cd [[:digit:]])
 
-FOLDER_BOOTLOADER=bootloader/
-FOLDER_KERNEL=kernel/
+FOLDER_BOOTLOADER	= bootloader
+FOLDER_KERNEL		= kernel
+FOLDER_TOOLS		= tools
+FOLDER_INITRD		= initrd
+
+BUILD_FOLDER		= build
+LOOP_FOLDER			= loop
+
+include $(FOLDER_BOOTLOADER)/consts.mk
+include $(FOLDER_KERNEL)/consts.mk
+include $(FOLDER_TOOLS)/consts.mk
+include $(FOLDER_INITRD)/consts.mk
 
 help:
 	@echo -e Available options:
 	@echo -e \\t	+ bootloader \\t: PXE-related stuff
+	@echo -e \\t	+ kernel \\t: kernel stuff
+	@echo -e \\t	+ tools \\t: imaging tools
+	@echo -e \\t	+ initrd \\t: the initrd itself
+	@echo -e \\t	+ imagin \\t: the previous targets AND assembly
+
+imaging: kernel bootloader tools initrd
+	[ -d $(BUILD_FOLDER) ] || cp -a $(FOLDER_INITRD)/tree $(BUILD_FOLDER)
 
 kernel:
 	make -C $(FOLDER_KERNEL) SVNREV=$(SVNREV)
@@ -36,6 +53,20 @@ kernel:
 bootloader:
 	make -C $(FOLDER_BOOTLOADER) SVNREV=$(SVNREV)
 
+tools:
+	make -C $(FOLDER_TOOLS) SVNREV=$(SVNREV)
+
+initrd:
+	make -C $(FOLDER_INITRD) SVNREV=$(SVNREV)
+
 clean:
-	make clean -C $(FOLDER_BOOTLOADER) SVNREV=$(SVNREV)
-	make clean -C $(FOLDER_KERNEL) SVNREV=$(SVNREV)
+	make clean -C $(FOLDER_BOOTLOADER)
+	make clean -C $(FOLDER_KERNEL)
+	make clean -C $(FOLDER_TOOLS)
+	make clean -C $(FOLDER_INITRD)
+
+dist-clean:
+	make dist-clean -C $(FOLDER_BOOTLOADER)
+	make dist-clean -C $(FOLDER_KERNEL)
+	make dist-clean -C $(FOLDER_TOOLS)
+	make dist-clean -C $(FOLDER_INITRD)

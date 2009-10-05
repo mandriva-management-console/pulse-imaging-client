@@ -46,6 +46,8 @@ revoboot.pxe:	$(OBJ) $(OBJZLIB) $(OBJNET) adjust_length
 adjust_length: adjust_length.c
 	$(CC) -o adjust_length adjust_length.c
 
+dist-clean: clean
+
 clean:
 	rm -r -f $(OBJ) $(OBJZLIB) $(OBJNET) revoboot.pxe revoboot.pxe.* adjust_length
 
