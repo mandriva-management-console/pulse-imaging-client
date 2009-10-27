@@ -21,7 +21,7 @@
 # MA 02110-1301, USA.
 #
 
-SVNREV:=$(shell echo $Rev$ | tr -cd [[:digit:]])
+SVNREV:=$(shell echo $Rev: 4657 $ | tr -cd [[:digit:]])
 
 FOLDER_BOOTLOADER	= bootloader
 FOLDER_KERNEL		= kernel
@@ -64,7 +64,7 @@ imaging:
 	#MDV/NR cp -a $(FOLDER_TOOLS)/ntblfix/ntblfix $(INITRAMFS_FOLDER)/bin
 	cp -a $(FOLDER_TOOLS)/scripts/mount.sh $(INITRAMFS_FOLDER)/bin
 	cp -a $(FOLDER_TOOLS)/scripts/mount-nfs.sh $(INITRAMFS_FOLDER)/bin
-	cp -a $(FOLDER_TOOLS)/ui_newt/ui_newt $(INITRAMFS_FOLDER)/bin
+	cp -a $(FOLDER_TOOLS)/ui_newt/ui_newt $(INITRAMFS_FOLDER)/bin/uinewt # changed name
 	cp -a postinst/postmount $(INITRAMFS_FOLDER)/bin
 	cp -a postinst/dopostinst $(INITRAMFS_FOLDER)/bin
 	cp -a postinst/doinitinst $(INITRAMFS_FOLDER)/bin
