@@ -21,18 +21,18 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
-/* 
+/*
 Copyright (c) 2000 by Juliusz Chroboczek
- 
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions: 
- 
+furnished to do so, subject to the following conditions:
+
 The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software. 
+all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -69,9 +69,9 @@ static void ErrorF(char*, ...);
 #include "os.h"
 #endif
 
-typedef unsigned char	U8;
-typedef unsigned short	U16;
-typedef unsigned int	U32;
+typedef unsigned char   U8;
+typedef unsigned short  U16;
+typedef unsigned int    U32;
 
 /* The whole addressable memory */
 #define SYSMEM_BASE 0x00000
@@ -110,11 +110,11 @@ typedef unsigned int	U32;
 #define ALLOC_FAIL ((U32)-1)
 
 typedef struct _Vm86InfoRec {
-    void		*magicMem, *loMem, *hiMem;
+    void        *magicMem, *loMem, *hiMem;
     void                *hole1, *hole2;
-    U32			brk;
-    struct vm86_struct	vms;
-    U32			ret_code, stack_base;
+    U32         brk;
+    struct vm86_struct  vms;
+    U32         ret_code, stack_base;
 } Vm86InfoRec, *Vm86InfoPtr;
 
 #define LM(vi,i) (((char*)vi->loMem)[i-LOMEM_BASE])
@@ -129,7 +129,7 @@ typedef struct _Vm86InfoRec {
 
 Vm86InfoPtr
 Vm86Setup(int);
-    
+
 void
 Vm86Cleanup(Vm86InfoPtr vi);
 
@@ -172,7 +172,9 @@ Vm86ReleaseMemory (Vm86InfoPtr vi, int mark);
 void
 Vm86Debug(Vm86InfoPtr vi);
 
+#ifdef NOT_IN_X_SERVER
 #define ErrorF printf
+#endif
 #define Xalloc malloc
 #define Xfree free
 

@@ -26,7 +26,7 @@
 CFLAGS=-Os -Wall -s -fpic
 
 ntblfix: ntblfix.c vm86.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ $^
+	$(CC) $(CPPFLAGS) $(CFLAGS) -DNOT_IN_X_SERVER -o $@ $^
 
 clean:
 	rm -f ntblfix

@@ -21,18 +21,18 @@
  * TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
  * PERFORMANCE OF THIS SOFTWARE.
  */
-/* 
+/*
 Copyright (c) 2000 by Juliusz Chroboczek
- 
+
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
 in the Software without restriction, including without limitation the rights
 to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions: 
- 
+furnished to do so, subject to the following conditions:
+
 The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software. 
+all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -123,14 +123,14 @@ Vm86Setup(int mapHoles)
 
     devmem = open("/dev/mem", O_RDWR);
     if(devmem < 0) {
-	perror("open /dev/mem");
-	goto fail;
+    perror("open /dev/mem");
+    goto fail;
     }
 
     devzero = open("/dev/zero", O_RDWR);
     if(devzero < 0) {
-	perror("open /dev/zero");
-	goto fail;
+    perror("open /dev/zero");
+    goto fail;
     }
 
     magicMem = MAP_FAILED;
@@ -141,19 +141,19 @@ Vm86Setup(int mapHoles)
 
 
     magicMem = mmap((void*)MAGICMEM_BASE, MAGICMEM_SIZE,
-		    PROT_READ | PROT_WRITE | PROT_EXEC,
-		    MAP_PRIVATE | MAP_FIXED, devmem, MAGICMEM_BASE);
-    
+            PROT_READ | PROT_WRITE | PROT_EXEC,
+            MAP_PRIVATE | MAP_FIXED, devmem, MAGICMEM_BASE);
+
     if(magicMem == MAP_FAILED) {
-	ErrorF("Couldn't map magic memory\n");
-	goto unmapfail;
+    ErrorF("Couldn't map magic memory\n");
+    goto unmapfail;
     }
 
     if(mapHoles) {
         hole1 = mmap((void*)HOLE1_BASE, HOLE1_SIZE,
                      PROT_READ | PROT_WRITE | PROT_EXEC,
                      MAP_PRIVATE | MAP_FIXED, devzero, HOLE1_BASE);
-    
+
         if(hole1 == MAP_FAILED) {
             ErrorF("Couldn't map first hole\n");
             goto unmapfail;
@@ -161,19 +161,19 @@ Vm86Setup(int mapHoles)
     }
 
     loMem = mmap((void*)LOMEM_BASE, LOMEM_SIZE,
-		 PROT_READ | PROT_WRITE | PROT_EXEC,
-		 MAP_PRIVATE | MAP_FIXED, devzero, LOMEM_BASE);
+         PROT_READ | PROT_WRITE | PROT_EXEC,
+         MAP_PRIVATE | MAP_FIXED, devzero, LOMEM_BASE);
     if(loMem == MAP_FAILED) {
-	ErrorF("Couldn't map low memory\n");
-	munmap(magicMem, MAGICMEM_SIZE);
-	goto unmapfail;
+    ErrorF("Couldn't map low memory\n");
+    munmap(magicMem, MAGICMEM_SIZE);
+    goto unmapfail;
     }
 
     if(mapHoles) {
         hole2 = mmap((void*)HOLE2_BASE, HOLE2_SIZE,
                      PROT_READ | PROT_WRITE | PROT_EXEC,
                      MAP_PRIVATE | MAP_FIXED, devzero, HOLE2_BASE);
-    
+
         if(hole2 == MAP_FAILED) {
             ErrorF("Couldn't map first hole\n");
             goto unmapfail;
@@ -181,17 +181,17 @@ Vm86Setup(int mapHoles)
     }
 
     hiMem = mmap((void*)HIMEM_BASE, HIMEM_SIZE,
-		 PROT_READ | PROT_WRITE | PROT_EXEC,
-		 MAP_SHARED | MAP_FIXED,
-		 devmem, HIMEM_BASE);
+         PROT_READ | PROT_WRITE | PROT_EXEC,
+         MAP_SHARED | MAP_FIXED,
+         devmem, HIMEM_BASE);
     if(hiMem == MAP_FAILED) {
-	ErrorF("Couldn't map high memory\n");
-	goto unmapfail;
+    ErrorF("Couldn't map high memory\n");
+    goto unmapfail;
     }
 
     vi = xalloc(sizeof(Vm86InfoRec));
     if (!vi)
-	goto unmapfail;
+    goto unmapfail;
 
     vi->magicMem = magicMem;
     vi->hole1 = hole1;
@@ -202,10 +202,10 @@ Vm86Setup(int mapHoles)
 
     stack_base = Vm86AllocateMemory(vi, STACK_SIZE);
     if(stack_base == ALLOC_FAIL)
-	goto unmapfail;
+    goto unmapfail;
     ret_code = Vm86AllocateMemory(vi, sizeof(retcode_data));
     if(ret_code == ALLOC_FAIL)
-	goto unmapfail;
+    goto unmapfail;
 
     vi->stack_base = stack_base;
     vi->ret_code = ret_code;
@@ -217,11 +217,11 @@ Vm86Setup(int mapHoles)
     memcpy(&vi->vms.int_revectored, rev_ints, sizeof(rev_ints));
 
     iopl(3);
-    
+
     if(devmem >= 0)
-	close(devmem);
+    close(devmem);
     if(devzero >= 0)
-	close(devzero);
+    close(devzero);
 
     return vi;
 
@@ -233,11 +233,11 @@ unmapfail:
     if(hiMem != MAP_FAILED) munmap(hiMem, HIMEM_SIZE);
 fail:
     if(devmem >= 0)
-	close(devmem);
+    close(devmem);
     if(devzero >= 0)
-	close(devzero);
+    close(devzero);
     if(vi)
-	xfree(vi);
+    xfree(vi);
     return NULL;
 }
 
@@ -259,16 +259,16 @@ Vm86DoInterrupt(Vm86InfoPtr vi, int num)
     int code;
 
     if(num < 0 || num>256) {
-	ErrorF("Interrupt %d doesn't exist\n");
-	return -1;
+    ErrorF("Interrupt %d doesn't exist\n");
+    return -1;
     }
     seg = MMW(vi,num * 4 + 2);
     off = MMW(vi,num * 4);
     if(MAKE_POINTER(seg, off) < ROM_BASE ||
        MAKE_POINTER(seg, off) >= ROM_BASE + ROM_SIZE) {
-	//ErrorF("Interrupt pointer (seg %x off %x) doesn't point at ROM\n",
-	//       seg, off);
-	//return -1;
+    //ErrorF("Interrupt pointer (seg %x off %x) doesn't point at ROM\n",
+    //       seg, off);
+    //return -1;
     }
     memcpy(&(LM(vi,vi->ret_code)), retcode_data, sizeof(retcode_data));
     vi->vms.regs.eflags = IF_MASK | IOPL_MASK;
@@ -283,13 +283,13 @@ Vm86DoInterrupt(Vm86InfoPtr vi, int num)
     code = vm86_loop(vi);
     OsReleaseSignals ();
     if(code < 0) {
-	ErrorF("vm86 failed (errno %d)\n", errno);
-	return -1;
+    ErrorF("vm86 failed (errno %d)\n", errno);
+    return -1;
     } else if(code != 0) {
-	ErrorF("vm86 returned 0x%04X\n", code);
-	return -1;
+    ErrorF("vm86 returned 0x%04X\n", code);
+    return -1;
     } else
-	return 0;
+    return 0;
 }
 
 int
@@ -302,9 +302,9 @@ Vm86DoPOST(Vm86InfoPtr vi)
     off = 3;
     if(MAKE_POINTER(seg, off) < ROM_BASE ||
        MAKE_POINTER(seg, off) >= ROM_BASE + ROM_SIZE) {
-	ErrorF("BIOS pointer (seg %x off %x) doesn't point at ROM\n",
-	       seg, off);
-	return -1;
+    ErrorF("BIOS pointer (seg %x off %x) doesn't point at ROM\n",
+           seg, off);
+    return -1;
     }
     memcpy(&(LM(vi,vi->ret_code)), retcode_data, sizeof(retcode_data));
     vi->vms.regs.ss = POINTER_SEGMENT(vi->stack_base);
@@ -317,13 +317,13 @@ Vm86DoPOST(Vm86InfoPtr vi)
     code = vm86_loop(vi);
     OsReleaseSignals ();
     if(code < 0) {
-	ErrorF("vm86 failed (errno %d)\n", errno);
-	return -1;
+    ErrorF("vm86 failed (errno %d)\n", errno);
+    return -1;
     } else if(code != 0) {
-	ErrorF("vm86 returned 0x%04X\n", code);
-	return -1;
+    ErrorF("vm86 returned 0x%04X\n", code);
+    return -1;
     } else
-	return 0;
+    return 0;
 }
 
 #define DEBUG_VBE 0
@@ -333,19 +333,19 @@ Vm86DoPOST(Vm86InfoPtr vi)
 #define DBG(x)
 #endif
 
-static inline U8 
+static inline U8
 vm86_inb(U16 port)
 {
     U8 value;
-    
+
     if (port != 0x3da)
     {
-	DBG(("inb  0x%04x", port));
+    DBG(("inb  0x%04x", port));
     }
     asm volatile ("inb %w1,%b0" : "=a" (value) : "d" (port));
     if (port != 0x3da)
     {
-	DBG((" = 0x%02x\n", value));
+    DBG((" = 0x%02x\n", value));
     }
     return value;
 }
@@ -377,11 +377,11 @@ vm86_outb(U16 port, U8 value)
     static U8 CR;
 
     if (port == 0x3d4)
-	CR = value;
+    CR = value;
     if (port == 0x3d5 && CR == 0xa4)
     {
-	DBG(("outb 0x%04x = 0x%02x (skipped)\n", port, value));
-	return;
+    DBG(("outb 0x%04x = 0x%02x (skipped)\n", port, value));
+    return;
     }
 #endif
     DBG(("outb 0x%04x = 0x%02x\n", port, value));
@@ -450,10 +450,10 @@ vm86_emulate(Vm86InfoPtr vi)
             regs->eax = vm86_inl(regs->edx & 0xFFFF);
         else
             SET_16(regs->eax, vm86_inw(regs->edx & 0xFFFF));
-	INC_IP(1);
+    INC_IP(1);
         break;
     case 0xE4:                  /* IN AL, imm8 */
-        SET_8(regs->eax, 
+        SET_8(regs->eax,
               vm86_inb(Vm86Memory(vi, MAKE_POINTER(regs->cs, regs->eip+1))));
         INC_IP(2);
         break;
@@ -462,7 +462,7 @@ vm86_emulate(Vm86InfoPtr vi)
             regs->eax =
                 vm86_inl(Vm86Memory(vi, MAKE_POINTER(regs->cs, regs->eip+1)));
         else
-            SET_16(regs->eax, 
+            SET_16(regs->eax,
                    vm86_inw(Vm86Memory(vi, MAKE_POINTER(regs->cs, regs->eip+1))));
         INC_IP(2);
         break;
@@ -527,15 +527,15 @@ vm86_emulate(Vm86InfoPtr vi)
     case 0x6E:                  /* OUTSB */
     case 0x6F:                  /* OUTSW */
         if(opcode == 0x6E) {
-            vm86_outb(regs->edx & 0xFFFF, 
+            vm86_outb(regs->edx & 0xFFFF,
                  Vm86Memory(vi, MAKE_POINTER(regs->es, regs->edi)));
             size = 1;
         } else if(pref_66) {
-            vm86_outl(regs->edx & 0xFFFF, 
+            vm86_outl(regs->edx & 0xFFFF,
                  Vm86Memory(vi, MAKE_POINTER(regs->es, regs->edi)));
             size = 4;
         } else {
-            vm86_outw(regs->edx & 0xFFFF, 
+            vm86_outw(regs->edx & 0xFFFF,
                  Vm86Memory(vi, MAKE_POINTER(regs->es, regs->edi)));
             size = 2;
         }
@@ -591,7 +591,7 @@ static int
 vm86_loop(Vm86InfoPtr vi)
 {
     int code;
-    
+
     while(1) {
         code = vm86old(&vi->vms);
         switch(VM86_TYPE(code)) {
@@ -627,8 +627,8 @@ vm86_loop(Vm86InfoPtr vi)
     }
 }
 
-int 
-Vm86IsMemory(Vm86InfoPtr vi, U32 i) 
+int
+Vm86IsMemory(Vm86InfoPtr vi, U32 i)
 {
     if(i >= MAGICMEM_BASE && i< MAGICMEM_BASE + MAGICMEM_SIZE)
         return 1;
@@ -640,7 +640,7 @@ Vm86IsMemory(Vm86InfoPtr vi, U32 i)
         return 0;
 }
 
-U8 
+U8
 Vm86Memory(Vm86InfoPtr vi, U32 i)
 {
     if(i >= MAGICMEM_BASE && i< MAGICMEM_BASE + MAGICMEM_SIZE)
@@ -651,7 +651,7 @@ Vm86Memory(Vm86InfoPtr vi, U32 i)
         return HM(vi, i);
     else {
         ErrorF("Reading unmapped memory at 0x%08X\n", i);
-	return 0;
+    return 0;
     }
 }
 
@@ -735,7 +735,7 @@ Vm86AllocateMemory(Vm86InfoPtr vi, int n)
         ErrorF("Asked to allocate negative amount of memory\n");
         return vi->brk;
     }
-      
+
     n = (n + 15) & ~15;
     if(vi->brk + n > LOMEM_BASE + LOMEM_SIZE) {
         ErrorF("Out of low memory\n");
@@ -763,27 +763,27 @@ vm86old(struct vm86_struct *vm)
 {
     int res;
 
-#ifdef __PIC__    
+#ifdef __PIC__
     asm volatile (
-	"pushl %%ebx\n\t"
-	"push %%gs\n\t"
-	"movl %2, %%ebx\n\t"
-	"movl %1,%%eax\n\t"
-	"int $0x80\n\t"
-	"pop %%gs\n\t"
-	"popl %%ebx"
-	: "=a" (res)  : "n" ((int)113), "r" ((struct vm86_struct *)vm));
+    "pushl %%ebx\n\t"
+    "push %%gs\n\t"
+    "movl %2, %%ebx\n\t"
+    "movl %1,%%eax\n\t"
+    "int $0x80\n\t"
+    "pop %%gs\n\t"
+    "popl %%ebx"
+    : "=a" (res)  : "n" ((int)113), "r" ((struct vm86_struct *)vm));
 #else
-	asm volatile (                                                          
-         "int $0x80"                                                            
-         : "=a" (res)                                                             
+    asm volatile (
+         "int $0x80"
+         : "=a" (res)
          : "n" (113), "b" (vm));
 #endif
     if(res < 0) {
-	errno = -res;
-	res = -1;
-    } else 
-	errno = 0;
+    errno = -res;
+    res = -1;
+    } else
+    errno = 0;
     return res;
 }
 
@@ -810,7 +810,7 @@ Vm86Debug(Vm86InfoPtr vi)
 }
 
 #ifdef NOT_IN_X_SERVER
-static void 
+static void
 ErrorF(char *f, ...)
 {
     va_list args;

@@ -26,8 +26,7 @@ SVNREV:=$(shell echo $Rev: 4505 $ | tr -cd [[:digit:]])
 
 include consts.mk
 
-all: image save restore ui_newt bench
-# ntblfix still needs to compile !
+all: image save restore ui_newt bench ntblfix
 
 image: zlib reiserfs e2fs
 	$(MAKE) -C revosave CC=$(CC) ZLIB_DIR=../$(ZLIB_FOLDER) RFS_DIR=../$(REISER_FOLDER) E2FS_DIR=../$(E2FS_FOLDER)
@@ -75,7 +74,7 @@ ui_newt: save
 	$(MAKE) -C ui_newt CC=$(CC) LRS_DIR=../revosave SLANG_DIR=../$(SLANG_FOLDER) NEWT_DIR=../$(NEWT_FOLDER)
 
 ntblfix:
-	$(MAKE) -C ntblfix
+	$(MAKE) -C ntblfix CC=$(CC)
 
 clean:
 	$(MAKE) clean -C revosave
@@ -96,3 +95,5 @@ clean:
 dist-clean:
 	rm -fr $(ZLIB_FOLDER) $(NEWT_FOLDER) $(SLANG_FOLDER) $(REISER_FOLDER) $(E2FS_FOLDER)
 	rm -f $(ZLIB_TARGET)/$(ZLIB_TARBALL) $(NEWT_TARGET)/$(NEWT_TARBALL) $(SLANG_TARGET)/$(SLANG_TARBALL) $(E2FS_TARGET)/$(E2FS_TARBALL) $(REISER_TARGET)/$(REISER_TARBALL)
+
+.PHONY: ntblfix
