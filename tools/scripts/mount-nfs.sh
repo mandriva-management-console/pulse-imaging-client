@@ -24,7 +24,7 @@
 #
 # Mount helper script for NFS
 #
-# $Id: autosave.sh,v 1.4 2003/10/22 10:57:27 ludo Exp $
+# $Id$
 #
 
 SIP=$1

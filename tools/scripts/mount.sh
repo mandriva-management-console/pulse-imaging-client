@@ -24,7 +24,7 @@
 #
 # Mount helper script
 #
-# $Id: mount.sh 4077 2007-03-02 14:57:46Z root $
+# $Id$
 #
 
 TYPE=nfs

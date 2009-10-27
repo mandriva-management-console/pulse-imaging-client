@@ -1,7 +1,7 @@
 #
 # (c) 2009 Mandriva, http://www.mandriva.com
 #
-# $Id: Makefile 4505 2009-09-23 13:42:56Z nrueff $
+# $Id$
 #
 # This file is part of Pulse 2, http://pulse2.mandriva.org
 #

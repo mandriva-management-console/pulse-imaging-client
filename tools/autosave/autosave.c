@@ -38,7 +38,7 @@
  * Warning : /revosave and /revoinfo directories must be alreadt mounted
  */
 
-char *cvsid = "$Id: autosave.c 4790 2008-03-10 17:18:24Z nicolas $";
+char *cvsid = "$Id$";
 
 #define _GNU_SOURCE
 #include <stdlib.h>
