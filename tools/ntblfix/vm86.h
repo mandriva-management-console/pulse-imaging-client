@@ -172,7 +172,7 @@ Vm86ReleaseMemory (Vm86InfoPtr vi, int mark);
 void
 Vm86Debug(Vm86InfoPtr vi);
 
-#ifdef NOT_IN_X_SERVER
+#ifndef NOT_IN_X_SERVER
 #define ErrorF printf
 #endif
 #define Xalloc malloc
