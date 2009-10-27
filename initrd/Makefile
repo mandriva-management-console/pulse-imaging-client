@@ -72,8 +72,8 @@ popt:
 busybox:
 	[ -e $(BUSYBOX_TARGET)/$(BUSYBOX_TARBALL) ] || wget $(BUSYBOX_URI)/$(BUSYBOX_TARBALL) -P $(BUSYBOX_TARGET)
 	[ -d $(BUSYBOX_FOLDER) ] || tar zxf $(BUSYBOX_TARGET)/$(BUSYBOX_TARBALL) -C $(BUSYBOX_TARGET)
-	#MDV/NR [ -f $(BUSYBOX_FOLDER)/Makefile ] || (cd $(BUSYBOX_FOLDER); CC=$(CC) ./configure)
-	#MDV/NR $(MAKE) -C $(BUSYBOX_FOLDER) CC=$(CC)
+	$(MAKE) -C $(BUSYBOX_FOLDER) CC=$(CC) defconfig
+	$(MAKE) -C $(BUSYBOX_FOLDER) CC=$(CC)
 
 sysvinit:
 	[ -e $(SYSV_TARGET)/$(SYSV_TARBALL) ] || wget $(SYSV_URI)/$(SYSV_TARBALL) -P $(SYSV_TARGET)
@@ -88,7 +88,7 @@ clean:
 	-$(MAKE) clean -C $(PUMP_FOLDER)
 	-$(MAKE) clean -C $(ATFTP_FOLDER)
 	rm -f $(ATFTP_FOLDER)/Makefile
-	-$(MAKE) clean -C $(LVM_FOLDER)
+	-$(MAKE) clean -C $(BUSYBOX_FOLDER)
 	find tree/dev -type b -delete
 	find tree/dev -type c -delete
 	find tree/dev -type l -delete

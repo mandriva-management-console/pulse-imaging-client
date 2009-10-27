@@ -36,7 +36,7 @@ POPT_FOLDER			= $(POPT_TARGET)/popt-$(POPT_VERSION)
 POPT_TARBALL		= popt-$(POPT_VERSION).tar.gz
 
 # Busybox
-BUSYBOX_VERSION		= 0.60.5
+BUSYBOX_VERSION		= 1.1.3
 BUSYBOX_URI			= http://www.busybox.net/downloads/legacy
 BUSYBOX_TARGET		= 3rd_party
 BUSYBOX_FOLDER		= $(BUSYBOX_TARGET)/busybox-$(BUSYBOX_VERSION)
