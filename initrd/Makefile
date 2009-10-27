@@ -35,15 +35,21 @@ load: atftp pump busybox sysvinit
 	# pump loading
 	cp -a $(PUMP_FOLDER)/pump tree/bin
 	# atftp loading
-	-cp -f $(ATFTP_FOLDER)/atftp $(LOOP)/bin
+	cp -a $(ATFTP_FOLDER)/atftp $(LOOP)/bin
 	# lvm tools loading
-	-cp -f $(LVM_FOLDER)/tools/lvm $(LOOP)/bin
+	cp -a $(LVM_FOLDER)/tools/lvm $(LOOP)/bin
 	# sysvinit loading
 	for n in halt init killall5 runlevel shutdown ;do \
 	    cp -a $(SYSV_FOLDER)/$$n $(LOOP)/sbin || exit 1; \
 	done
 
 atftp:
+	[ -e $(ATFTP_TARGET)/$(ATFTP_TARBALL) ] || wget $(ATFTP_URI)/$(ATFTP_TARBALL) -P $(ATFTP_TARGET)
+	[ -e $(ATFTP_TARGET)/$(ATFTP_PATCH) ] || wget $(ATFTP_URI)/$(ATFTP_PATCH) -P $(ATFTP_TARGET)
+	[ -d $(ATFTP_FOLDER) ] || tar zxf $(ATFTP_TARGET)/$(ATFTP_TARBALL) -C $(ATFTP_TARGET)
+	-zcat $(ATFTP_TARGET)/$(ATFTP_PATCH) | patch -N -p1 -d $(ATFTP_FOLDER)
+	[ -f $(ATFTP_FOLDER)/Makefile ] || (cd $(ATFTP_FOLDER); CC=$(CC) ./configure)
+	$(MAKE) -C $(ATFTP_FOLDER) CC=$(CC) atftp
 
 devmapper:
 	[ -e $(DEVMAP_TARGET)/$(DEVMAP_TARBALL) ] || wget $(DEVMAP_URI)/$(DEVMAP_TARBALL) -P $(DEVMAP_TARGET)
@@ -86,6 +92,8 @@ clean:
 	-$(MAKE) clean -C $(BUSYBOX_FOLDER)
 	-$(MAKE) clean -C $(SYSV_FOLDER)
 	-$(MAKE) clean -C $(PUMP_FOLDER)
+	-$(MAKE) clean -C $(ATFTP_FOLDER)
+	rm -f $(ATFTP_FOLDER)/Makefile
 	find tree/dev -type b -delete
 	find tree/dev -type c -delete
 	find tree/dev -type l -delete

@@ -24,21 +24,21 @@
 # PUMP
 PUMP_VERSION		= 0.8.24
 PUMP_URI			= http://www.linuxfocus.org/~guido
-PUMP_TARGET			= build
+PUMP_TARGET			= 3rd_party
 PUMP_FOLDER			= $(PUMP_TARGET)/pump-$(PUMP_VERSION)
 PUMP_TARBALL		= pump-$(PUMP_VERSION)-patched-2009.tar.gz
 
 # POPT
 POPT_VERSION		= 1.15
 POPT_URI			= http://rpm5.org/files/popt
-POPT_TARGET			= build
+POPT_TARGET			= 3rd_party
 POPT_FOLDER			= $(POPT_TARGET)/popt-$(POPT_VERSION)
 POPT_TARBALL		= popt-$(POPT_VERSION).tar.gz
 
 # Busybox
 BUSYBOX_VERSION		= 0.60.5
 BUSYBOX_URI			= http://www.busybox.net/downloads/legacy
-BUSYBOX_TARGET		= build
+BUSYBOX_TARGET		= 3rd_party
 BUSYBOX_FOLDER		= $(BUSYBOX_TARGET)/busybox-$(BUSYBOX_VERSION)
 BUSYBOX_TARBALL		= busybox-$(BUSYBOX_VERSION).tar.gz
 
@@ -50,11 +50,12 @@ SYSV_FOLDER			= $(SYSV_TARGET)/sysvinit-$(SYSV_VERSION)/src
 SYSV_TARBALL		= sysvinit-$(SYSV_VERSION).tar.gz
 
 # ATFTP
-ATFTP_VERSION		= ??
-ATFTP_URI			= ??
-ATFTP_TARGET		= build
+ATFTP_VERSION		= 0.7.dfsg
+ATFTP_URI			= http://ftp.debian.org/debian/pool/main/a/atftp
+ATFTP_TARGET		= 3rd_party
 ATFTP_FOLDER		= $(ATFTP_TARGET)/atftp-$(ATFTP_VERSION)
-ATFTP_TARBALL		= atftp-$(ATFTP_VERSION).tar.gz
+ATFTP_TARBALL		= atftp_$(ATFTP_VERSION).orig.tar.gz
+ATFTP_PATCH			= atftp_$(ATFTP_VERSION)-7.diff.gz
 
 # LVM
 LVM_VERSION			= 2.01.04
