@@ -44,14 +44,15 @@ BUSYBOX_TARBALL		= busybox-$(BUSYBOX_VERSION).tar.gz
 
 # SysVInit
 SYSV_VERSION		= 2.84
-SYSV_URI			= ??
-SYSV_TARGET			= build
-SYSV_FOLDER			= $(SYSV_TARGET)/sysvinit-$(SYSV_VERSION)/src
-SYSV_TARBALL		= sysvinit-$(SYSV_VERSION).tar.gz
+SYSV_URI			= ftp://archive.debian.org/debian-archive/debian/pool/main/s/sysvinit
+SYSV_TARGET			= 3rd_party
+SYSV_FOLDER			= $(SYSV_TARGET)/sysvinit-$(SYSV_VERSION).orig/src
+SYSV_TARBALL		= sysvinit_$(SYSV_VERSION).orig.tar.gz
+SYSV_PATCH			= sysvinit_$(SYSV_VERSION)-2woody1.diff.gz
 
 # ATFTP
 ATFTP_VERSION		= 0.7.dfsg
-ATFTP_URI			= http://ftp.debian.org/debian/pool/main/a/atftp
+ATFTP_URI			= ftp://archive.debian.org/debian-archive/debian/pool/main/a/atftp
 ATFTP_TARGET		= 3rd_party
 ATFTP_FOLDER		= $(ATFTP_TARGET)/atftp-$(ATFTP_VERSION)
 ATFTP_TARBALL		= atftp_$(ATFTP_VERSION).orig.tar.gz

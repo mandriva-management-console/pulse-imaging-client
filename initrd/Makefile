@@ -77,7 +77,9 @@ busybox:
 
 sysvinit:
 	[ -e $(SYSV_TARGET)/$(SYSV_TARBALL) ] || wget $(SYSV_URI)/$(SYSV_TARBALL) -P $(SYSV_TARGET)
+	[ -e $(SYSV_TARGET)/$(SYSV_PATCH) ] || wget $(SYSV_URI)/$(SYSV_PATCH) -P $(SYSV_TARGET)
 	[ -d $(SYSV_FOLDER) ] || tar zxf $(SYSV_TARGET)/$(SYSV_TARBALL) -C $(SYSV_TARGET)
+	-zcat $(SYSV_TARGET)/$(SYSV_PATCH) | patch -N -p1 -d $(SYSV_FOLDER)/..
 	$(MAKE) -C $(SYSV_FOLDER) CC=$(CC)
 
 clean:
@@ -89,6 +91,7 @@ clean:
 	-$(MAKE) clean -C $(ATFTP_FOLDER)
 	rm -f $(ATFTP_FOLDER)/Makefile
 	-$(MAKE) clean -C $(BUSYBOX_FOLDER)
+	-$(MAKE) clean -C $(SYSV_FOLDER)
 	find tree/dev -type b -delete
 	find tree/dev -type c -delete
 	find tree/dev -type l -delete
