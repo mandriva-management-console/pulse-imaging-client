@@ -51,16 +51,10 @@ atftp:
 	[ -f $(ATFTP_FOLDER)/Makefile ] || (cd $(ATFTP_FOLDER); CC=$(CC) ./configure)
 	$(MAKE) -C $(ATFTP_FOLDER) CC=$(CC) atftp
 
-devmapper:
-	[ -e $(DEVMAP_TARGET)/$(DEVMAP_TARBALL) ] || wget $(DEVMAP_URI)/$(DEVMAP_TARBALL) -P $(DEVMAP_TARGET)
-	[ -d $(DEVMAP_FOLDER) ] || tar zxf $(DEVMAP_TARGET)/$(DEVMAP_TARBALL) -C $(DEVMAP_TARGET)
-	[ -f $(DEVMAP_FOLDER)/Makefile ] || (cd $(DEVMAP_FOLDER); CC=$(CC) ./configure)
-	$(MAKE) -C $(DEVMAP_FOLDER) CC=$(CC)
-
-lvm: devmapper
+lvm:
 	[ -e $(LVM_TARGET)/$(LVM_TARBALL) ] || wget $(LVM_URI)/$(LVM_TARBALL) -P $(LVM_TARGET)
 	[ -d $(LVM_FOLDER) ] || tar zxf $(LVM_TARGET)/$(LVM_TARBALL) -C $(LVM_TARGET)
-	[ -f $(LVM_FOLDER)/Makefile ] || (cd $(LVM_FOLDER); CC=$(CC) LDFLAGS='-L../../$(DEVMAP_FOLDER)/lib -L../../../$(DEVMAP_FOLDER)/lib' CFLAGS='-I../../$(DEVMAP_FOLDER)/lib -I../../../$(DEVMAP_FOLDER)/lib' ./configure)
+	[ -f $(LVM_FOLDER)/Makefile ] || (cd $(LVM_FOLDER); CC=$(CC) ./configure)
 	$(MAKE) tools -C $(LVM_FOLDER) CC=$(CC)
 
 pump: popt
@@ -94,6 +88,7 @@ clean:
 	-$(MAKE) clean -C $(PUMP_FOLDER)
 	-$(MAKE) clean -C $(ATFTP_FOLDER)
 	rm -f $(ATFTP_FOLDER)/Makefile
+	-$(MAKE) clean -C $(LVM_FOLDER)
 	find tree/dev -type b -delete
 	find tree/dev -type c -delete
 	find tree/dev -type l -delete

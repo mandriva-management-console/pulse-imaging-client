@@ -58,15 +58,8 @@ ATFTP_TARBALL		= atftp_$(ATFTP_VERSION).orig.tar.gz
 ATFTP_PATCH			= atftp_$(ATFTP_VERSION)-7.diff.gz
 
 # LVM
-LVM_VERSION			= 2.01.04
-LVM_URI				= ??
-LVM_TARGET			= build
+LVM_VERSION			= 2.02.54
+LVM_URI				= ftp://sources.redhat.com/pub/lvm2
+LVM_TARGET			= 3rd_party
 LVM_FOLDER			= $(LVM_TARGET)/LVM2.$(LVM_VERSION)
-LVM_TARBALL			= lvm2-$(LVM_VERSION).tar.gz
-
-# Dev Mapper
-DEVMAP_VERSION		= 1.01.00
-DEVMAP_URI			= ??
-DEVMAP_TARGET		= build
-DEVMAP_FOLDER		= $(DEVMAP_TARGET)/device-mapper.$(DEVMAP_VERSION)
-DEVMAP_TARBALL		= devmapper-$(DEVMAP_VERSION).tar.gz
+LVM_TARBALL			= LVM2.$(LVM_VERSION).tgz
