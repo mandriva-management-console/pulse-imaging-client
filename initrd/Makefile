@@ -27,7 +27,7 @@ include consts.mk
 
 all: load
 
-load: atftp pump busybox sysvinit lvm
+load: atftp pump busybox sysvinit
 	# dev summoning
 	-(cd tree/dev; ../../MAKEDEV console ptyp std hda hdb hdc hdd hde hdf hdg hdh sda sdb sdc sdd sde sdf sdg sdh fd0 cciss.0 cciss.1 ida.0 scd0 scd1 input; mknod -m 600 initctl p; mknod -m 600 log p)
 	# symlinks summoning
@@ -72,22 +72,19 @@ popt:
 busybox:
 	[ -e $(BUSYBOX_TARGET)/$(BUSYBOX_TARBALL) ] || wget $(BUSYBOX_URI)/$(BUSYBOX_TARBALL) -P $(BUSYBOX_TARGET)
 	[ -d $(BUSYBOX_FOLDER) ] || tar zxf $(BUSYBOX_TARGET)/$(BUSYBOX_TARBALL) -C $(BUSYBOX_TARGET)
-	[ -f $(BUSYBOX_FOLDER)/Makefile ] || (cd $(BUSYBOX_FOLDER); CC=$(CC) ./configure)
+	#MDV/NR [ -f $(BUSYBOX_FOLDER)/Makefile ] || (cd $(BUSYBOX_FOLDER); CC=$(CC) ./configure)
 	#MDV/NR $(MAKE) -C $(BUSYBOX_FOLDER) CC=$(CC)
 
 sysvinit:
 	[ -e $(SYSV_TARGET)/$(SYSV_TARBALL) ] || wget $(SYSV_URI)/$(SYSV_TARBALL) -P $(SYSV_TARGET)
 	[ -d $(SYSV_FOLDER) ] || tar zxf $(SYSV_TARGET)/$(SYSV_TARBALL) -C $(SYSV_TARGET)
-	[ -f $(SYSV_FOLDER)/Makefile ] || (cd $(SYSV_FOLDER); CC=$(CC) ./configure)
 	$(MAKE) -C $(SYSV_FOLDER) CC=$(CC)
 
 clean:
 	-$(MAKE) clean -C $(POPT_FOLDER)
 	rm -f $(POPT_FOLDER)/Makefile
 	-$(MAKE) clean -C $(BUSYBOX_FOLDER)
-	rm -f $(BUSYBOX_FOLDER)/Makefile
 	-$(MAKE) clean -C $(SYSV_FOLDER)
-	rm -f $(SYSV_FOLDER)/Makefile
 	-$(MAKE) clean -C $(PUMP_FOLDER)
 	find tree/dev -type b -delete
 	find tree/dev -type c -delete

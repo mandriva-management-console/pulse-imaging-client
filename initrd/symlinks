@@ -150,3 +150,5 @@ ln -sf libnewt.so.0 lib/libnewt.so
 ln -sf libnewt.so.0.52 lib/libnewt.so.0
 ln -sf libnewt.so.0.52.10 lib/libnewt.so.0.52
 
+# init
+ln -sf sbin/init init

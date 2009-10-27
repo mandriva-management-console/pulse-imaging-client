@@ -33,12 +33,14 @@ kernel:
 	[ -f $(FOLDER_LINUXKERNEL)/.config ] || cp -a $(CONFIGS_LINUXKERNEL)/dot-config-$(VERSION_LINUXKERNEL) $(FOLDER_LINUXKERNEL)/.config
 	$(MAKE) -C $(FOLDER_LINUXKERNEL) ARCH=$(ARCHITECTURE) silentoldconfig
 	$(MAKE) -C $(FOLDER_LINUXKERNEL) ARCH=$(ARCHITECTURE) all
-	@cp -f $(FOLDER_LINUXKERNEL)/arch/i386/boot/bzImage build/bzImage-$(VERSION_LINUXKERNEL)-r$(SVNREV)
-	@/usr/sbin/rdev build/bzImage-$(VERSION_LINUXKERNEL)-r$(SVNREV) /dev/ram0
-	@ln -sf build/bzImage-$(VERSION_LINUXKERNEL)-r$(SVNREV) build/bzImage
+	cp -f $(FOLDER_LINUXKERNEL)/arch/i386/boot/bzImage build/bzImage-$(VERSION_LINUXKERNEL)-r$(SVNREV)
+	/usr/sbin/rdev build/bzImage-$(VERSION_LINUXKERNEL)-r$(SVNREV) /dev/ram0
+	ln -sf build/bzImage-$(VERSION_LINUXKERNEL)-r$(SVNREV) build/bzImage
+	find $(FOLDER_LINUXKERNEL)/drivers/net -iname \*.ko -exec cp -a {} build/modules \;
+	find $(FOLDER_LINUXKERNEL)/lib -iname \*.ko -exec cp -a {} build/modules \;
 
 modules: module_e1000 module_e1000e
-	# others disebaled for now : module_igb module_r8168 module_r8169 module_atl1 module_atl1e module_atl2 module_570x module_nxii module_sk98lin
+	# others disabled for now : module_igb module_r8168 module_r8169 module_atl1 module_atl1e module_atl2 module_570x module_nxii module_sk98lin
 
 module_e1000:
 	# If build fails comment 'get_perm_addr' ifdef in e1000_ethtool.c
