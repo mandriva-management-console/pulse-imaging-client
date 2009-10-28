@@ -49,6 +49,12 @@ FOLDER_NXII			= netxtreme2-5.0.17/bnx2/src
 ARCHIVE_NXII		= linux-$(VERSION_NXII).zip
 TARBALL_NXII		= netxtreme2-5.0.17.tar.gz
 
+VERSION_SK98		= 10.81.3.3
+URI_SK98			= http://www.marvell.com/drivers/files
+FOLDER_SK98			= DriverInstall
+ARCHIVE_SK98		= Linux_$(VERSION_SK98).zip
+TARBALL_SK98		= install_v$(VERSION_SK98).tar.bz2
+
 
 FOLDER_ATL1e := $(PWD)/3rd_party/atl1e
 SRC_ATL1e := $(FOLDER_ATL1e)/459-AR813X-linux-v1.0.0.9/src
@@ -58,8 +64,4 @@ FOLDER_ATL2 := $(PWD)/3rd_party/atl2
 SRC_ATL2 := $(FOLDER_ATL2)/atl2-2.0.5
 TARBALL_ATL2 := atl2-2.0.5.tar.bz2
 
-FOLDER_SK98LIN := $(PWD)/3rd_party/sk98lin
-SRC_SK98LIN := $(FOLDER_SK98LIN)/build
-PKG_SK98LIN := install_v10.70.7.3.tar.bz2
-TARBALL_SK98LIN := DriverInstall/sk98lin.tar.bz2
 
