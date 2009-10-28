@@ -23,77 +23,84 @@
 
 SVNREV:=$(shell echo $Rev: 4491 $ | tr -cd [[:digit:]])
 
+BUILD_FOLDER = build
+3RDPARTY_FOLDER = 3rd_party
+
 include consts.mk
 
 all: kernel modules
 
 kernel:
-	[ -e $(TARGET_LINUXKERNEL)/$(TARBALL_LINUXKERNEL) ] || wget $(URI_LINUXKERNEL)/$(TARBALL_LINUXKERNEL) -P $(TARGET_LINUXKERNEL)
-	[ -d $(FOLDER_LINUXKERNEL) ] || tar jxf $(TARGET_LINUXKERNEL)/$(TARBALL_LINUXKERNEL) -C $(TARGET_LINUXKERNEL)
-	[ -f $(FOLDER_LINUXKERNEL)/.config ] || cp -a $(CONFIGS_LINUXKERNEL)/dot-config-$(VERSION_LINUXKERNEL) $(FOLDER_LINUXKERNEL)/.config
-	$(MAKE) -C $(FOLDER_LINUXKERNEL) ARCH=$(ARCHITECTURE) silentoldconfig
-	$(MAKE) -C $(FOLDER_LINUXKERNEL) ARCH=$(ARCHITECTURE) all
-	cp -f $(FOLDER_LINUXKERNEL)/arch/i386/boot/bzImage build/bzImage-$(VERSION_LINUXKERNEL)-r$(SVNREV)
-	/usr/sbin/rdev build/bzImage-$(VERSION_LINUXKERNEL)-r$(SVNREV) /dev/ram0
-	ln -sf build/bzImage-$(VERSION_LINUXKERNEL)-r$(SVNREV) build/bzImage
-	find $(FOLDER_LINUXKERNEL)/drivers/net -iname \*.ko -exec cp -a {} build/modules \;
-	find $(FOLDER_LINUXKERNEL)/lib -iname \*.ko -exec cp -a {} build/modules \;
+	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_LINUXKERNEL) ] || wget $(URI_LINUXKERNEL)/$(TARBALL_LINUXKERNEL) -P $(3RDPARTY_FOLDER)
+	[ -d $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) ] || tar jxf $(3RDPARTY_FOLDER)/$(TARBALL_LINUXKERNEL) -C $(BUILD_FOLDER)
+	[ -f $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/.config ] || cp -a $(CONFIGS_LINUXKERNEL)/dot-config-$(VERSION_LINUXKERNEL) $(FOLDER_LINUXKERNEL)/.config
+	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) ARCH=$(ARCHITECTURE) silentoldconfig
+	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) ARCH=$(ARCHITECTURE) all
+	cp -f $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/arch/i386/boot/bzImage $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-r$(SVNREV)
+	/usr/sbin/rdev $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-r$(SVNREV) /dev/ram0
+	ln -sf $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-r$(SVNREV) $(BUILD_FOLDER)/bzImage
+	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/net -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
+	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/pcmcia -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
+	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/lib -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 
-modules: module_e1000 module_e1000e module_igb module_r8168 module_r8169 module_atl1
-	# others disabled for now :  module_atl1e module_atl2 module_570x module_nxii module_sk98lin
+modules: module_e1000 module_e1000e module_igb module_r8168 module_r8169 module_atl1 module_nxii
+	# others disabled for now : module_570x module_atl1e module_atl2   module_sk98lin
 
 module_e1000:
 	# If build fails comment 'get_perm_addr' ifdef in e1000_ethtool.c
-	[ -e $(TARGET_E1000)/$(TARBALL_E1000) ] || wget $(URI_E1000)/$(TARBALL_E1000) -P $(TARGET_E1000)
-	[ -d $(FOLDER_E1000) ] || tar zxf $(TARGET_E1000)/$(TARBALL_E1000) -C $(TARGET_E1000)
-	$(MAKE) -C $(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../../../$(FOLDER_E1000) KSRC=../../../$(FOLDER_LINUXKERNEL)
-	mkdir -p build/modules && cp -f $(FOLDER_E1000)/e1000.ko build/modules
+	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_E1000) ] || wget $(URI_E1000)/$(TARBALL_E1000) -P $(3RDPARTY_FOLDER)
+	[ -d $(BUILD_FOLDER)/$(FOLDER_E1000) ] || tar zxf $(3RDPARTY_FOLDER)/$(TARBALL_E1000) -C $(BUILD_FOLDER)
+	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_E1000) KSRC=../$(FOLDER_LINUXKERNEL)
+	cp -f $(BUILD_FOLDER)/$(FOLDER_E1000)/e1000.ko $(BUILD_FOLDER)/modules
 
 module_e1000e:
-	[ -e $(TARGET_E1000e)/$(TARBALL_E1000e) ] || wget $(URI_E1000e)/$(TARBALL_E1000e) -P $(TARGET_E1000e)
-	[ -d $(FOLDER_E1000e) ] || tar zxf $(TARGET_E1000e)/$(TARBALL_E1000e) -C $(TARGET_E1000e)
-	-patch -N -p1 -d $(FOLDER_E1000e) < $(TARGET_E1000e)/e1000e-$(VERSION_E1000e)-patch_for_2.6.23_kernel.diff
-	$(MAKE) -C $(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../../../$(FOLDER_E1000e) KSRC=../../../$(FOLDER_LINUXKERNEL)
-	mkdir -p build/modules && cp -f $(FOLDER_E1000e)/e1000e.ko build/modules
+	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_E1000e) ] || wget $(URI_E1000e)/$(TARBALL_E1000e) -P $(3RDPARTY_FOLDER)
+	[ -d $(BUILD_FOLDER)/$(FOLDER_E1000e) ] || tar zxf $(3RDPARTY_FOLDER)/$(TARBALL_E1000e) -C $(BUILD_FOLDER)
+	-patch -N -p1 -d $(BUILD_FOLDER)/$(FOLDER_E1000e) < $(3RDPARTY_FOLDER)/e1000e-$(VERSION_E1000e)-patch_for_2.6.23_kernel.diff
+	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_E1000e) KSRC=../$(FOLDER_LINUXKERNEL)
+	cp -f $(BUILD_FOLDER)/$(FOLDER_E1000e)/e1000e.ko $(BUILD_FOLDER)/modules
 
 module_igb:
-	[ -e $(TARGET_IGB)/$(TARBALL_IGB) ] || wget $(URI_IGB)/$(TARBALL_IGB) -P $(TARGET_IGB)
-	[ -d $(FOLDER_IGB) ] || tar zxf $(TARGET_IGB)/$(TARBALL_IGB) -C $(TARGET_IGB)
-	-patch -N -p1 -d $(FOLDER_IGB) < $(TARGET_IGB)/igb-$(VERSION_IGB)-patch_for_2.6.23_kernel.diff
-	$(MAKE) -C $(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../../../$(FOLDER_IGB) KSRC=../../../$(FOLDER_LINUXKERNEL)
-	mkdir -p build/modules && cp -f $(FOLDER_IGB)/igb.ko build/modules
+	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_IGB) ] || wget $(URI_IGB)/$(TARBALL_IGB) -P $(3RDPARTY_FOLDER)
+	[ -d $(BUILD_FOLDER)/$(FOLDER_IGB) ] || tar zxf $(3RDPARTY_FOLDER)/$(TARBALL_IGB) -C $(BUILD_FOLDER)
+	-patch -N -p1 -d $(BUILD_FOLDER)/$(FOLDER_IGB) < $(3RDPARTY_FOLDER)/igb-$(VERSION_IGB)-patch_for_2.6.23_kernel.diff
+	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_IGB) KSRC=../$(FOLDER_LINUXKERNEL)
+	cp -f $(BUILD_FOLDER)/$(FOLDER_IGB)/igb.ko $(BUILD_FOLDER)/modules
 
 module_r8168:
-	[ -e $(TARGET_R8168)/$(TARBALL_R8168) ] || wget $(URI_R8168)/$(TARBALL_R8168) -P $(TARGET_R8168)
-	[ -d $(FOLDER_R8168) ] || tar jxf $(TARGET_R8168)/$(TARBALL_R8168) -C $(TARGET_R8168)
-	$(MAKE) -C $(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../../../$(FOLDER_R8168) KSRC=../../../$(FOLDER_LINUXKERNEL)
-	mkdir -p build/modules && cp -f $(FOLDER_R8168)/r8168.ko build/modules
+	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_R8168) ] || wget $(URI_R8168)/$(TARBALL_R8168) -P $(3RDPARTY_FOLDER)
+	[ -d $(BUILD_FOLDER)/$(FOLDER_R8168) ] || tar jxf $(3RDPARTY_FOLDER)/$(TARBALL_R8168) -C $(BUILD_FOLDER)
+	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_R8168) KSRC=../$(FOLDER_LINUXKERNEL)
+	cp -f $(BUILD_FOLDER)/$(FOLDER_R8168)/r8168.ko $(BUILD_FOLDER)/modules
 
 module_r8169:
-	[ -e $(TARGET_R8169)/$(TARBALL_R8169) ] || wget $(URI_R8169)/$(TARBALL_R8169) -P $(TARGET_R8169)
-	[ -d $(FOLDER_R8169) ] || tar jxf $(TARGET_R8169)/$(TARBALL_R8169) -C $(TARGET_R8169)
-	$(MAKE) -C $(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../../../$(FOLDER_R8169) KSRC=../../../$(FOLDER_LINUXKERNEL)
-	mkdir -p build/modules && cp -f $(FOLDER_R8169)/r8169.ko build/modules
+	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_R8169) ] || wget $(URI_R8169)/$(TARBALL_R8169) -P $(3RDPARTY_FOLDER)
+	[ -d $(BUILD_FOLDER)/$(FOLDER_R8169) ] || tar jxf $(3RDPARTY_FOLDER)/$(TARBALL_R8169) -C $(BUILD_FOLDER)
+	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_R8169) KSRC=../$(FOLDER_LINUXKERNEL)
+	cp -f $(BUILD_FOLDER)/$(FOLDER_R8169)/r8169.ko $(BUILD_FOLDER)/modules
 
 module_atl1:
-	[ -e $(TARGET_ATL1)/$(TARBALL_ATL1) ] || wget $(URI_ATL1)/$(TARBALL_ATL1) -P $(TARGET_ATL1)
-	[ -d $(FOLDER_ATL1) ] || tar zxf $(TARGET_ATL1)/$(TARBALL_ATL1) -C $(TARGET_ATL1)
-	$(MAKE) -C $(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../../../$(FOLDER_ATL1) KSRC=../../../$(FOLDER_LINUXKERNEL)
-	mkdir -p build/modules && cp -f $(FOLDER_ATL1)/atl1.ko build/modules
+	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_ATL1) ] || wget $(URI_ATL1)/$(TARBALL_ATL1) -P $(3RDPARTY_FOLDER)
+	[ -d $(BUILD_FOLDER)/$(FOLDER_ATL1) ] || tar zxf $(3RDPARTY_FOLDER)/$(TARBALL_ATL1) -C $(BUILD_FOLDER)
+	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_ATL1) KSRC=../$(FOLDER_LINUXKERNEL)
+	cp -f $(BUILD_FOLDER)/$(FOLDER_ATL1)/atl1.ko $(BUILD_FOLDER)/modules
 
 module_570x:
-	[ -d $(SRC_570X) ] || (cd $(FOLDER_570X) && unzip $(PKG_570X) && tar zxf $(TARBALL_570X) && rm -fr $(FOLDER_570X)/Server)
-	sed -i 's!^#define TG3_VLAN_TAG_USED 0$$!#define TG3_VLAN_TAG_USED 1!' $(SRC_570X)/tg3.c
-	make CC=$(CC) -C $(SRC_570X) LINUXSRC=$(KSRC) tg3_flags.h
-	make CC=$(CC) -C $(KSRC) SUBDIRS=$(SRC_570X) modules
-	mkdir -p build/modules && cp -f $(SRC_570X)/tg3.ko build/modules
+	[ -e $(3RDPARTY_FOLDER)/$(ARCHIVE_570X) ] || wget $(URI_570X)/$(ARCHIVE_570X) -P $(3RDPARTY_FOLDER)
+	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_570X) ] || unzip -j $(3RDPARTY_FOLDER)/$(ARCHIVE_570X) \*$(TARBALL_570X) -d $(3RDPARTY_FOLDER)
+	[ -d $(BUILD_FOLDER)/$(FOLDER_570X) ] || tar zxf $(3RDPARTY_FOLDER)/$(TARBALL_570X) -C $(BUILD_FOLDER)
+	sed -i 's!^#define TG3_VLAN_TAG_USED 0$$!#define TG3_VLAN_TAG_USED 1!' $(BUILD_FOLDER)/$(FOLDER_570X)/tg3.c
+	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_570X) CC=$(CC) ARCH=$(ARCHITECTURE) LINUX=../$(FOLDER_LINUXKERNEL) tg3_flags.h
+	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_ATL1) KSRC=../$(FOLDER_LINUXKERNEL)
+	cp -f $(BUILD_FOLDER)/$(FOLDER_570X)/atl1.ko $(BUILD_FOLDER)/modules
+
 
 module_nxii:
-	[ -d $(SRC_NXII) ] || (cd $(FOLDER_NXII) && unzip $(PKG_NXII) && tar zxf $(TARBALL_NXII) && rm -fr $(FOLDER_NXII)/Server)
-	make CC=$(CC) LINUXSRC=$(KSRC) -C $(KSRC) SUBDIRS=$(SRC_NXII) modules
-	mkdir -p build/modules && cp -f $(SRC_NXII)/bnx2.ko build/modules
-
-
+	[ -e $(3RDPARTY_FOLDER)/$(ARCHIVE_NXII) ] || wget $(URI_NXII)/$(ARCHIVE_NXII) -P $(3RDPARTY_FOLDER)
+	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_NXII) ] || unzip -j $(3RDPARTY_FOLDER)/$(ARCHIVE_NXII) \*$(TARBALL_NXII) -d $(3RDPARTY_FOLDER)
+	[ -d $(BUILD_FOLDER)/$(FOLDER_NXII) ] || tar zxf $(3RDPARTY_FOLDER)/$(TARBALL_NXII) -C $(BUILD_FOLDER)
+	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_NXII) LINUXSRC=../$(FOLDER_LINUXKERNEL)
+	cp -f $(BUILD_FOLDER)/$(FOLDER_NXII)/bnx2.ko build/modules
 
 module_atl1e:
 	[ -d $(SRC_ATL1e) ] || (cd $(FOLDER_ATL1e) && tar zxf $(TARBALL_ATL1e))
@@ -113,21 +120,20 @@ module_sk98lin:
 	mkdir -p build/modules && cp -f $(SRC_SK98LIN)/sk98lin.ko build/modules
 
 clean: modules_clean
-	$(MAKE) -C $(FOLDER_LINUXKERNEL) clean
+	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) clean
 
 dist-clean:
-	rm -fr $(TARGET_E1000)/e1000-$(VERSION_E1000)
-	rm -fr $(TARGET_E1000e)/e1000e-$(VERSION_E1000e)
-	rm -fr $(TARGET_IGB)/igb-$(VERSION_IGB)
-	rm -fr $(TARGET_R8168)/r8168-$(VERSION_R8168)
-	rm -fr $(TARGET_R8169)/r8169-$(VERSION_R8169)
-	rm -fr $(FOLDER_ATL1)
+	rm -fr $(BUILD_FOLDER)/e1000-$(VERSION_E1000)
+	rm -fr $(BUILD_FOLDER)/e1000e-$(VERSION_E1000e)
+	rm -fr $(BUILD_FOLDER)/igb-$(VERSION_IGB)
+	rm -fr $(BUILD_FOLDER)/r8168-$(VERSION_R8168)
+	rm -fr $(BUILD_FOLDER)/r8169-$(VERSION_R8169)
 
 modules_clean:
-	$(MAKE) -C $(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../../../$(FOLDER_E1000) KSRC=../../../$(FOLDER_LINUXKERNEL)
-	$(MAKE) -C $(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../../../$(FOLDER_E1000e) KSRC=../../../$(FOLDER_LINUXKERNEL)
-	$(MAKE) -C $(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../../../$(FOLDER_IGB) KSRC=../../../$(FOLDER_LINUXKERNEL)
-	$(MAKE) -C $(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../../../$(FOLDER_R8168) KSRC=../../../$(FOLDER_LINUXKERNEL)
-	$(MAKE) -C $(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../../../$(FOLDER_R8169) KSRC=../../../$(FOLDER_LINUXKERNEL)
-	$(MAKE) -C $(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../../../$(FOLDER_ATL1) KSRC=../../../$(FOLDER_LINUXKERNEL)
+	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_E1000) KSRC=../$(FOLDER_LINUXKERNEL)
+	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_E1000e) KSRC=../$(FOLDER_LINUXKERNEL)
+	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_IGB) KSRC=../$(FOLDER_LINUXKERNEL)
+	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_R8168) KSRC=../$(FOLDER_LINUXKERNEL)
+	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_R8169) KSRC=../$(FOLDER_LINUXKERNEL)
+	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_ATL1) KSRC=../$(FOLDER_LINUXKERNEL)
 
