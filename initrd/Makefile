@@ -48,7 +48,7 @@ atftp:
 lvm:
 	[ -e $(3RDPARTY_FOLDER)/$(LVM_TARBALL) ] || wget $(LVM_URI)/$(LVM_TARBALL) -P $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(LVM_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(LVM_TARBALL) -C $(BUILD_FOLDER)
-	[ -f $(LVM_FOLDER)/Makefile ] || (cd $(LVM_FOLDER); CC=$(CC) ./configure)
+	[ -f $(BUILD_FOLDER)/$(LVM_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(LVM_FOLDER); CC=$(CC) ./configure)
 	$(MAKE) tools -C $(LVM_FOLDER) CC=$(CC)
 	cp -a $(LVM_FOLDER)/tools/lvm tree/bin
 	strip tree/bin/lvm
@@ -79,9 +79,7 @@ sysvinit:
 	[ -d $(BUILD_FOLDER)/$(SYSV_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(SYSV_TARBALL) -C $(BUILD_FOLDER)
 	-zcat $(3RDPARTY_FOLDER)/$(SYSV_PATCH) | patch -N -p1 -d $(BUILD_FOLDER)/$(SYSV_FOLDER)/..
 	$(MAKE) -C $(BUILD_FOLDER)/$(SYSV_FOLDER) CC=$(CC)
-	for n in halt init killall5 runlevel shutdown ;do \
-	    cp -a $(BUILD_FOLDER)/$(SYSV_FOLDER)/$$n tree/sbin; \
-	done
+	for n in halt init killall5 runlevel shutdown; do cp -a $(BUILD_FOLDER)/$(SYSV_FOLDER)/$$n tree/sbin; done
 
 clean:
 	-$(MAKE) clean -C $(BUILD_FOLDER)/$(POPT_FOLDER)
@@ -96,4 +94,22 @@ clean:
 	find tree/dev -type b -delete
 	find tree/dev -type c -delete
 	find tree/dev -type l -delete
+	find tree/dev -type p -delete
+	rm -fr tree/dev/cciss
+	rm -fr tree/dev/ida
+	rm -fr tree/dev/input
 	find tree/ -type l -delete
+	rm -f tree/bin/atftp
+	rm -f tree/bin/lvm
+	rm -f tree/bin/pump
+	rm -f tree/bin/busybox
+	for n in halt init killall5 runlevel shutdown; do rm -f tree/sbin/$$n; done
+
+dist-clean:
+	rm -fr $(BUILD_FOLDER)/$(SYSV_FOLDER)
+	rm -fr $(BUILD_FOLDER)/$(BUSYBOX_FOLDER)
+	rm -fr $(BUILD_FOLDER)/$(POPT_FOLDER)
+	rm -fr $(BUILD_FOLDER)/$(PUMP_FOLDER)
+	rm -fr $(BUILD_FOLDER)/$(LVM_FOLDER)
+	rm -fr $(BUILD_FOLDER)/$(ATFTP_FOLDER)
+
