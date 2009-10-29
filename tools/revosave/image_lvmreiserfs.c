@@ -49,8 +49,6 @@
 #include "include/reiserfs_fs.h"
 #include "version.h"
 
-//#include <linux/lvm.h>
-
 #include "compress.h"
 #include "client.h"
 #include "lvm.h"

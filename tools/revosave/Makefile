@@ -23,8 +23,8 @@
 OBJ			= compress.o
 LIBOBJ		= compress.o easy_sock.o client.o
 OBJS		= decompress-bitmap.o decompress.o decompress-test.o image_e2fs.o image_fat.o image_jfs.o image_lvm.o image_ntfs.o image_raw.o image_swap.o image_xfs.o lvm.o
+# image_lvmreiserfs no not compile anymore
 IMGFILES	= image_swap image_fat image_ntfs image_e2fs image_xfs image_jfs image_lvm decompress decompress-test image_raw decompress-bitmap
-# image_lvmreiserfs do not compile yet /o\
 
 CFLAGS	= -Wall -O2 -DLBLIMAGEVER='1.2' -I$(ZLIB_DIR) -I$(E2FS_DIR)/lib
 LDFLAGS	= -s
@@ -63,7 +63,7 @@ image_lvm: image_lvm.o lvm.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
 
 image_lvmreiserfs: lvm.o image_lvmreiserfs.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS) $(RFSLIBS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS) $(RFSLIBS)
 
 decompress: decompress.o $(OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS) $(LIBZ)
