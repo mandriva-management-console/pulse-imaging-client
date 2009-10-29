@@ -21,7 +21,7 @@
 # MA 02110-1301, USA.
 #
 
-SVNREV:=$(shell echo $Rev: 4491 $ | tr -cd [[:digit:]])
+SVNREV:=$(shell echo $Rev$ | tr -cd [[:digit:]])
 
 BUILD_FOLDER = build
 3RDPARTY_FOLDER = 3rd_party
