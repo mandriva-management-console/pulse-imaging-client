@@ -1,28 +1,7 @@
-# (c) 2003-2007 Linbox FAS, http://linbox.com
-# (c) 2008-2009 Mandriva, http://www.mandriva.com
-#
-# $Id$
-#
-# This file is part of Pulse 2, http://pulse2.mandriva.org
-#
-# Pulse 2 is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 2 of the License, or
-# (at your option) any later version.
-#
-# Pulse 2 is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Pulse 2; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-# MA 02110-1301, USA.
 #
 # Automatically generated make config: don't edit
 # Linux kernel version: 2.6.23.9
-# Wed Nov 19 17:39:19 2008
+# Thu Oct 29 07:53:29 2009
 #
 CONFIG_X86_32=y
 CONFIG_GENERIC_TIME=y
@@ -49,7 +28,6 @@ CONFIG_DEFCONFIG_LIST="/lib/modules/$UNAME_RELEASE/.config"
 # General setup
 #
 CONFIG_EXPERIMENTAL=y
-CONFIG_BROKEN_ON_SMP=y
 CONFIG_LOCK_KERNEL=y
 CONFIG_INIT_ENV_ARG_LIMIT=32
 CONFIG_LOCALVERSION=""
@@ -65,6 +43,7 @@ CONFIG_SYSVIPC_SYSCTL=y
 CONFIG_IKCONFIG=y
 CONFIG_IKCONFIG_PROC=y
 CONFIG_LOG_BUF_SHIFT=14
+# CONFIG_CPUSETS is not set
 # CONFIG_SYSFS_DEPRECATED is not set
 # CONFIG_RELAY is not set
 CONFIG_BLK_DEV_INITRD=y
@@ -99,6 +78,7 @@ CONFIG_MODULE_UNLOAD=y
 # CONFIG_MODVERSIONS is not set
 # CONFIG_MODULE_SRCVERSION_ALL is not set
 CONFIG_KMOD=y
+CONFIG_STOP_MACHINE=y
 CONFIG_BLOCK=y
 CONFIG_LBD=y
 # CONFIG_LSF is not set
@@ -123,7 +103,7 @@ CONFIG_DEFAULT_IOSCHED="deadline"
 # CONFIG_TICK_ONESHOT is not set
 # CONFIG_NO_HZ is not set
 # CONFIG_HIGH_RES_TIMERS is not set
-# CONFIG_SMP is not set
+CONFIG_SMP=y
 CONFIG_X86_PC=y
 # CONFIG_X86_ELAN is not set
 # CONFIG_X86_VOYAGER is not set
@@ -176,12 +156,13 @@ CONFIG_X86_ALIGNMENT_16=y
 CONFIG_X86_INTEL_USERCOPY=y
 CONFIG_X86_MINIMUM_CPU_FAMILY=4
 CONFIG_HPET_TIMER=y
-# CONFIG_PREEMPT_NONE is not set
+CONFIG_NR_CPUS=8
+# CONFIG_SCHED_SMT is not set
+CONFIG_SCHED_MC=y
+CONFIG_PREEMPT_NONE=y
 # CONFIG_PREEMPT_VOLUNTARY is not set
-CONFIG_PREEMPT=y
+# CONFIG_PREEMPT is not set
 # CONFIG_PREEMPT_BKL is not set
-CONFIG_X86_UP_APIC=y
-CONFIG_X86_UP_IOAPIC=y
 CONFIG_X86_LOCAL_APIC=y
 CONFIG_X86_IO_APIC=y
 # CONFIG_X86_MCE is not set
@@ -230,6 +211,7 @@ CONFIG_VIRT_TO_BUS=y
 # CONFIG_MATH_EMULATION is not set
 # CONFIG_MTRR is not set
 # CONFIG_EFI is not set
+CONFIG_IRQBALANCE=y
 # CONFIG_SECCOMP is not set
 # CONFIG_HZ_100 is not set
 # CONFIG_HZ_250 is not set
@@ -240,6 +222,7 @@ CONFIG_HZ=1000
 CONFIG_PHYSICAL_START=0x100000
 # CONFIG_RELOCATABLE is not set
 CONFIG_PHYSICAL_ALIGN=0x100000
+# CONFIG_HOTPLUG_CPU is not set
 CONFIG_COMPAT_VDSO=y
 
 #
@@ -248,9 +231,9 @@ CONFIG_COMPAT_VDSO=y
 CONFIG_PM=y
 # CONFIG_PM_LEGACY is not set
 # CONFIG_PM_DEBUG is not set
-CONFIG_SUSPEND_UP_POSSIBLE=y
+CONFIG_SUSPEND_SMP_POSSIBLE=y
 # CONFIG_SUSPEND is not set
-CONFIG_HIBERNATION_UP_POSSIBLE=y
+CONFIG_HIBERNATION_SMP_POSSIBLE=y
 CONFIG_ACPI=y
 CONFIG_ACPI_PROCFS=y
 CONFIG_ACPI_PROC_EVENT=y
@@ -765,7 +748,6 @@ CONFIG_WINBOND_840=m
 CONFIG_DM9102=m
 CONFIG_ULI526X=m
 # CONFIG_PCMCIA_XIRCOM is not set
-# CONFIG_PCMCIA_XIRTULIP is not set
 # CONFIG_AT1700 is not set
 # CONFIG_DEPCA is not set
 CONFIG_HP100=m
@@ -1353,7 +1335,6 @@ CONFIG_DETECT_SOFTLOCKUP=y
 # CONFIG_SCHEDSTATS is not set
 # CONFIG_TIMER_STATS is not set
 # CONFIG_DEBUG_SLAB is not set
-# CONFIG_DEBUG_PREEMPT is not set
 # CONFIG_DEBUG_RT_MUTEXES is not set
 # CONFIG_RT_MUTEX_TESTER is not set
 # CONFIG_DEBUG_SPINLOCK is not set
@@ -1405,5 +1386,9 @@ CONFIG_HAS_IOPORT=y
 CONFIG_HAS_DMA=y
 CONFIG_GENERIC_HARDIRQS=y
 CONFIG_GENERIC_IRQ_PROBE=y
+CONFIG_GENERIC_PENDING_IRQ=y
+CONFIG_X86_SMP=y
+CONFIG_X86_HT=y
 CONFIG_X86_BIOS_REBOOT=y
+CONFIG_X86_TRAMPOLINE=y
 CONFIG_KTIME_SCALAR=y
