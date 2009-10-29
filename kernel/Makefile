@@ -35,14 +35,15 @@ kernel:
 	[ -d $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) ] || tar jxf $(3RDPARTY_FOLDER)/$(TARBALL_LINUXKERNEL) -C $(BUILD_FOLDER)
 	[ -f $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/.config ] || cp -a $(CONFIGS_LINUXKERNEL)/dot-config-$(VERSION_LINUXKERNEL) $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/.config && $(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) ARCH=$(ARCHITECTURE) silentoldconfig
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) ARCH=$(ARCHITECTURE) all
-	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/arch/i386/boot/bzImage $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-r$(SVNREV)
-	/usr/sbin/rdev $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-r$(SVNREV) /dev/ram0
+	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/arch/i386/boot/bzImage $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV)
+	/usr/sbin/rdev $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) /dev/ram0
+	ln -sf bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) $(BUILD_FOLDER)/bzImage
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/net -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/pcmcia -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/lib -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 
-modules: module_e1000 module_e1000e module_igb module_r8168 module_r8169 module_atl1 module_nxii
-	# others disabled for now : module_570x module_atl1e module_atl2 module_sk98
+modules: module_e1000 module_e1000e module_igb module_r8168 module_r8169 module_atl1 module_nxii module_570x
+	# others disabled for now :  module_atl1e module_atl2 module_sk98
 
 module_e1000:
 	# If build fails comment 'get_perm_addr' ifdef in e1000_ethtool.c
@@ -88,9 +89,11 @@ module_570x:
 	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_570X) ] || unzip -j $(3RDPARTY_FOLDER)/$(ARCHIVE_570X) \*$(TARBALL_570X) -d $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(FOLDER_570X) ] || tar zxf $(3RDPARTY_FOLDER)/$(TARBALL_570X) -C $(BUILD_FOLDER)
 	sed -i 's!^#define TG3_VLAN_TAG_USED 0$$!#define TG3_VLAN_TAG_USED 1!' $(BUILD_FOLDER)/$(FOLDER_570X)/tg3.c
-	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_570X) CC=$(CC) ARCH=$(ARCHITECTURE) LINUX=../$(FOLDER_LINUXKERNEL) tg3_flags.h
-	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_ATL1) KSRC=../$(FOLDER_LINUXKERNEL)
-	cp -f $(BUILD_FOLDER)/$(FOLDER_570X)/atl1.ko $(BUILD_FOLDER)/modules
+	sed -i 's!^BCMCFGDIR=$!!BCMCFGDIR=../$(FOLDER_LINUXKERNEL)!' $(BUILD_FOLDER)/$(FOLDER_570X)/Makefile
+	sed -i 's!^BCMSRCDIR=$!!BCMSRCDIR=../$(FOLDER_LINUXKERNEL)!' $(BUILD_FOLDER)/$(FOLDER_570X)/Makefile
+	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_570X) CC=$(CC) ARCH=$(ARCHITECTURE) LINUXSRC=../$(FOLDER_LINUXKERNEL) tg3_flags.h
+	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_570X) KSRC=../$(FOLDER_LINUXKERNEL)
+	cp -f $(BUILD_FOLDER)/$(FOLDER_570X)/tg3.ko $(BUILD_FOLDER)/modules
 
 
 module_nxii:
@@ -117,7 +120,6 @@ module_atl2:
 	[ -d $(SRC_ATL2) ] || (cd $(FOLDER_ATL2) && tar jxf $(TARBALL_ATL2))
 	make CC=$(CC) -C $(KSRC) SUBDIRS=$(SRC_ATL2) modules
 	mkdir -p build/modules && cp -f $(SRC_ATL2)/atl2.ko build/modules
-
 
 clean: modules_clean
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) clean
