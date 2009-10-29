@@ -60,7 +60,7 @@ dm:
 	$(MAKE) -C $(BUILD_FOLDER)/$(DM_FOLDER) CC=$(CC) lib
 	cp -a $(BUILD_FOLDER)/$(DM_FOLDER)/lib/ioctl/libdevmapper.so tree/lib
 	strip tree/lib/libdevmapper.so
-	ln -s libdevmapper.so tree/lib/libdevmapper.so.1.01
+	ln -sf libdevmapper.so tree/lib/libdevmapper.so.1.01
 
 pump: popt
 	[ -e $(3RDPARTY_FOLDER)/$(PUMP_TARBALL) ] || wget $(PUMP_URI)/$(PUMP_TARBALL) -P $(3RDPARTY_FOLDER)
