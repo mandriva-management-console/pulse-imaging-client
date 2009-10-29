@@ -29,7 +29,7 @@ include consts.mk
 
 all: load
 
-load: atftp pump busybox sysvinit
+load: lvm atftp pump busybox sysvinit
 	# dev summoning
 	-(cd tree/dev; ../../MAKEDEV console ptyp std hda hdb hdc hdd hde hdf hdg hdh sda sdb sdc sdd sde sdf sdg sdh fd0 cciss.0 cciss.1 ida.0 scd0 scd1 input; mknod -m 600 initctl p; mknod -m 600 log p)
 	# symlinks summoning
@@ -49,8 +49,8 @@ lvm:
 	[ -e $(3RDPARTY_FOLDER)/$(LVM_TARBALL) ] || wget $(LVM_URI)/$(LVM_TARBALL) -P $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(LVM_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(LVM_TARBALL) -C $(BUILD_FOLDER)
 	[ -f $(BUILD_FOLDER)/$(LVM_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(LVM_FOLDER); CC=$(CC) ./configure)
-	$(MAKE) tools -C $(LVM_FOLDER) CC=$(CC)
-	cp -a $(LVM_FOLDER)/tools/lvm tree/bin
+	$(MAKE) tools -C $(BUILD_FOLDER)/$(LVM_FOLDER) CC=$(CC)
+	cp -a $(BUILD_FOLDER)/$(LVM_FOLDER)/tools/lvm tree/bin
 	strip tree/bin/lvm
 
 pump: popt
