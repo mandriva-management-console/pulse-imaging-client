@@ -23,44 +23,39 @@
 
 # PUMP
 PUMP_VERSION		= 0.8.24
-PUMP_URI			= http://www.linuxfocus.org/~guido
-PUMP_TARGET			= 3rd_party
-PUMP_FOLDER			= $(PUMP_TARGET)/pump-$(PUMP_VERSION)
+PUMP_URI		= http://www.linuxfocus.org/~guido
+PUMP_FOLDER		= pump-$(PUMP_VERSION)
 PUMP_TARBALL		= pump-$(PUMP_VERSION)-patched-2009.tar.gz
 
 # POPT
 POPT_VERSION		= 1.15
-POPT_URI			= http://rpm5.org/files/popt
-POPT_TARGET			= 3rd_party
-POPT_FOLDER			= $(POPT_TARGET)/popt-$(POPT_VERSION)
+POPT_URI		= http://rpm5.org/files/popt
+POPT_FOLDER		= popt-$(POPT_VERSION)
 POPT_TARBALL		= popt-$(POPT_VERSION).tar.gz
 
 # Busybox
 BUSYBOX_VERSION		= 1.1.3
-BUSYBOX_URI			= http://www.busybox.net/downloads/legacy
-BUSYBOX_TARGET		= 3rd_party
-BUSYBOX_FOLDER		= $(BUSYBOX_TARGET)/busybox-$(BUSYBOX_VERSION)
+BUSYBOX_URI		= http://www.busybox.net/downloads/legacy
+BUSYBOX_FOLDER		= busybox-$(BUSYBOX_VERSION)
 BUSYBOX_TARBALL		= busybox-$(BUSYBOX_VERSION).tar.gz
+BUSYBOX_CONFIG		= busybox-$(BUSYBOX_VERSION).config
 
 # SysVInit
 SYSV_VERSION		= 2.84
-SYSV_URI			= ftp://archive.debian.org/debian-archive/debian/pool/main/s/sysvinit
-SYSV_TARGET			= 3rd_party
-SYSV_FOLDER			= $(SYSV_TARGET)/sysvinit-$(SYSV_VERSION).orig/src
+SYSV_URI		= ftp://archive.debian.org/debian-archive/debian/pool/main/s/sysvinit
+SYSV_FOLDER		= sysvinit-$(SYSV_VERSION).orig/src
 SYSV_TARBALL		= sysvinit_$(SYSV_VERSION).orig.tar.gz
-SYSV_PATCH			= sysvinit_$(SYSV_VERSION)-2woody1.diff.gz
+SYSV_PATCH		= sysvinit_$(SYSV_VERSION)-2woody1.diff.gz
 
 # ATFTP
-ATFTP_VERSION		= 0.7.dfsg
-ATFTP_URI			= ftp://archive.debian.org/debian-archive/debian/pool/main/a/atftp
-ATFTP_TARGET		= 3rd_party
-ATFTP_FOLDER		= $(ATFTP_TARGET)/atftp-$(ATFTP_VERSION)
+ATFTP_VERSION		= 0.7
+ATFTP_URI		= ftp://archive.debian.org/debian-archive/debian/pool/main/a/atftp
+ATFTP_FOLDER		= atftp-$(ATFTP_VERSION)
 ATFTP_TARBALL		= atftp_$(ATFTP_VERSION).orig.tar.gz
-ATFTP_PATCH			= atftp_$(ATFTP_VERSION)-7.diff.gz
+ATFTP_PATCH		= atftp_$(ATFTP_VERSION)-7.diff.gz
 
 # LVM
-LVM_VERSION			= 2.02.54
-LVM_URI				= ftp://sources.redhat.com/pub/lvm2
-LVM_TARGET			= 3rd_party
-LVM_FOLDER			= $(LVM_TARGET)/LVM2.$(LVM_VERSION)
-LVM_TARBALL			= LVM2.$(LVM_VERSION).tgz
+LVM_VERSION		= 2.02.54
+LVM_URI			= ftp://sources.redhat.com/pub/lvm2
+LVM_FOLDER		= LVM2.$(LVM_VERSION)
+LVM_TARBALL		= LVM2.$(LVM_VERSION).tgz
