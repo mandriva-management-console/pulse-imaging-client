@@ -96,6 +96,8 @@ popt:
 	[ -d $(BUILD_FOLDER)/$(POPT_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(POPT_TARBALL) -C $(BUILD_FOLDER)
 	[ -f $(BUILD_FOLDER)/$(POPT_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(POPT_FOLDER); CC=$(CC) ./configure)
 	$(MAKE) -C $(BUILD_FOLDER)/$(POPT_FOLDER) CC=$(CC)
+	cp -a $(BUILD_FOLDER)/$(POPT_FOLDER)/.lib/libpopt.so* $(BUILD_FOLDER)/lib
+	strip $(BUILD_FOLDER)/lib/libpopt.so*
 
 e2fs:
 	[ -e $(3RDPARTY_FOLDER)/$(E2FS_TARBALL) ] || wget $(E2FS_URI)/$(E2FS_TARBALL) -P $(3RDPARTY_FOLDER)

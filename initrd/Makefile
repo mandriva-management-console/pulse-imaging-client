@@ -40,7 +40,7 @@ atftp:
 	[ -e $(3RDPARTY_FOLDER)/$(ATFTP_PATCH) ] || wget $(ATFTP_URI)/$(ATFTP_PATCH) -P $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(ATFTP_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(ATFTP_TARBALL) -C $(BUILD_FOLDER)
 	-zcat $(3RDPARTY_FOLDER)/$(ATFTP_PATCH) | patch -N -p1 -d $(BUILD_FOLDER)/$(ATFTP_FOLDER)
-	[ -f $(BUILD_FOLDER)/$(ATFTP_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(ATFTP_FOLDER); CC=$(CC) ./configure)
+	[ -f $(BUILD_FOLDER)/$(ATFTP_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(ATFTP_FOLDER); CC=$(CC) ./configure --disable-libreadline)
 	$(MAKE) -C $(BUILD_FOLDER)/$(ATFTP_FOLDER) CC=$(CC) atftp
 	cp -a $(BUILD_FOLDER)/$(ATFTP_FOLDER)/atftp tree/bin
 	strip tree/bin/atftp
@@ -48,7 +48,7 @@ atftp:
 lvm:
 	[ -e $(3RDPARTY_FOLDER)/$(LVM_TARBALL) ] || wget $(LVM_URI)/$(LVM_TARBALL) -P $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(LVM_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(LVM_TARBALL) -C $(BUILD_FOLDER)
-	[ -f $(BUILD_FOLDER)/$(LVM_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(LVM_FOLDER); CC=$(CC) ./configure)
+	[ -f $(BUILD_FOLDER)/$(LVM_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(LVM_FOLDER); CC=$(CC) ./configure --disable-selinux --disable-devmapper --disable-readline)
 	$(MAKE) tools -C $(BUILD_FOLDER)/$(LVM_FOLDER) CC=$(CC)
 	cp -a $(BUILD_FOLDER)/$(LVM_FOLDER)/tools/lvm tree/bin
 	strip tree/bin/lvm
