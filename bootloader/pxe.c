@@ -390,129 +390,130 @@ parse_dhcp_options (unsigned char *ptr)
 extern int bootp
 P ((void))
 {
-  typedef struct s
-  {
-    short Status;
-    unsigned short Packet;
-    unsigned short BuffSize;
-    unsigned short BuffOff;
-    unsigned short BuffSeg;
-    unsigned short BuffLimit;
-  }
-  cache;
+    typedef struct s {
+        short Status;
+        unsigned short Packet;
+        unsigned short BuffSize;
+        unsigned short BuffOff;
+        unsigned short BuffSeg;
+        unsigned short BuffLimit;
+    } cache;
 
-  cache toto;
-  int ret;
-  unsigned char *ptr, *cmp;
+    cache toto;
+    int ret;
+    unsigned char *ptr, *cmp;
 
-  if (!pxe_detected)
-    {
-      get_pxe_entry ();
+      if (!pxe_detected) {
+        get_pxe_entry ();
 #ifdef DEBUG_PXE_STRUCT
-      dump_pxe_struct ();
+        dump_pxe_struct ();
 #endif
     }
 
-  if (!PXEEntry)
-    return 0;
+    if (!PXEEntry)
+        return 0;
 
-  //printf ("bootp ()\n");
-
-  toto.Packet = 2;
-  toto.BuffSize = 0;
-  toto.BuffSeg = 0;
-  toto.BuffOff = 0;
-  toto.BuffLimit = 2048;
-  ret = pxe_call (0x71, &toto);
+    toto.Packet = 2;
+    toto.BuffSize = 0;
+    toto.BuffSeg = 0;
+    toto.BuffOff = 0;
+    toto.BuffLimit = 2048;
+    ret = pxe_call (0x71, &toto);
 
 #ifdef DEBUG
-  printf ("Getting Packet type 2 : ");
-  printf ("Call : %d (", ret);
-  printf ("Status  : %d)\n", toto.Status);
+    printf ("Getting Packet type 2 : ");
+    printf ("Call : %d (", ret);
+    printf ("Status  : %d)\n", toto.Status);
 #ifdef DEBUG_DHCP
-  printf ("Returned values : Buffer size = %d\n", toto.BuffSize);
-  {
-    int i;
-    ptr = (unsigned char *) ((toto.BuffSeg << 4) + toto.BuffOff);
-    printf ("Returned values : Buffer ptr = %x\n", ptr);
-    for (i = 0; i < toto.BuffSize; i++)
-      {
-        if ((i & 15) == 0)
-          {
-            if ((i & 255) == 0)
-              getkey ();
-            printf ("\n%x : ", i);
-          }
-        printf ("%x ", *(ptr + i));
-      }
-    printf ("\n");
-    getkey ();
-  }
-#endif
-#endif
-
-  ptr = (unsigned char *) ((toto.BuffSeg << 4) + toto.BuffOff);
-  {
-    int i;
-    for (i = 0; i < MAX_ARP * sizeof (struct arptable_t); i++)
-      *(((char *) arptable) + i) = 0;
-  }
-
-  *(in_addr *) & arptable[ARP_CLIENT].ipaddr = *(in_addr *) (ptr + 16);
-  *(in_addr *) & arptable[ARP_SERVER].ipaddr = *(in_addr *) (ptr + 20);
-  *(unsigned long *) &(nic_macaddr[0]) = *(unsigned long *) (ptr + 28);
-  *(unsigned short *) &(nic_macaddr[4]) = *(unsigned short *) (ptr + 32);
-
-#ifdef DEBUG
-  printf ("Server Name : %s\n", ptr + 34);
-  printf ("Filename    : %s\n", ptr + 108);
-  printf ("Magic       : %x\n", *(unsigned long *) (ptr + 236));
-#endif
-  cmp = ptr + 108;
-  while (*(cmp + 4))
+    printf ("Returned values : Buffer size = %d\n", toto.BuffSize);
     {
-      if ((*(cmp + 0) == '/') && (*(cmp + 1) == 'b') && (*(cmp + 2) == 'i')
-          && (*(cmp + 3) == 'n'))
-        {
-          *cmp = 0;
-          break;
+        int i;
+        ptr = (unsigned char *) ((toto.BuffSeg << 4) + toto.BuffOff);
+        printf ("Returned values : Buffer ptr = %x\n", ptr);
+        for (i = 0; i < toto.BuffSize; i++) {
+            if ((i & 15) == 0) {
+                if ((i & 255) == 0)
+                    getkey ();
+                printf ("\n%x : ", i);
+            }
+            printf ("%x ", *(ptr + i));
         }
-      cmp++;
+        printf ("\n");
+        getkey ();
+    }
+#endif
+#endif
+
+    ptr = (unsigned char *) ((toto.BuffSeg << 4) + toto.BuffOff); {
+        int i;
+        for (i = 0; i < MAX_ARP * sizeof (struct arptable_t); i++)
+            *(((char *) arptable) + i) = 0;
     }
 
-  strcpy (basedir, ptr + 108);
+    *(in_addr *) & arptable[ARP_CLIENT].ipaddr = *(in_addr *) (ptr + 16);
+    *(in_addr *) & arptable[ARP_SERVER].ipaddr = *(in_addr *) (ptr + 20);
+    *(unsigned long *) &(nic_macaddr[0]) = *(unsigned long *) (ptr + 28);
+    *(unsigned short *) &(nic_macaddr[4]) = *(unsigned short *) (ptr + 32);
 
-  parse_dhcp_options (ptr + 240);
+#ifdef DEBUG
+    printf ("Server Name : %s\n", ptr + 34);
+    printf ("Filename    : %s\n", ptr + 108);
+    printf ("Magic       : %x\n", *(unsigned long *) (ptr + 236));
+#endif
+
+    // guest basedir using ptr + 108, aka "filename"
+    // filename max len is 128
+    cmp = ptr + 108;
+
+    // to obtain the basename, we reverse count from ptr + 235 to ptr + 109
+    // if we found a '/', we replace it by a \0 to terminate the string
+    // ending to 109, not 108, this way first '/' will never be replaced (to prevent NULL basename)
+    {
+        int i;
+
+        for (i = 235; i >= 109; i--) {
+            if (*(ptr + i) == '/' ) {
+                *(ptr + i) = 0;
+                break;
+            }
+        }
+    }
+    strcpy(basedir, ptr + 108);
+
+    parse_dhcp_options(ptr + 240);
 
 #if 0
-  toto.Packet = 3;
-  toto.BuffSize = 0;
-  toto.BuffSeg = 0;
-  toto.BuffOff = 0;
-  toto.BuffLimit = 2048;
-  ret = pxe_call (0x71, &toto);
+    toto.Packet = 3;
+    toto.BuffSize = 0;
+    toto.BuffSeg = 0;
+    toto.BuffOff = 0;
+    toto.BuffLimit = 2048;
+    ret = pxe_call (0x71, &toto);
 
 #ifdef DEBUG
-  printf ("Getting Packet type 3 : ");
-  printf ("Call : %d (", ret);
-  printf ("Status  : %d)\n", toto.Status);
+    printf ("Getting Packet type 3 : ");
+    printf ("Call : %d (", ret);
+    printf ("Status  : %d)\n", toto.Status);
 #endif
 
-  ptr = (unsigned char *) ((toto.BuffSeg << 4) + toto.BuffOff);
+    ptr = (unsigned char *) ((toto.BuffSeg << 4) + toto.BuffOff);
 /*
-                memmove((char*) &arptable[ARP_CLIENT].ipaddr,ptr+16,sizeof(in_addr));
-                memmove((char*) &arptable[ARP_SERVER].ipaddr,ptr+20,sizeof(in_addr));
-                memmove((char*) &nic_macaddr,ptr+28,6);
+    memmove((char*) &arptable[ARP_CLIENT].ipaddr,ptr+16,sizeof(in_addr));
+    memmove((char*) &arptable[ARP_SERVER].ipaddr,ptr+20,sizeof(in_addr));
+    memmove((char*) &nic_macaddr,ptr+28,6);
 */
+
 #ifdef DEBUG
-  printf ("Server Name : %s\n", ptr + 34);
-  printf ("Filename    : %s\n", ptr + 108);
-  printf ("Magic       : %x\n", *(unsigned long *) (ptr + 236));
+    printf ("Server Name : %s\n", ptr + 34);
+    printf ("Filename    : %s\n", ptr + 108);
+    printf ("Magic       : %x\n", *(unsigned long *) (ptr + 236));
 #endif
-  parse_dhcp_options (ptr + 240);
+
+    parse_dhcp_options (ptr + 240);
 #endif
-  network_ready = 1;
-  return 1;
+
+    network_ready = 1;
+    return 1;
 }
 
 extern int rarp
