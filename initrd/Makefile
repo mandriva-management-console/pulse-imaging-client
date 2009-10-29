@@ -45,13 +45,22 @@ atftp:
 	cp -a $(BUILD_FOLDER)/$(ATFTP_FOLDER)/atftp tree/bin
 	strip tree/bin/atftp
 
-lvm:
+lvm: dm
 	[ -e $(3RDPARTY_FOLDER)/$(LVM_TARBALL) ] || wget $(LVM_URI)/$(LVM_TARBALL) -P $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(LVM_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(LVM_TARBALL) -C $(BUILD_FOLDER)
-	[ -f $(BUILD_FOLDER)/$(LVM_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(LVM_FOLDER); CC=$(CC) ./configure --disable-selinux --disable-devmapper --disable-readline)
-	$(MAKE) tools -C $(BUILD_FOLDER)/$(LVM_FOLDER) CC=$(CC)
+	[ -f $(BUILD_FOLDER)/$(LVM_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(LVM_FOLDER); LDFLAGS='-L../$(DM_FOLDER)/lib/ioctl -L../../$(DM_FOLDER)/lib/ioctl' CFLAGS='-I../$(DM_FOLDER)/include -I../../$(DM_FOLDER)/include' CPPFLAGS='-I../$(DM_FOLDER)/include -I../../$(DM_FOLDER)/include' CC=$(CC) ./configure --disable-selinux --disable-readline)
+	$(MAKE) -C $(BUILD_FOLDER)/$(LVM_FOLDER) CC=$(CC) tools
 	cp -a $(BUILD_FOLDER)/$(LVM_FOLDER)/tools/lvm tree/bin
 	strip tree/bin/lvm
+
+dm:
+	[ -e $(3RDPARTY_FOLDER)/$(DM_TARBALL) ] || wget $(DM_URI)/$(DM_TARBALL) -P $(3RDPARTY_FOLDER)
+	[ -d $(BUILD_FOLDER)/$(DM_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(DM_TARBALL) -C $(BUILD_FOLDER)
+	[ -f $(BUILD_FOLDER)/$(DM_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(DM_FOLDER); CC=$(CC) ./configure)
+	$(MAKE) -C $(BUILD_FOLDER)/$(DM_FOLDER) CC=$(CC) lib
+	cp -a $(BUILD_FOLDER)/$(DM_FOLDER)/lib/ioctl/libdevmapper.so tree/lib
+	strip tree/lib/libdevmapper.so
+	ln -s libdevmapper.so tree/lib/libdevmapper.so.1.01
 
 pump: popt
 	[ -e $(3RDPARTY_FOLDER)/$(PUMP_TARBALL) ] || wget $(PUMP_URI)/$(PUMP_TARBALL) -P $(3RDPARTY_FOLDER)

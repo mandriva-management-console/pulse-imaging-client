@@ -88,12 +88,16 @@ ln -sf ../../bin/busybox ./usr/bin/yes
 ln -sf ae ./bin/vi
 
 ln -sf ../sbin/route ./bin/route
+
 ln -sf tinylogin ./bin/addgroup
 ln -sf tinylogin ./bin/adduser
 ln -sf tinylogin ./bin/delgroup
 ln -sf tinylogin ./bin/deluser
 ln -sf tinylogin ./bin/login
 ln -sf tinylogin ./bin/su
+ln -sf ../../bin/tinylogin ./usr/bin/passwd
+ln -sf ../bin/tinylogin ./sbin/getty
+ln -sf ../bin/tinylogin ./sbin/sulogin
 
 # Init tree
 ln -sf ../init.d/umountfs ./etc/rc0.d/S40umountfs
@@ -136,12 +140,11 @@ ln -sf libc-2.3.6.so ./lib/libc.so.6
 # libPThread
 ln -sf libpthread-0.10.so ./lib/libpthread.so.0
 
+# Other stuff
 ln -sf /tmp ./var/tmp
+
 ln -sf nc ./usr/bin/netcat
-ln -sf ../../bin/tinylogin ./usr/bin/passwd
 ln -sf /usr/share/terminfo/ ./usr/lib/terminfo
-ln -sf ../bin/tinylogin ./sbin/getty
-ln -sf ../bin/tinylogin ./sbin/sulogin
 ln -sf halt ./sbin/reboot
 
 # init

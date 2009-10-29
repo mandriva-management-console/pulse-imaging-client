@@ -55,7 +55,15 @@ ATFTP_TARBALL		= atftp_$(ATFTP_VERSION).orig.tar.gz
 ATFTP_PATCH		= atftp_$(ATFTP_VERSION)-7.diff.gz
 
 # LVM
-LVM_VERSION		= 2.02.54
-LVM_URI			= ftp://sources.redhat.com/pub/lvm2
+#MDV/NR LVM_VERSION		= 2.02.54
+LVM_VERSION		= 2.01.04
+#MDV/NR LVM_URI			= ftp://sources.redhat.com/pub/lvm2
+LVM_URI			= ftp://sources.redhat.com/pub/lvm2/old
 LVM_FOLDER		= LVM2.$(LVM_VERSION)
 LVM_TARBALL		= LVM2.$(LVM_VERSION).tgz
+
+# DM
+DM_VERSION		= 1.01.00
+DM_URI			= ftp://sources.redhat.com/pub/dm/old/
+DM_FOLDER		= device-mapper.$(DM_VERSION)
+DM_TARBALL		= device-mapper.$(DM_VERSION).tgz
