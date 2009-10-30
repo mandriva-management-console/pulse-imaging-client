@@ -89,7 +89,7 @@ sysvinit:
 	[ -d $(BUILD_FOLDER)/$(SYSV_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(SYSV_TARBALL) -C $(BUILD_FOLDER)
 	-zcat $(3RDPARTY_FOLDER)/$(SYSV_PATCH) | patch -N -p1 -d $(BUILD_FOLDER)/$(SYSV_FOLDER)/..
 	$(MAKE) -C $(BUILD_FOLDER)/$(SYSV_FOLDER) CC=$(CC)
-	for n in killall5 init halt shutdown; do cp -a $(BUILD_FOLDER)/$(SYSV_FOLDER)/$$n tree/sbin; done
+	for n in halt init killall5 runlevel shutdown; do cp -a $(BUILD_FOLDER)/$(SYSV_FOLDER)/$$n tree/sbin; done
 
 clean:
 	-$(MAKE) clean -C $(BUILD_FOLDER)/$(POPT_FOLDER)
@@ -113,7 +113,7 @@ clean:
 	rm -f tree/bin/lvm
 	rm -f tree/bin/pump
 	rm -f tree/bin/busybox
-	for n in killall5 init shutdown; do rm -f tree/sbin/$$n; done
+	for n in halt init killall5 runlevel shutdown; do rm -f tree/sbin/$$n; done
 
 dist-clean:
 	rm -fr $(BUILD_FOLDER)/$(SYSV_FOLDER)

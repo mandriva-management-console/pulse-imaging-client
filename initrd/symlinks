@@ -68,7 +68,6 @@ ln -sf ../bin/busybox ./sbin/route
 ln -sf ../bin/busybox ./sbin/syslogd
 ln -sf ../bin/busybox ./sbin/telinit
 ln -sf ../bin/busybox ./sbin/update
-ln -sf ../bin/busybox ./sbin/runlevel
 
 ln -sf sbin/init ./init
 ln -sf halt ./sbin/reboot
@@ -89,8 +88,6 @@ ln -sf ../../bin/busybox ./usr/bin/wc
 ln -sf ../../bin/busybox ./usr/bin/which
 ln -sf ../../bin/busybox ./usr/bin/whoami
 ln -sf ../../bin/busybox ./usr/bin/yes
-
-ln -sf ../../bin/busybox ./usr/sbin/start-stop-daemon
 
 ln -sf ae ./bin/vi
 
