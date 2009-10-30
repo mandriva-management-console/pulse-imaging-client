@@ -37,7 +37,7 @@ INITRAMFS_FOLDER	= $(BUILD_FOLDER)/initramfs
 
 imaging: kernel bootloader tools initrd
 	# initial tree
-	mkdir -p $(INITRAMFS_FOLDER)
+	rm -fr $(INITRAMFS_FOLDER) && mkdir -p $(INITRAMFS_FOLDER)
 	tar c --exclude=\.svn -C initrd/tree . | tar x -C build/initramfs
 
 	# gather tools arb
