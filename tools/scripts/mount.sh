@@ -35,9 +35,12 @@ grep -q revosavedir=/cdrom /etc/cmdline && exit 0
 
 # Other restoration types
 SRV=$Next_server
-PREFIX=`echo $Boot_file|sed 's/\/bin\/revoboot.pxe//'`
-DIR=`cat /etc/cmdline|cut -f 1 -d " "|cut -f 2 -d =`
+PREFIX=`echo $Boot_file | sed 's|/revoboot.pxe$||' | sed 's|/bin$||'`
+DIR=`cat /etc/cmdline | cut -f 1 -d " "|cut -f 2 -d =`
+ROOT=`grep revoroot /etc/cmdline | sed 's|.* revoroot=\([^ ]*\).*|\1|'`
 
+# revoroot= override prefix from PXE phase
+[ -z "$ROOT" ] || PREFIX="$ROOT"
 echo "Mounting Storage directory... mount-$TYPE.sh $SRV $PREFIX $DIR"
 while ! mount-$TYPE.sh $SRV $PREFIX $DIR
 do
