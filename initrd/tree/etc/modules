@@ -32,6 +32,7 @@ tg3
 forcedeth
 r8169
 r8168
+r8101
 tlan
 epic100
 sis190

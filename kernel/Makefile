@@ -42,7 +42,7 @@ kernel:
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/pcmcia -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/lib -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 
-modules: module_e1000 module_e1000e module_igb module_r8168 module_r8169 module_atl1 module_nxii module_570x
+modules: module_e1000 module_e1000e module_igb module_r8168 module_r8169 module_r8101 module_atl1 module_nxii module_570x
 	# others disabled for now :  module_atl1e module_atl2 module_sk98
 
 module_e1000:
@@ -78,6 +78,12 @@ module_r8169:
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_R8169) KSRC=../$(FOLDER_LINUXKERNEL)
 	cp -f $(BUILD_FOLDER)/$(FOLDER_R8169)/r8169.ko $(BUILD_FOLDER)/modules
 
+module_r8101:
+	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_R8101) ] || wget $(URI_R8101)/$(TARBALL_R8101) -P $(3RDPARTY_FOLDER)
+	[ -d $(BUILD_FOLDER)/$(FOLDER_R8101) ] || tar jxf $(3RDPARTY_FOLDER)/$(TARBALL_R8101) -C $(BUILD_FOLDER)
+	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_R8101) KSRC=../$(FOLDER_LINUXKERNEL)
+	cp -f $(BUILD_FOLDER)/$(FOLDER_R8101)/r8101.ko $(BUILD_FOLDER)/modules
+
 module_atl1:
 	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_ATL1) ] || wget $(URI_ATL1)/$(TARBALL_ATL1) -P $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(FOLDER_ATL1) ] || tar zxf $(3RDPARTY_FOLDER)/$(TARBALL_ATL1) -C $(BUILD_FOLDER)
@@ -94,7 +100,6 @@ module_570x:
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_570X) CC=$(CC) ARCH=$(ARCHITECTURE) LINUXSRC=../$(FOLDER_LINUXKERNEL) tg3_flags.h
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_570X) KSRC=../$(FOLDER_LINUXKERNEL)
 	cp -f $(BUILD_FOLDER)/$(FOLDER_570X)/tg3.ko $(BUILD_FOLDER)/modules
-
 
 module_nxii:
 	[ -e $(3RDPARTY_FOLDER)/$(ARCHIVE_NXII) ] || [ -e $(3RDPARTY_FOLDER)/$(TARBALL_NXII) ] || wget $(URI_NXII)/$(ARCHIVE_NXII) -P $(3RDPARTY_FOLDER)
