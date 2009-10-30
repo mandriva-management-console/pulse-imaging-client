@@ -113,13 +113,15 @@ clean:
 	rm -f tree/bin/lvm
 	rm -f tree/bin/pump
 	rm -f tree/bin/busybox
+	rm -f tree/lib/libdevmapper.so
 	for n in halt init killall5 runlevel shutdown; do rm -f tree/sbin/$$n; done
 
-dist-clean:
+dist-clean: clean
 	rm -fr $(BUILD_FOLDER)/$(SYSV_FOLDER)
 	rm -fr $(BUILD_FOLDER)/$(BUSYBOX_FOLDER)
 	rm -fr $(BUILD_FOLDER)/$(POPT_FOLDER)
 	rm -fr $(BUILD_FOLDER)/$(PUMP_FOLDER)
 	rm -fr $(BUILD_FOLDER)/$(LVM_FOLDER)
+	rm -fr $(BUILD_FOLDER)/$(DM_FOLDER)
 	rm -fr $(BUILD_FOLDER)/$(ATFTP_FOLDER)
 
