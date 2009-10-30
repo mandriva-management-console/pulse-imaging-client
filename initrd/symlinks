@@ -68,6 +68,12 @@ ln -sf ../bin/busybox ./sbin/route
 ln -sf ../bin/busybox ./sbin/syslogd
 ln -sf ../bin/busybox ./sbin/telinit
 ln -sf ../bin/busybox ./sbin/update
+ln -sf ../bin/busybox ./sbin/halt
+ln -sf ../bin/busybox ./sbin/reboot
+ln -sf ../bin/busybox ./sbin/runlevel
+#ln -sf ../bin/busybox ./sbin/init
+ln -sf sbin/init ./init
+
 ln -sf ../../bin/busybox ./usr/bin/chvt
 ln -sf ../../bin/busybox ./usr/bin/clear
 ln -sf ../../bin/busybox ./usr/bin/env
@@ -84,6 +90,8 @@ ln -sf ../../bin/busybox ./usr/bin/wc
 ln -sf ../../bin/busybox ./usr/bin/which
 ln -sf ../../bin/busybox ./usr/bin/whoami
 ln -sf ../../bin/busybox ./usr/bin/yes
+
+ln -sf ../../bin/busybox ./usr/sbin/start-stop-daemon
 
 ln -sf ae ./bin/vi
 
@@ -145,7 +153,3 @@ ln -sf /tmp ./var/tmp
 
 ln -sf nc ./usr/bin/netcat
 ln -sf /usr/share/terminfo/ ./usr/lib/terminfo
-ln -sf halt ./sbin/reboot
-
-# init
-ln -sf sbin/init init

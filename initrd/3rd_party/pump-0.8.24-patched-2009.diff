@@ -1,0 +1,14 @@
+diff -ru pump-0.8.24.dist/pump.c pump-0.8.24/pump.c
+--- pump-0.8.24.dist/pump.c	2009-07-12 14:24:59.000000000 +0000
++++ pump-0.8.24/pump.c	2009-10-30 12:30:58.464866112 +0000
+@@ -821,8 +821,8 @@
+     printf("\tNetmask: %s\n", inet_ntoa(i.netmask));
+     printf("\tBroadcast: %s\n", inet_ntoa(i.broadcast));
+     printf("\tNetwork: %s\n", inet_ntoa(i.network));
+-    printf("\tBoot server %s\n", inet_ntoa(i.bootServer));
+-    printf("\tNext server %s\n", inet_ntoa(i.nextServer));
++    printf("\tBoot server: %s\n", inet_ntoa(i.bootServer));
++    printf("\tNext server: %s\n", inet_ntoa(i.nextServer));
+ 
+     if (i.numGateways) {
+ 	printf("\tGateways:");
