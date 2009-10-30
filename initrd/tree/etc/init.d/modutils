@@ -22,7 +22,7 @@ do
 	esac
 		
 	echo -n " - $module $args"
-	insmod -s /lib/modules/"$module".ko $args >/dev/null 2>&1 || echo -n "*"
+	insmod /lib/modules/"$module".ko $args >/dev/null > /dev/null || echo -n "*"
 done
 echo
 
