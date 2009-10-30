@@ -65,7 +65,7 @@ dm:
 pump: popt
 	[ -e $(3RDPARTY_FOLDER)/$(PUMP_TARBALL) ] || wget $(PUMP_URI)/$(PUMP_TARBALL) -P $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(PUMP_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(PUMP_TARBALL) -C $(BUILD_FOLDER)
-	cat $(3RDPARTY_FOLDER)/$(PUMP_PATCH) | patch -N -p1 -d $(BUILD_FOLDER)/$(PUMP_FOLDER)
+	-cat $(3RDPARTY_FOLDER)/$(PUMP_PATCH) | patch -N -p1 -d $(BUILD_FOLDER)/$(PUMP_FOLDER)
 	$(MAKE) -C $(BUILD_FOLDER)/$(PUMP_FOLDER) CC=$(CC) LDFLAGS='-L../$(POPT_FOLDER)/.libs' DEB_CFLAGS='-I../$(POPT_FOLDER)'
 	cp -a $(BUILD_FOLDER)/$(PUMP_FOLDER)/pump tree/bin
 	strip tree/bin/pump
@@ -89,7 +89,7 @@ sysvinit:
 	[ -d $(BUILD_FOLDER)/$(SYSV_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(SYSV_TARBALL) -C $(BUILD_FOLDER)
 	-zcat $(3RDPARTY_FOLDER)/$(SYSV_PATCH) | patch -N -p1 -d $(BUILD_FOLDER)/$(SYSV_FOLDER)/..
 	$(MAKE) -C $(BUILD_FOLDER)/$(SYSV_FOLDER) CC=$(CC)
-	for n in killall5 init shutdown; do cp -a $(BUILD_FOLDER)/$(SYSV_FOLDER)/$$n tree/sbin; done
+	for n in killall5 init halt shutdown; do cp -a $(BUILD_FOLDER)/$(SYSV_FOLDER)/$$n tree/sbin; done
 
 clean:
 	-$(MAKE) clean -C $(BUILD_FOLDER)/$(POPT_FOLDER)

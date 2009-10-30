@@ -68,11 +68,10 @@ ln -sf ../bin/busybox ./sbin/route
 ln -sf ../bin/busybox ./sbin/syslogd
 ln -sf ../bin/busybox ./sbin/telinit
 ln -sf ../bin/busybox ./sbin/update
-ln -sf ../bin/busybox ./sbin/halt
-ln -sf ../bin/busybox ./sbin/reboot
 ln -sf ../bin/busybox ./sbin/runlevel
-#ln -sf ../bin/busybox ./sbin/init
+
 ln -sf sbin/init ./init
+ln -sf halt ./sbin/reboot
 
 ln -sf ../../bin/busybox ./usr/bin/chvt
 ln -sf ../../bin/busybox ./usr/bin/clear
