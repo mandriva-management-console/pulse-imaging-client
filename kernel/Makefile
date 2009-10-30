@@ -42,8 +42,8 @@ kernel:
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/pcmcia -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/lib -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 
-modules: module_e1000 module_e1000e module_igb module_r8168 module_r8169 module_r8101 module_atl1 module_nxii module_570x
-	# others disabled for now :  module_atl1e module_atl2 module_sk98
+modules: module_e1000 module_e1000e module_igb module_r8168 module_r8169 module_r8101 module_atl1 module_atl1e module_atl2 module_nxii module_570x
+	# others disabled for now :   module_sk98
 
 module_e1000:
 	# If build fails comment 'get_perm_addr' ifdef in e1000_ethtool.c
@@ -90,6 +90,18 @@ module_atl1:
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_ATL1) KSRC=../$(FOLDER_LINUXKERNEL)
 	cp -f $(BUILD_FOLDER)/$(FOLDER_ATL1)/atl1.ko $(BUILD_FOLDER)/modules
 
+module_atl1e:
+	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_ATL1E) ] || wget $(URI_ATL1E)/$(TARBALL_ATL1E) -P $(3RDPARTY_FOLDER)
+	[ -d $(BUILD_FOLDER)/$(FOLDER_ATL1E) ] || tar zxf $(3RDPARTY_FOLDER)/$(TARBALL_ATL1E) -C $(BUILD_FOLDER)
+	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_ATL1E) KSRC=../$(FOLDER_LINUXKERNEL)
+	cp -f $(BUILD_FOLDER)/$(FOLDER_ATL1E)/atl1e.ko $(BUILD_FOLDER)/modules
+
+module_atl2:
+	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_ATL2) ] || wget $(URI_ATL2)/$(TARBALL_ATL2) -P $(3RDPARTY_FOLDER)
+	[ -d $(BUILD_FOLDER)/$(FOLDER_ATL2) ] || tar zxf $(3RDPARTY_FOLDER)/$(TARBALL_ATL2) -C $(BUILD_FOLDER)
+	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_ATL2) KSRC=../$(FOLDER_LINUXKERNEL)
+	cp -f $(BUILD_FOLDER)/$(FOLDER_ATL2)/atl2.ko $(BUILD_FOLDER)/modules
+
 module_570x:
 	[ -e $(3RDPARTY_FOLDER)/$(ARCHIVE_570X) ] || [ -e $(3RDPARTY_FOLDER)/$(TARBALL_570X) ] || wget $(URI_570X)/$(ARCHIVE_570X) -P $(3RDPARTY_FOLDER)
 	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_570X) ] || unzip -j $(3RDPARTY_FOLDER)/$(ARCHIVE_570X) \*$(TARBALL_570X) -d $(3RDPARTY_FOLDER)
@@ -115,16 +127,6 @@ module_sk98:
 	sed -i "s|\-Idrivers/net/sk98lin|-I$(FOLDER_SK98)|" $(BUILD_FOLDER)/$(FOLDER_SK98)/Makefile
 	CONFIG_SK98LIN=m $(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_SK98) KSRC=../$(FOLDER_LINUXKERNEL)
 	cp -f $(BUILD_FOLDER)/$(FOLDER_SK98)/bnx2.ko build/modules
-
-module_atl1e:
-	[ -d $(SRC_ATL1e) ] || (cd $(FOLDER_ATL1e) && tar zxf $(TARBALL_ATL1e))
-	make CC=$(CC) -C $(KSRC) SUBDIRS=$(SRC_ATL1e) modules
-	mkdir -p build/modules && cp -f $(SRC_ATL1e)/atl1e.ko build/modules
-
-module_atl2:
-	[ -d $(SRC_ATL2) ] || (cd $(FOLDER_ATL2) && tar jxf $(TARBALL_ATL2))
-	make CC=$(CC) -C $(KSRC) SUBDIRS=$(SRC_ATL2) modules
-	mkdir -p build/modules && cp -f $(SRC_ATL2)/atl2.ko build/modules
 
 clean: modules_clean
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) clean
