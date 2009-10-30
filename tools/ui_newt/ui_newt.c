@@ -1,6 +1,6 @@
 /*
  * (c) 2003-2007 Ludovic Drolez, Linbox FAS, http://linbox.com
- * (c) 2008-2009 Mandriva, http://www.mandriva.com
+ * (c) 2008-2009 Nicolas Rueff, Mandriva, http://www.mandriva.com
  *
  * $Id$
  *
@@ -409,7 +409,7 @@ char *misc_error (int argc, char **argv)
   newtCls ();
 
   // FIXME. Really needed?
-  newtDrawRootText (0, 0, "Linbox Rescue Server");
+  newtDrawRootText (0, 0, "Pulse 2 Imaging");
 
   newtOpenWindow (2, 2, 72, 20, "LBLImage v" LBLIMAGEVER);
 

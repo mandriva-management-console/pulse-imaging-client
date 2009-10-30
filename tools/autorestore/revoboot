@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # (c) 2003-2007 Linbox FAS, http://linbox.com
-# (c) 2008-2009 Mandriva, http://www.mandriva.com
+# (c) 2008-2009 Nicolas Rueff, Mandriva, http://www.mandriva.com
 #
 # $Id$
 #
@@ -48,7 +48,7 @@ do
         echo "*** $ETH: not yet configured ($SEC) ***"
         SEC=$(($SEC+1))
         if [ $SEC -gt $MAXSEC ]; then
-            whiptail --title "Fatal Error" --backtitle "Linbox Rescue Server" --menu "I cannot configure the NIC
+            whiptail --title "Fatal Error" --backtitle "Pulse 2" --menu "I cannot configure the NIC
 
 Possible causes:
 1- No DHCP server has responded
@@ -67,7 +67,7 @@ What should I do ?" 20 70 4 1 "Retry to configure the NIC via DHCP" 2 "Manualy s
                 wechow "Insert a blank MSDOS formatted floppy and press Enter"
                 floppysave
                 sleep 3
-                wechow "Now you can send the 'messages' file to support@linbox.com"
+                wechow "Now you can send the 'messages' file to customercare@support.mandriva.com"
                 ;;
             esac
             SEC=0
@@ -91,14 +91,14 @@ staticip()
     IP=192.168.0.100
     NM=255.255.255.0
     while true; do
-        whiptail --title "Static IP" --backtitle "Linbox Rescue Server" --inputbox "Please enter the IP address:" 10 70 "$IP" 2>/tmp/res
+        whiptail --title "Static IP" --backtitle "Pulse 2" --inputbox "Please enter the IP address:" 10 70 "$IP" 2>/tmp/res
         IP=`cat /tmp/res`
-        whiptail --title "Static IP" --backtitle "Linbox Rescue Server" --inputbox "Please enter the netmask:" 10 70 "$NM" 2>/tmp/res
+        whiptail --title "Static IP" --backtitle "Pulse 2" --inputbox "Please enter the netmask:" 10 70 "$NM" 2>/tmp/res
         NM=`cat /tmp/res`
         DEFGW=`echo $IP|cut -d. -f1-3`".1"
-        whiptail --title "Static IP" --backtitle "Linbox Rescue Server" --inputbox "Please enter the default gateway:" 10 70 "$DEFGW" 2>/tmp/res
+        whiptail --title "Static IP" --backtitle "Pulse 2" --inputbox "Please enter the default gateway:" 10 70 "$DEFGW" 2>/tmp/res
         GW=`cat /tmp/res`
-        whiptail --title "Static IP" --backtitle "Linbox Rescue Server" --inputbox "Please enter the LRS IP address:" 10 70 "$DEFGW" 2>/tmp/res
+        whiptail --title "Static IP" --backtitle "Pulse 2" --inputbox "Please enter the LRS IP address:" 10 70 "$DEFGW" 2>/tmp/res
         LRS=`cat /tmp/res`
         ifconfig $ETH $IP netmask $NM
         route add default gw $GW
@@ -181,7 +181,7 @@ wecho()
 {
     LINES=10
     [ `echo -e "$1" | wc -l` -gt 8 ] && LINES=20
-    whiptail --title "Info" --backtitle "Linbox Rescue Server" --infobox "$1" $LINES 70
+    whiptail --title "Info" --backtitle "Pulse 2" --infobox "$1" $LINES 70
 }
 
 # whiptail echo with wait
@@ -189,7 +189,7 @@ wechow()
 {
     LINES=10
     [ `echo -e "$1" | wc -l` -gt 8 ] && LINES=20
-    whiptail --title "Info" --backtitle "Linbox Rescue Server" --msgbox "$1" $LINES 70
+    whiptail --title "Info" --backtitle "Pulse 2" --msgbox "$1" $LINES 70
 }
 
 # print the menu
@@ -214,7 +214,7 @@ parse_menu()
         esac
     done < /tmp/menu
 
-    CMD="whiptail --title \"Boot Menu for `cat /etc/lbxname`\" --backtitle \"Linbox Rescue Server\" --menu \" \" 20 70 12 "
+    CMD="whiptail --title \"Boot Menu for `cat /etc/lbxname`\" --backtitle \"Pulse 2\" --menu \" \" 20 70 12 "
     I=1
     while [ $I -le $NUM ]
     do
@@ -237,7 +237,7 @@ do_cdrom()
         rm -f default
         /bin/atftp --tftp-timeout 1 -g -r $BASE/cfg/default -l default $SRV 69 2>/dev/null
         [ -f default -a -n "`cat default`" ] && break
-        whiptail --title "TFTP problem" --backtitle "Linbox Rescue Server" --inputbox "Possible DHCP server configuration problem. Cannot download the boot menu over TFTP. Got $SRV as the LRS server.\n\n`cat /etc/netinfo.log|grep -v time:`\n\nPlease enter the LRS IP address below:" 22 70 2>/tmp/res
+        whiptail --title "TFTP problem" --backtitle "Pulse 2" --inputbox "Possible DHCP server configuration problem. Cannot download the boot menu over TFTP. Got $SRV as the LRS server.\n\n`cat /etc/netinfo.log|grep -v time:`\n\nPlease enter the LRS IP address below:" 22 70 2>/tmp/res
         SRV=`cat /tmp/res`
         echo -e "\n\tOption_177: $SRV:/tftpboot/revoboot" >>/etc/netinfo.log
         echo -e "\nOption_177=$SRV:/tftpboot/revoboot" >>/etc/netinfo.sh
@@ -278,10 +278,10 @@ identify()
     /bin/atftp --tftp-timeout 1 -g -r $BASE/cfg/default -l default $SRV 69 2>/dev/null
     [ ! -f default -o -z "`cat default`" ] && wechow "Cannot download the boot menu over TFTP. Cannot continue." && reboot
     # enter the client name
-    whiptail --title "Client name" --backtitle "Linbox Rescue Server" --inputbox "Please enter client name:" 10 70 2>/tmp/res
+    whiptail --title "Client name" --backtitle "Pulse 2" --inputbox "Please enter client name:" 10 70 2>/tmp/res
     NAME=`cat /tmp/res|tr ' ' _`
     # enter the password
-    whiptail --title "Password" --backtitle "Linbox Rescue Server" --passwordbox "Please enter LRS password" 10 70 2>/tmp/res
+    whiptail --title "Password" --backtitle "Pulse 2" --passwordbox "Please enter LRS password" 10 70 2>/tmp/res
     PASS=`cat /tmp/res`
     # send the packet
     echo -en "\255ID$NAME:$PASS\00Mc:`cat /etc/mac`" | nc -p 1001 -w 1 $SRV 1001
@@ -327,7 +327,7 @@ SRV=$Next_server
 
 # IP check
 if [ "$SRV" = "0.0.0.0" ]; then
-    whiptail --title "DHCP problem" --backtitle "Linbox Rescue Server" --inputbox "Possible DHCP server configuration problem !\nGot $SRV as the LRS server !\n\n`cat /etc/netinfo.log`\n\nPlease enter the LRS IP address below:" 22 70 2>/tmp/res
+    whiptail --title "DHCP problem" --backtitle "Pulse 2" --inputbox "Possible DHCP server configuration problem !\nGot $SRV as the LRS server !\n\n`cat /etc/netinfo.log`\n\nPlease enter the LRS IP address below:" 22 70 2>/tmp/res
     SRV=`cat /tmp/res`
 fi
 
