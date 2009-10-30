@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
     int head, cyl, sect, status, fo, drive;
     unsigned short buffer[16];
 
-    printf("ntblfix $Rev: 3748 $. Copyright (C) 2006 Linbox FAS\n"
+    printf("ntblfix $Rev$. Copyright (C) 2006 Linbox FAS\n"
            "Vm86 library Copyright (C) 2000 Keith Packard and Juliusz Chroboczek\n");
 
     if (argc != 3) {
