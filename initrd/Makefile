@@ -23,8 +23,8 @@
 
 CC=gcc-3.4
 
-BUILD_FOLDER = build
-3RDPARTY_FOLDER = 3rd_party
+BUILD_FOLDER =  $(shell pwd)/build
+3RDPARTY_FOLDER = $(shell pwd)/3rd_party
 include consts.mk
 
 all: load
