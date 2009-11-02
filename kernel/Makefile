@@ -23,8 +23,8 @@
 
 SVNREV:=$(shell echo $Rev$ | tr -cd [[:digit:]])
 
-BUILD_FOLDER = build
-3RDPARTY_FOLDER = 3rd_party
+BUILD_FOLDER =  $(shell pwd)/build
+3RDPARTY_FOLDER =  $(shell pwd)/3rd_party
 
 include consts.mk
 
@@ -42,8 +42,8 @@ kernel:
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/pcmcia -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/lib -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 
-modules: module_e1000 module_e1000e module_igb module_r8168 module_r8169 module_r8101 module_atl1 module_atl1e module_atl2 module_nxii module_570x
-	# others disabled for now :   module_sk98
+modules: module_e1000 module_e1000e module_igb module_r8168 module_r8169 module_r8101 module_atl1 module_atl1e module_atl2 module_nxii module_570x module_sk98
+	# others disabled for now :
 
 module_e1000:
 	# If build fails comment 'get_perm_addr' ifdef in e1000_ethtool.c
@@ -124,9 +124,9 @@ module_sk98:
 	[ -e $(3RDPARTY_FOLDER)/$(ARCHIVE_SK98) ] || [ -e $(3RDPARTY_FOLDER)/$(TARBALL_SK98) ] || wget $(URI_SK98)/$(ARCHIVE_SK98) -P $(3RDPARTY_FOLDER)
 	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_SK98) ] || unzip -j $(3RDPARTY_FOLDER)/$(ARCHIVE_SK98) \*$(TARBALL_SK98) -d $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(FOLDER_SK98) ] || tar jxf $(3RDPARTY_FOLDER)/$(TARBALL_SK98) -C $(BUILD_FOLDER) && (cd $(BUILD_FOLDER)/$(FOLDER_SK98); tar jxf sk98lin.tar.bz2; cp -a common/* .; cp -a 2.6/* .)
-	sed -i "s|\-Idrivers/net/sk98lin|-I$(FOLDER_SK98)|" $(BUILD_FOLDER)/$(FOLDER_SK98)/Makefile
+	sed -i "s|\-Idrivers/net/sk98lin|-I$(BUILD_FOLDER)/$(FOLDER_SK98)|" $(BUILD_FOLDER)/$(FOLDER_SK98)/Makefile
 	CONFIG_SK98LIN=m $(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_SK98) KSRC=../$(FOLDER_LINUXKERNEL)
-	cp -f $(BUILD_FOLDER)/$(FOLDER_SK98)/bnx2.ko build/modules
+	cp -f $(BUILD_FOLDER)/$(FOLDER_SK98)/sk98lin.ko build/modules
 
 clean: modules_clean
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) clean
