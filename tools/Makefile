@@ -24,8 +24,8 @@
 CC=gcc-3.4
 SVNREV:=$(shell echo $Rev: 4505 $ | tr -cd [[:digit:]])
 
-BUILD_FOLDER = build
-3RDPARTY_FOLDER = 3rd_party
+BUILD_FOLDER = $(shell pwd)/build
+3RDPARTY_FOLDER = $(shell pwd)/3rd_party
 
 include consts.mk
 
@@ -34,7 +34,7 @@ all: image save restore ui_newt bench ntblfix
 	cp -a scripts/mount-nfs.sh 	$(BUILD_FOLDER)/bin
 
 image: zlib e2fs reiserfs
-	$(MAKE) -C revosave CC=$(CC) ZLIB_DIR=../$(BUILD_FOLDER)/$(ZLIB_FOLDER) RFS_DIR=../$(BUILD_FOLDER)/$(REISER_FOLDER) E2FS_DIR=../$(BUILD_FOLDER)/$(E2FS_FOLDER)
+	$(MAKE) -C revosave CC=$(CC) ZLIB_DIR=$(BUILD_FOLDER)/$(ZLIB_FOLDER) RFS_DIR=$(BUILD_FOLDER)/$(REISER_FOLDER) E2FS_DIR=$(BUILD_FOLDER)/$(E2FS_FOLDER)
 	cp -a revosave/image_raw 	$(BUILD_FOLDER)/revobin
 	cp -a revosave/image_swap 	$(BUILD_FOLDER)/revobin
 	cp -a revosave/image_e2fs 	$(BUILD_FOLDER)/revobin
@@ -52,7 +52,7 @@ save: image
 	cp -a autosave/floppysave 	$(BUILD_FOLDER)/bin
 
 restore: image
-	$(MAKE) -C autorestore CC=$(CC) ZLIB_DIR=../$(BUILD_FOLDER)/$(ZLIB_FOLDER) LRS_DIR=../revosave
+	$(MAKE) -C autorestore CC=$(CC) ZLIB_DIR=$(BUILD_FOLDER)/$(ZLIB_FOLDER) LRS_DIR=../revosave
 	cp -a autorestore/autorestore 		$(BUILD_FOLDER)/bin
 	cp -a autorestore/revosendlog 		$(BUILD_FOLDER)/bin
 	cp -a autorestore/revowait 		$(BUILD_FOLDER)/bin
@@ -63,7 +63,7 @@ restore: image
 	cp -a autorestore/revoboot 		$(BUILD_FOLDER)/etc/init.d
 
 bench: image
-	$(MAKE) -C bench CC=$(CC) LRS_DIR=../revosave ZLIB_DIR=../$(BUILD_FOLDER)/$(ZLIB_FOLDER)
+	$(MAKE) -C bench CC=$(CC) LRS_DIR=../revosave ZLIB_DIR=$(BUILD_FOLDER)/$(ZLIB_FOLDER)
 	cp -a bench/bench 	$(BUILD_FOLDER)/bin
 	cp -a bench/bench.ping 	$(BUILD_FOLDER)/bin
 
