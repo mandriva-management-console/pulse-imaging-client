@@ -1,0 +1,13 @@
+Manual install :
+ - install atftpd (it *must* serve files from /var/lib/tftpboot)
+ - create tree :
+   mkdir -p /var/lib/tftpboot/pulse2/cfg /var/lib/tftpboot/pulse2/kernel /var/lib/tftpboot/pulse2/background
+ - create some symlinks :
+   link /var/lib/tftpboot/pulse2/cfg/default to contrib/pxe_cfgs/default
+   link /var/lib/tftpboot/pulse2/background/mandriva.xpm to contrib/logo/mandriva.xpm
+   link /var/lib/tftpboot/pulse2/kernel/bzImage to kernel/build/bzImage
+   link /var/lib/tftpboot/pulse2/kernel/initrd.img to build/initrd.img
+   link /var/lib/tftpboot/pulse2/revoboot.pxe to bootloader/revoboot.pxe
+ - (install and) configure dhcp to serve the "filename" option as "/pulse2/revoboot.pxe", and next-server if required.
+
+You're done. Any PXE client should now be able to boot, d/l revoboot.pxe, its configuration, then crash.
