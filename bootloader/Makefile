@@ -29,7 +29,7 @@ DEFINES 	= -DNO_DECOMPRESSION -DSUPPORT_NETBOOT -DSUPPORT_DISKLESS -DFSYS_TFTP -
 HELP		= -DHELP_ON
 ARCH		= i386
 CFLAGS		= -I. -Os -Wall $(HELP) $(DEFINES) -nostdinc -falign-jumps=1 -falign-loops=1 -falign-functions=1 -march=$(ARCH) -m32
-CC		= gcc-3.4
+CC			= gcc-3.4
 
 OBJZLIB		= adler32.o inflate.o infblock.o infcodes.o inftrees.o inffast.o infutil.o zfunc.o
 CFLAGSZLIB	= -I. -DMAX_WBITS=14 -DMAX_MEM_LEVEL=7 -DMY_ZCALLOC -DNO_ERRNO_H -O9 -march=$(ARCH) -m32
@@ -40,7 +40,7 @@ all: revoboot.pxe
 	ln -sf revoboot.pxe-$(SVNREV) revoboot.pxe
 
 revoboot.pxe:	$(OBJ) $(OBJZLIB) $(OBJNET) adjust_length
-	rm revoboot.pxe
+	rm -f revoboot.pxe
 	$(CC) -o revoboot.pxe.exec -nostdlib -Wl,-N -Wl,-Ttext -Wl,7C00 $(OBJ) $(OBJZLIB) $(OBJNET) -m32
 	objcopy -O binary revoboot.pxe.exec revoboot.pxe
 	./adjust_length
