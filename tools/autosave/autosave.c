@@ -1,6 +1,6 @@
 /*
  * (c) 2003-2007 Ludovic Drolez, Linbox FAS, http://linbox.com
- * (c) 2008-2009 Mandriva, http://www.mandriva.com
+ * (c) 2008-2009 Nicolas Rueff, Mandriva, http://www.mandriva.com
  *
  * $Id$
  *
@@ -136,12 +136,16 @@ void myprintf(const char *format_str, ...)
     FILE *foerr;
 
     /* write some info */
-    foerr = fopen(logtxt, "a");
-    fprintf(foerr, "\n==== misc ====\n");
-    va_start(ap, format_str);
-    vfprintf(foerr, format_str, ap);
-    va_end(ap);
-    fclose(foerr);
+    if ((foerr = fopen(logtxt, "a"))) {
+
+        fprintf(foerr, "\n==== misc ====\n");
+        va_start(ap, format_str);
+        vfprintf(foerr, format_str, ap);
+        va_end(ap);
+        fclose(foerr);
+    } else
+        perror(logtxt);
+
 }
 
 /*
@@ -158,10 +162,12 @@ int mysystem(const char *s)
     strcat(cmd, logtxt);
 
     /* write some info */
-    foerr = fopen(logtxt, "a");
-    // ctime()
-    fprintf(foerr, "\n==== %s ====\n", s);
-    fclose(foerr);
+    if ((foerr = fopen(logtxt, "a"))) {
+        // ctime()
+        fprintf(foerr, "\n==== %s ====\n", s);
+        fclose(foerr);
+    } else perror(logtxt);
+
 #ifdef TEST
     return 0;
 #endif
@@ -198,10 +204,11 @@ int mysystem1(const char *s)
     strcat(cmd, logtxt);
 
     /* write some info */
-    foerr = fopen(logtxt, "a");
-    // ctime()
-    fprintf(foerr, "\n==== %s ====\n", s);
-    fclose(foerr);
+    if ((foerr = fopen(logtxt, "a"))) {
+        // ctime()
+        fprintf(foerr, "\n==== %s ====\n", s);
+        fclose(foerr);
+    } else perror(logtxt);
 
     return (system(cmd));
 
@@ -269,17 +276,17 @@ void save_raw(__u32 start, __u32 end, int fdin, int dnum)
     FILE *fP;
     __u32 s;
 
-    tmprintf("%s/%sTABS", revosave, dnum2pre(dnum));
-    fP = fopen(tmppath, "a");
+    if ((fP = fopen(tmprintf("%s/%sTABS", revosave, dnum2pre(dnum)), "a"))) {
 
-    myprintf("Saving partition info from : %u , to : %u\n", start, end);
-    for (s = start; s <= end; s++) {
-        lseek64(fdin, (__u64) 512 * (__off64_t) s, SEEK_SET);
-        read(fdin, buffer, 512);
-        fwrite(&s, 1, 4, fP);
-        fwrite(buffer, 1, 512, fP);
-    }
-    fclose(fP);
+        myprintf("Saving partition info from : %u , to : %u\n", start, end);
+        for (s = start; s <= end; s++) {
+            lseek64(fdin, (__u64) 512 * (__off64_t) s, SEEK_SET);
+            read(fdin, buffer, 512);
+            fwrite(&s, 1, 4, fP);
+            fwrite(buffer, 1, 512, fP);
+        }
+        fclose(fP);
+    } else perror(tmprintf("%s/%sTABS", revosave, dnum2pre(dnum)));
 }
 
 /* return the next partition */
@@ -296,8 +303,7 @@ int get_nextpart(struct part *part)
 
     if (try == 1) {
         if (fp == NULL) {
-            fp = fopen("/proc/partitions", "r");
-            if (fp == NULL) {
+            if (!(fp = fopen("/proc/partitions", "r"))) {
                 perror("/proc/partitions");
                 exit(1);
             }
@@ -396,260 +402,264 @@ int save(void)
 #endif
     }
 
-    fC = fopen( tmprintf("%s/CONF", revosave) , "a");
-    fo = fopen( tmprintf("%s/conf.tmp", revosave) , "a");
+    if ((fo = fopen( tmprintf("%s/conf.tmp", revosave) , "a"))) {
+        if ((fC = fopen( tmprintf("%s/CONF", revosave) , "a"))) {
 
-//  fprintf(fo,"# Comment next line to remove PTABS reconstruction\n");
-//  fprintf(fo,"ptabs (hd%d) (nd)PATH/%cTABS\n",dnum-128,'P'+(dnum-128));
-    fprintf(fo, "# Partcopy commands...\n");
+        //  fprintf(fo,"# Comment next line to remove PTABS reconstruction\n");
+        //  fprintf(fo,"ptabs (hd%d) (nd)PATH/%cTABS\n",dnum-128,'P'+(dnum-128));
+            fprintf(fo, "# Partcopy commands...\n");
 
-    /* will be incremented soon */
-    dnum = 127;
+            /* will be incremented soon */
+            dnum = 127;
 
-    backuped = 0;
-    /* iterate on each partition found */
-    while (get_nextpart(&part)) {
-        dontsave = 0;
-        isldm = 0;
-        magic = -1;
+            backuped = 0;
+            /* iterate on each partition found */
+            while (get_nextpart(&part)) {
+                dontsave = 0;
+                isldm = 0;
+                magic = -1;
 
-        major = part.major;
-        minor = part.minor;
+                major = part.major;
+                minor = part.minor;
 
-        /* find the major device , REALLY NEEDED ??? */
-        /* /dev/hd[a-h]* and /dev/sd[a-z]* supported */
-        /* compaq /dev/ida/c[01234567]d0->d15 supported */
-        /* compaq /dev/cciss/c[01234567]d0->d15 supported */
-        /* mylex unsupported */
-        if ((((major == 3) || (major == 22) || (major == 33)
-              || (major == 34)) && !(minor & 0x3F)) ||
-            (((major == 8) || (major == 65) || (major >= 72 && major <= 79)
-              || (major >= 104 && major <= 111))
-             && !(minor & 0xF))) {
-            dontsave = 1;
-        }
-        /* increment the number of parsed lines */
-        backuped++;
-        /* get part extents */
-        sprintf(device, "/dev/%s", part.device);
-
-        /* LVM volumes are saved with a name which begins by 'a' */
-        if (major == 254) {
-            dnum = 0x1000 + minor;
-            isdm = 1;
-        } else {
-            isdm = 0;
-        }
-        /* LVM ? Ignore LVM volumes unless it cannot be backuped by image_lvmreiserfs */
-        if (isdm && !should_backup_lvm)
-            continue;
-
-        fi = open(device, O_RDONLY | O_LARGEFILE);
-
-        if (fi == -1) {
-            myprintf("ERROR: failed to open %s\n", device);
-            continue;
-        }
-
-        if (ioctl(fi, HDIO_GETGEO, &geo) && !isdm) {
-            perror(device);
-            continue;
-        } else {
-            s = 0;
-            ioctl(fi, BLKGETSIZE, &s);  /* get size in sectors (at least in 2.5.x) */
-            if (isdm) {
-                poff[0] = 0;
-                geo.start = 0;
-            } else {
-                poff[0] = minor & 0xF;  /* fixme: does not work for IDE */
-            }
-            tmin[0] = geo.start;
-            tmax[0] = geo.start + s - 1;
-            ttype[0] = -1;
-
-            DEBUG(printf("%s: %ld l:%d\n", part.device, geo.start, s));
-            if (geo.start == 0 && !isdm) {
-                DEBUG(printf("major !\n"));
-                strcpy(majorn, device);
-                dontsave = 1;
-            } else if (!isdm) {
-                /* try now to get part type with sfdisk */
-                sprintf(command, "/sbin/sfdisk --id %s %d", majorn,
-                        poff[0]);
-                foerr = popen(command, "r");
-                /* get the last hexadecimal number found */
-                while (!feof(foerr)) {
-                    fscanf(foerr, "%x", &ttype[0]);
-                    fgetc(foerr);
+                /* find the major device , REALLY NEEDED ??? */
+                /* /dev/hd[a-h]* and /dev/sd[a-z]* supported */
+                /* compaq /dev/ida/c[01234567]d0->d15 supported */
+                /* compaq /dev/cciss/c[01234567]d0->d15 supported */
+                /* mylex unsupported */
+                if ((((major == 3) || (major == 22) || (major == 33)
+                      || (major == 34)) && !(minor & 0x3F)) ||
+                    (((major == 8) || (major == 65) || (major >= 72 && major <= 79)
+                      || (major >= 104 && major <= 111))
+                     && !(minor & 0xF))) {
+                    dontsave = 1;
                 }
-                pclose(foerr);
+                /* increment the number of parsed lines */
+                backuped++;
+                /* get part extents */
+                sprintf(device, "/dev/%s", part.device);
+
+                /* LVM volumes are saved with a name which begins by 'a' */
+                if (major == 254) {
+                    dnum = 0x1000 + minor;
+                    isdm = 1;
+                } else {
+                    isdm = 0;
+                }
+                /* LVM ? Ignore LVM volumes unless it cannot be backuped by image_lvmreiserfs */
+                if (isdm && !should_backup_lvm)
+                    continue;
+
+                fi = open(device, O_RDONLY | O_LARGEFILE);
+
+                if (fi == -1) {
+                    myprintf("ERROR: failed to open %s\n", device);
+                    continue;
+                }
+
+                if (ioctl(fi, HDIO_GETGEO, &geo) && !isdm) {
+                    perror(device);
+                    continue;
+                } else {
+                    s = 0;
+                    ioctl(fi, BLKGETSIZE, &s);  /* get size in sectors (at least in 2.5.x) */
+                    if (isdm) {
+                        poff[0] = 0;
+                        geo.start = 0;
+                    } else {
+                        poff[0] = minor & 0xF;  /* fixme: does not work for IDE */
+                    }
+                    tmin[0] = geo.start;
+                    tmax[0] = geo.start + s - 1;
+                    ttype[0] = -1;
+
+                    DEBUG(printf("%s: %ld l:%d\n", part.device, geo.start, s));
+                    if (geo.start == 0 && !isdm) {
+                        DEBUG(printf("major !\n"));
+                        strcpy(majorn, device);
+                        dontsave = 1;
+                    } else if (!isdm) {
+                        /* try now to get part type with sfdisk */
+                        sprintf(command, "/sbin/sfdisk --id %s %d", majorn,
+                                poff[0]);
+                        foerr = popen(command, "r");
+                        /* get the last hexadecimal number found */
+                        while (!feof(foerr)) {
+                            fscanf(foerr, "%x", &ttype[0]);
+                            fgetc(foerr);
+                        }
+                        pclose(foerr);
+                    }
+                }
+                close(fi);
+
+                /* new start of disk */
+                if (dontsave) {
+                    FILE *fsize;
+
+                    dnum = gethdbios(s);
+                    DEBUG(printf("BIOSNUM %d\n", dnum));
+                    /* open the whole major device to save partitions later */
+                    if (fmajor)
+                        close(fmajor);
+                    fmajor = open(device, O_RDONLY | O_LARGEFILE);
+
+                    /* save recovery info for CDs */
+                    fprintf(fC, "D:%d L:%u\n", dnum, s);
+                    fprintf(fC, "R\n");
+
+                    /* save disk size for later */
+                    if ((fsize = fopen( tmprintf("%s/size%02x%02x.txt", revosave, major, minor) , "w"))) {
+                        fprintf(fsize, "%u", s / 2);
+                        fclose(fsize);
+                    } else perror(tmprintf("%s/size%02x%02x.txt", revosave, major, minor));
+
+                    /* save recovery info for grub */
+                    fprintf(fo,
+                            "# Comment next line to remove PTABS reconstruction\n");
+                    fprintf(fo, "ptabs (hd%d) (nd)PATH/%sTABS\n", dnum - 128,
+                            dnum2pre(dnum));
+
+                    /* check for LDM */
+                    isldm = ldm_check(fmajor, &ph);
+                    if (isldm) {
+                        /* save LDM database sectors */
+                        save_raw(ph.config_start,
+                                 ph.config_start + ph.config_size - 1, fmajor,
+                                 dnum);
+                        ttype[0] = 0x42;
+                    }
+                }
+
+                /* save partition info */
+                /* where to start and to stop: */
+                if (poff[0] >= 5) {
+                    /* maybe an extended dos partition so backup 63 sectors before */
+                    if (geo.start <= 63)
+                        pi_start = 0;
+                    else
+                        pi_start = geo.start - 63;
+                } else {
+                    pi_start = geo.start;
+                }
+                pi_end = geo.start + 62;
+                if (!isdm)
+                    save_raw(pi_start, pi_end, fmajor, dnum);
+
+                if (s <= 63) {
+                    dontsave = 1;
+                }
+
+                /* extended partition ? */
+                if ((ttype[0] == 0x05) || (ttype[0] == 0x85) || (ttype[0] == 0x0f)
+                    || (ttype[0] == 0xA5)) {
+                    DEBUG(printf("extended !\n"));
+                    /* it's an extended partition, don't show an error */
+                    /* from left to right: dos, linux, win98 extended, freebsd */
+                    dontsave = 1;
+                }
+
+                if (dontsave || isexcluded(dnum - 128, poff[i])) {
+                    if (!dontsave) {
+                        myprintf("excluded %d %d\n", dnum - 128, poff[i]);
+                    }
+                    continue;
+                }
+
+                i = 0;
+                prefix = dnum2pre(dnum);
+                myprintf("%s%-2d, S:%u , E:%u , t:%d\n", dnum2pre(dnum),
+                        poff[i], tmin[i], tmax[i], ttype[i]);
+                fprintf(fC, "%c%-2d, S:%u , E:%u , t:%d\n", 'P',
+                        poff[i], tmin[i], tmax[i], ttype[i]);
+                fflush(fC);
+
+                fprintf(fo, " # (hd%d,%d) %u %u %d\n", (dnum - 128),
+                        poff[i] - 1, tmin[i], tmax[i], ttype[i]);
+
+                if (isdm) {
+                    fprintf(fo, " partcopy (hd%d,%d) %u PATH/%s %s\n",
+                            (dnum - 128), poff[i] - 1, tmin[i], dnum2pre(dnum),
+                            part.device);
+                    snprintf(destfile, 63, "%s/%s", revosave, dnum2pre(dnum));
+                } else {
+                    fprintf(fo, " partcopy (hd%d,%d) %u PATH/%s%d\n",
+                            (dnum - 128), poff[i] - 1, tmin[i], dnum2pre(dnum),
+                            poff[i]);
+                    snprintf(destfile, 63, "%s/%s%d", revosave, dnum2pre(dnum),
+                             poff[i]);
+                }
+                fflush(fo);
+
+                /* raw ? */
+                if (revoraw) {
+                    tmprintf("%s/image_raw %s ?", revobin, device);
+                    if (mysystem(tmppath) == 0) {
+                        tmprintf("%s/image_raw %s %s", revobin, device, destfile);
+                        mysystem(tmppath);
+                        continue;
+                    }
+                }
+
+                /* all FS */
+                idx = 0;
+                fs = fslist[idx];
+                do {
+                    tmprintf("%s/image_%s %s ?", revobin, fs, device);
+                    if (mysystem(tmppath) == 0) {
+                        tmprintf("%s/image_%s %s %s", revobin, fs, device, destfile);
+                        mysystem(tmppath);
+                        break;
+                    }
+                    fs = fslist[++idx];
+                } while (fs);
+                if (fs)
+                    continue;
+
+                /* LVM */
+                if (ttype[i] == 0x8e) {
+                    tmprintf("%s/image_lvm %s ?", revobin, device);
+                    if (mysystem(tmppath) == 0) {
+                        tmprintf("%s/image_lvm %s %s", revobin, device, destfile);
+                        mysystem(tmppath);
+                        should_backup_lvm = 1;
+                        continue;
+                    }
+                }
+
+                if (ttype[i] == 0x12 || ttype[i] == 0xee || ttype[i] == 0xef) {
+                    /* Save as raw: compaq diag, EFI partitions */
+                    tmprintf("%s/image_raw %s ?", revobin, device);
+                    if (mysystem(tmppath) == 0) {
+                        tmprintf("%s/image_raw %s %s", revobin, device, destfile);
+                        mysystem(tmppath);
+                        continue;
+                    }
+                }
+
+                if ((foerr = fopen(logtxt, "a"))) {
+                    fprintf(foerr,
+                            "\n\nERROR: Unsupported or corrupted FS...(disk %d, part %d, type %x)\n",
+                            dnum, poff[i], ttype[i]);
+                    fprintf(fo,
+                            "# ERROR: Unsupported or corrupted FS...(disk %d, part %d, type %x)\n",
+                            dnum, poff[i], ttype[i]);
+                    fclose(foerr);
+                } else perror(logtxt);
+
+                fatal();
+                /* Show a nice error message */
+                sprintf(command, "Unsupported or corrupted file system...\n\n(disk %d, part %d, type %x)",
+                        dnum, poff[i], ttype[i]);
+                ui_send("misc_error", 2, "Backup error", command);
+
             }
-        }
-        close(fi);
 
-        /* new start of disk */
-        if (dontsave) {
-            FILE *fsize;
-
-            dnum = gethdbios(s);
-            DEBUG(printf("BIOSNUM %d\n", dnum));
-            /* open the whole major device to save partitions later */
-            if (fmajor)
-                close(fmajor);
-            fmajor = open(device, O_RDONLY | O_LARGEFILE);
-
-            /* save recovery info for CDs */
-            fprintf(fC, "D:%d L:%u\n", dnum, s);
-            fprintf(fC, "R\n");
-
-            /* save disk size for later */
-            fsize = fopen( tmprintf("%s/size%02x%02x.txt", revosave, major, minor) , "w");
-            fprintf(fsize, "%u", s / 2);
-            fclose(fsize);
-
-            /* save recovery info for grub */
-            fprintf(fo,
-                    "# Comment next line to remove PTABS reconstruction\n");
-            fprintf(fo, "ptabs (hd%d) (nd)PATH/%sTABS\n", dnum - 128,
-                    dnum2pre(dnum));
-
-            /* check for LDM */
-            isldm = ldm_check(fmajor, &ph);
-            if (isldm) {
-                /* save LDM database sectors */
-                save_raw(ph.config_start,
-                         ph.config_start + ph.config_size - 1, fmajor,
-                         dnum);
-                ttype[0] = 0x42;
-            }
-        }
-
-        /* save partition info */
-        /* where to start and to stop: */
-        if (poff[0] >= 5) {
-            /* maybe an extended dos partition so backup 63 sectors before */
-            if (geo.start <= 63)
-                pi_start = 0;
-            else
-                pi_start = geo.start - 63;
-        } else {
-            pi_start = geo.start;
-        }
-        pi_end = geo.start + 62;
-        if (!isdm)
-            save_raw(pi_start, pi_end, fmajor, dnum);
-
-        if (s <= 63) {
-            dontsave = 1;
-        }
-
-        /* extended partition ? */
-        if ((ttype[0] == 0x05) || (ttype[0] == 0x85) || (ttype[0] == 0x0f)
-            || (ttype[0] == 0xA5)) {
-            DEBUG(printf("extended !\n"));
-            /* it's an extended partition, don't show an error */
-            /* from left to right: dos, linux, win98 extended, freebsd */
-            dontsave = 1;
-        }
-
-        if (dontsave || isexcluded(dnum - 128, poff[i])) {
-            if (!dontsave) {
-                myprintf("excluded %d %d\n", dnum - 128, poff[i]);
-            }
-            continue;
-        }
-
-        i = 0;
-        prefix = dnum2pre(dnum);
-        myprintf("%s%-2d, S:%u , E:%u , t:%d\n", dnum2pre(dnum),
-                poff[i], tmin[i], tmax[i], ttype[i]);
-        fprintf(fC, "%c%-2d, S:%u , E:%u , t:%d\n", 'P',
-                poff[i], tmin[i], tmax[i], ttype[i]);
-        fflush(fC);
-
-        fprintf(fo, " # (hd%d,%d) %u %u %d\n", (dnum - 128),
-                poff[i] - 1, tmin[i], tmax[i], ttype[i]);
-
-        if (isdm) {
-            fprintf(fo, " partcopy (hd%d,%d) %u PATH/%s %s\n",
-                    (dnum - 128), poff[i] - 1, tmin[i], dnum2pre(dnum),
-                    part.device);
-            snprintf(destfile, 63, "%s/%s", revosave, dnum2pre(dnum));
-        } else {
-            fprintf(fo, " partcopy (hd%d,%d) %u PATH/%s%d\n",
-                    (dnum - 128), poff[i] - 1, tmin[i], dnum2pre(dnum),
-                    poff[i]);
-            snprintf(destfile, 63, "%s/%s%d", revosave, dnum2pre(dnum),
-                     poff[i]);
-        }
-        fflush(fo);
-
-        /* raw ? */
-        if (revoraw) {
-            tmprintf("%s/image_raw %s ?", revobin, device);
-            if (mysystem(tmppath) == 0) {
-                tmprintf("%s/image_raw %s %s", revobin, device, destfile);
-                mysystem(tmppath);
-                continue;
-            }
-        }
-
-        /* all FS */
-        idx = 0;
-        fs = fslist[idx];
-        do {
-            tmprintf("%s/image_%s %s ?", revobin, fs, device);
-            if (mysystem(tmppath) == 0) {
-                tmprintf("%s/image_%s %s %s", revobin, fs, device, destfile);
-                mysystem(tmppath);
-                break;
-            }
-            fs = fslist[++idx];
-        } while (fs);
-        if (fs)
-            continue;
-
-        /* LVM */
-        if (ttype[i] == 0x8e) {
-            tmprintf("%s/image_lvm %s ?", revobin, device);
-            if (mysystem(tmppath) == 0) {
-                tmprintf("%s/image_lvm %s %s", revobin, device, destfile);
-                mysystem(tmppath);
-                should_backup_lvm = 1;
-                continue;
-            }
-        }
-
-        if (ttype[i] == 0x12 || ttype[i] == 0xee || ttype[i] == 0xef) {
-            /* Save as raw: compaq diag, EFI partitions */
-            tmprintf("%s/image_raw %s ?", revobin, device);
-            if (mysystem(tmppath) == 0) {
-                tmprintf("%s/image_raw %s %s", revobin, device, destfile);
-                mysystem(tmppath);
-                continue;
-            }
-        }
-
-        foerr = fopen(logtxt, "a");
-        fprintf(foerr,
-                "\n\nERROR: Unsupported or corrupted FS...(disk %d, part %d, type %x)\n",
-                dnum, poff[i], ttype[i]);
-        fprintf(fo,
-                "# ERROR: Unsupported or corrupted FS...(disk %d, part %d, type %x)\n",
-                dnum, poff[i], ttype[i]);
-        fclose(foerr);
-
-        fatal();
-        /* Show a nice error message */
-        sprintf(command, "Unsupported or corrupted file system...\n\n(disk %d, part %d, type %x)",
-                dnum, poff[i], ttype[i]);
-        ui_send("misc_error", 2, "Backup error", command);
-
-    }
-
-    fprintf(fC, "E\n");
-    fclose(fC);
-    fclose(fo);
+            fprintf(fC, "E\n");
+            fclose(fC);
+        } else perror(tmprintf("%s/CONF", revosave));
+        fclose(fo);
+    } else perror(tmprintf("%s/conf.tmp", revosave));
 
     if (backuped == 0) {
         /* nothing backuped !!! */
@@ -669,9 +679,7 @@ unsigned char *find(const char *str, const char *fname)
 {
     FILE *f;
 
-    f = fopen(fname, "r");
-    if (f == NULL)
-        return NULL;
+    if (!(f = fopen(fname, "r"))) return NULL;
     while (fgets(buf, 80, f)) {
         if (strstr(buf, str)) {
             fclose(f);
@@ -690,8 +698,7 @@ void gethost(void)
     FILE *f;
 
     hostname[0] = 0;
-    f = fopen( tmprintf("%s/hostname", revoinfo), "r");
-    if (f == NULL)
+    if (!(f = fopen( tmprintf("%s/hostname", revoinfo), "r")))
         return;
     fscanf(f, "%31s", hostname);
     fclose(f);
@@ -723,21 +730,24 @@ void saveimage(void)
        printf("%02.2x",iface.ifr_hwaddr.sa_data[count] & 0xff );
        printf("\n"); */
 
-    fo = fopen( tmprintf("%s/conf.tmp", revosave), "w");
-    fprintf(fo, "title Image %s\n", hostname);
-    fprintf(fo, "desc (%s)\n", date);
-    fclose(fo);
+    if ((fo = fopen( tmprintf("%s/conf.tmp", revosave), "w"))) {
+        fprintf(fo, "title Image %s\n", hostname);
+        fprintf(fo, "desc (%s)\n", date);
+        fclose(fo);
+    } else perror(tmprintf("%s/conf.tmp", revosave));
 
     save();
 
-    fo = fopen( tmprintf("%s/conf.tmp", revosave), "a");
-    if (boot >= 0) {
-        fprintf(fo, "# Boot on 1st disk %d\n", boot);
-        fprintf(fo, " root (hd0)\n");
-        fprintf(fo, " chainloader +1\n");
-    }
-    fprintf(fo, "\n");
-    fclose(fo);
+    if ((fo = fopen( tmprintf("%s/conf.tmp", revosave), "a"))) {
+        if (boot >= 0) {
+            fprintf(fo, "# Boot on 1st disk %d\n", boot);
+            fprintf(fo, " root (hd0)\n");
+            fprintf(fo, " chainloader +1\n");
+        }
+        fprintf(fo, "\n");
+        fclose(fo);
+    } else perror(tmprintf("%s/conf.tmp", revosave));
+
     system(tmprintf("mv -f %s/conf.tmp %s/conf.txt", revosave, revosave));
 }
 
@@ -753,8 +763,7 @@ void loadhdmap(void)
     for (i = 0; i < 256; i++)
         hdmap[i] = 0xFFFFFFFF;
 
-    f = fopen(tmprintf("%s/hdmap", revoinfo), "r");
-    if (f == NULL)
+    if (!(f = fopen(tmprintf("%s/hdmap", revoinfo), "r")))
         return;
 
     has_hdmap = 1;
@@ -780,9 +789,7 @@ void loadexcludemap(void)
     for (i = 0; i < 256; i++)
         exclude[i] = 0x0;
 
-    f = fopen(tmprintf("%s/exclude", revoinfo), "r");
-    if (f == NULL)
-        return;
+    if (!(f = fopen(tmprintf("%s/exclude", revoinfo), "r"))) return;
 
     while (!feof(f)) {
         if (fscanf(f, "%d:%d\n", &d, &n) == 2) {
