@@ -264,7 +264,9 @@ drive_info (unsigned char *buffer)
   unsigned char disk[] = "(hdX)";
   unsigned char bnum = *(unsigned char *)0x0475;
 
+#ifndef QUIET
   grub_printf("BIOS drives number: %d\n", bnum);
+#endif
   if (bnum == 0 || bnum > 32) bnum = 8;         /* for buggy bios */
   for (i = '0'; i <= '0'+bnum-1; i++)
     {
@@ -285,8 +287,9 @@ drive_info (unsigned char *buffer)
 
       grub_sprintf (buffer, "D:%s:CHS(%d,%d,%d)=%d\n", disk, geom.cylinders,
                     geom.heads, geom.sectors, geom.total_sectors);
+#ifndef QUIET
       grub_printf ("%s: %d MB\n", disk, geom.total_sectors / 2048);
-
+#endif
       while (*buffer)
         buffer++;
 
@@ -304,8 +307,10 @@ drive_info (unsigned char *buffer)
             {
               grub_sprintf (buffer, "P:%d,t:%x,s:%d,l:%d\n",
                             (partition >> 16), type, start, len);
+#ifndef QUIET
               grub_printf (" P:%d,t:%x,s:%d,l:%d\n", (partition >> 16), type,
                            start, len);
+#endif
               while (*buffer)
                 buffer++;
             }
@@ -383,7 +388,7 @@ partcopy_func (char *arg, int flags)
       //return 1;
     }
 
-#if 0
+#if DEBUG
   grub_printf ("GEO : %d, %d, %d, %d E: %d DR: %d err=%d\n",
                buf_geom.total_sectors, buf_geom.cylinders, buf_geom.heads,
                buf_geom.sectors, entry, current_drive, 0);
@@ -737,7 +742,7 @@ restart:
                               grub_printf
                                 ("\n!!! Disk Write Error (%d) sector %d, drive %d\nPress a key\n",
                                  ret, sect, current_drive);
-#if 0
+#if DEBUG
                               grub_printf ("GEO : %d, %d, %d, %d E: %d DR: %d err=%d\n",
                                            buf_geom.total_sectors, buf_geom.cylinders, buf_geom.heads,
                                            buf_geom.sectors, 0, current_drive, 0);
@@ -1388,5 +1393,12 @@ kbdfr_func (char *arg, int flags)
   *ptr++=0;
   *ptr++=0;
 
+  return 0;
+}
+
+/* do nothing */
+int
+nop_func (char *arg, int flags)
+{
   return 0;
 }

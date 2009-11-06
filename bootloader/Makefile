@@ -25,6 +25,8 @@ SVNREV:=$(shell echo $Rev: 4491 $ | tr -cd [[:digit:]])
 
 OBJ 		= asm.o bios.o boot.o pci.o char_io.o builtins.o common.o stage2.o cmdline.o disk_io.o graphics.o console.o fsys_fat.o fsys_ext2fs.o builtins_pulse2.o
 OBJNET		= pxe.o udp.o
+# add -DDEBUG to add debug strings
+# remove -DQUIET to recover the original Grub behavior
 DEFINES 	= -DNO_DECOMPRESSION -DSUPPORT_NETBOOT -DSUPPORT_DISKLESS -DFSYS_TFTP -DFSYS_EXT2FS -DFSYS_FAT -DNO_INT13_FALLBACK -DSUPPORT_GRAPHICS=1
 HELP		= -DHELP_ON
 ARCH		= i386

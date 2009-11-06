@@ -2428,6 +2428,7 @@ struct builtin *builtin_table[] = {
   &builtin_mbr,
   &builtin_module,
   &builtin_modulenounzip,
+  &builtin_nop,
   &builtin_nosecurity,
   &builtin_partcopy,
   &builtin_partnew,

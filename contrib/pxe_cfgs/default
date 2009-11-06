@@ -6,18 +6,16 @@ default 2
 
 splashimage=(nd)/pulse2/background/mandriva.xpm
 
-title Hard Disk
-desc Boot on local hard drive
+title Continue Normal Startup
+desc Start as usual
 root (hd0)
 chainloader +1
 
-title Add as Pulse 2 Client
+title  -- Pulse 2 Boot Services --
+desc woot
+nop
+
+title ¯ Add as Pulse 2 Client
 desc Record this computer in Pulse 2 Server
 identify
 reboot
-
-title Diskless
-desc Boot under a diskless environnement
-kernel (nd)/pulse2/kernel/bzImage revodebug  
-initrd (nd)/pulse2/kernel/initrd.img
-
