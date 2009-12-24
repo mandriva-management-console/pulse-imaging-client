@@ -35,15 +35,14 @@ kernel:
 	[ -d $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) ] || tar jxf $(3RDPARTY_FOLDER)/$(TARBALL_LINUXKERNEL) -C $(BUILD_FOLDER)
 	[ -f $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/.config ] || cp -a $(CONFIGS_LINUXKERNEL)/dot-config-$(VERSION_LINUXKERNEL) $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/.config && $(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) ARCH=$(ARCHITECTURE) silentoldconfig
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) ARCH=$(ARCHITECTURE) all
-	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/arch/i386/boot/bzImage $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV)
+	cp -aL $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/arch/i386/boot/bzImage $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV)
 	/usr/sbin/rdev $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) /dev/ram0
 	ln -sf bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) $(BUILD_FOLDER)/bzImage
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/net -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/pcmcia -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/lib -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 
-modules: module_e1000 module_e1000e module_igb module_r8168 module_r8169 module_r8101 module_atl1 module_atl1e module_atl2 module_nxii module_570x module_sk98
-	# others disabled for now :
+modules: module_e1000 module_e1000e module_igb module_r8168 module_r8169 module_r8101 module_atl2 module_nxii module_sk98 module_570x
 
 module_e1000:
 	# If build fails comment 'get_perm_addr' ifdef in e1000_ethtool.c
@@ -55,14 +54,12 @@ module_e1000:
 module_e1000e:
 	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_E1000e) ] || wget $(URI_E1000e)/$(TARBALL_E1000e) -P $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(FOLDER_E1000e) ] || tar zxf $(3RDPARTY_FOLDER)/$(TARBALL_E1000e) -C $(BUILD_FOLDER)
-	-patch -N -p1 -d $(BUILD_FOLDER)/$(FOLDER_E1000e) < $(3RDPARTY_FOLDER)/e1000e-$(VERSION_E1000e)-patch_for_2.6.23_kernel.diff
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_E1000e) KSRC=../$(FOLDER_LINUXKERNEL)
 	cp -f $(BUILD_FOLDER)/$(FOLDER_E1000e)/e1000e.ko $(BUILD_FOLDER)/modules
 
 module_igb:
 	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_IGB) ] || wget $(URI_IGB)/$(TARBALL_IGB) -P $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(FOLDER_IGB) ] || tar zxf $(3RDPARTY_FOLDER)/$(TARBALL_IGB) -C $(BUILD_FOLDER)
-	-patch -N -p1 -d $(BUILD_FOLDER)/$(FOLDER_IGB) < $(3RDPARTY_FOLDER)/igb-$(VERSION_IGB)-patch_for_2.6.23_kernel.diff
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_IGB) KSRC=../$(FOLDER_LINUXKERNEL)
 	cp -f $(BUILD_FOLDER)/$(FOLDER_IGB)/igb.ko $(BUILD_FOLDER)/modules
 
@@ -83,18 +80,6 @@ module_r8101:
 	[ -d $(BUILD_FOLDER)/$(FOLDER_R8101) ] || tar jxf $(3RDPARTY_FOLDER)/$(TARBALL_R8101) -C $(BUILD_FOLDER)
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_R8101) KSRC=../$(FOLDER_LINUXKERNEL)
 	cp -f $(BUILD_FOLDER)/$(FOLDER_R8101)/r8101.ko $(BUILD_FOLDER)/modules
-
-module_atl1:
-	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_ATL1) ] || wget $(URI_ATL1)/$(TARBALL_ATL1) -P $(3RDPARTY_FOLDER)
-	[ -d $(BUILD_FOLDER)/$(FOLDER_ATL1) ] || tar zxf $(3RDPARTY_FOLDER)/$(TARBALL_ATL1) -C $(BUILD_FOLDER)
-	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_ATL1) KSRC=../$(FOLDER_LINUXKERNEL)
-	cp -f $(BUILD_FOLDER)/$(FOLDER_ATL1)/atl1.ko $(BUILD_FOLDER)/modules
-
-module_atl1e:
-	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_ATL1E) ] || wget $(URI_ATL1E)/$(TARBALL_ATL1E) -P $(3RDPARTY_FOLDER)
-	[ -d $(BUILD_FOLDER)/$(FOLDER_ATL1E) ] || tar jf $(3RDPARTY_FOLDER)/$(TARBALL_ATL1E) -C $(BUILD_FOLDER)
-	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_ATL1E) KSRC=../$(FOLDER_LINUXKERNEL)
-	cp -f $(BUILD_FOLDER)/$(FOLDER_ATL1E)/atl1e.ko $(BUILD_FOLDER)/modules
 
 module_atl2:
 	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_ATL2) ] || wget $(URI_ATL2)/$(TARBALL_ATL2) -P $(3RDPARTY_FOLDER)
