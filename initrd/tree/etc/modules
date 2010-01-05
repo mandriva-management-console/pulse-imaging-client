@@ -1,43 +1,189 @@
 # /etc/modules: kernel modules to load at boot time.
 
+
 pcmcia_core
 rsrc_nonstatic
 yenta_socket
-mii
-libcrc32c
-zlib_inflate
 
-e100
-8139too
+# needed by atl1, b44, e100, eepro100, epic100, fealnx, hamachi, ipg, pcnet32, r6040, sfc, sis190, sis900, starfire, sundance, via-rhine, winbond-840
+mii
+
+# 3Com 3c59x/3c9xx ethernet driver
 3c59x
+
+# Marvell/SysKonnect
+# --> Yukon Ethernet Network Driver
 sk98lin
+# --> Gigabit Ethernet driver
 skge
+# --> Yukon 2 Gigabit Ethernet driver
 sky2
+
+# VIA 
+# needed by via-velocity
+crc-ccitt
+# --> Rhine PCI Fast Ethernet driver
 via-rhine
+# --> Networking Velocity Family Gigabit Ethernet Adapter Driver
+via-velocity
+
+# Intel
+# --> PRO/100 Network Driver
+e100
+# --> i82557/i82558/i82559 PCI EtherExpressPro driver
+eepro100
+# --> PRO/1000 Network Driver
 e1000
 e1000e
+# --> Gigabit Ethernet Network Driver
 igb
+# --> 10 Gigabit PCI Express Network Driver
+ixgbe
+# --> PRO/10GbE Network Driver
+ixgb
+
+# Davicom DM910X fast ethernet driver
 dmfe
+
+# needed by ne2k-pci
 8390
+# PCI NE2000 clone driver
 ne2k-pci
+
+# PCnet32 and PCnetPCI based ethercards
 pcnet32
-b44
-sis900
+
+# AceNIC/3C985/GA620 Gigabit Ethernet driver
+acenic
+
+# National Semiconductor
+# --> DP8381x series PCI Ethernet driver
 natsemi
+# --> DP83820 10/100/1000 driver
+ns83820
+
+# Sundance Alta Ethernet driver
 sundance
+
+# Digital
+# --> 21*4* Tulip ethernet driver
 tulip
+# --> ???
 de4x5
+# --> 21040/1 series PCI Ethernet driver
+de2104x
+
+# Broadcom
+# needed by b44
+ssb
+# needed by bnx2, bnx2x
+zlib_inflate
+# needed by bnx2x
+libcrc32c
+# --> 44xx/47xx 10/100 PCI ethernet driver
+b44
+# --> NetXtreme II BCM5706/5708/5709/5716 Driver
 bnx2
+# --> NetXtreme II BCM57710 Driver
+bnx2x
+# --> Tigon3 ethernet driver
 tg3
+
+# Reverse Engineered nForce ethernet driver
 forcedeth
-r8169
-r8168
+
+# RealTek
+# --> RTL-8139 Fast Ethernet driver
+8139too
+# --> RTL-8139C+ series 10/100 PCI Ethernet driver (not loaded anymore, deprecated by 8139too)
+# 8139cp
+# --> RTL-8101 Fast Ethernet driver
 r8101
+# RTL-8169 Gigabit Ethernet driver
+r8169
+# RTL-8168 Gigabit Ethernet driver
+r8168
+
+# TI ThunderLAN based ethernet PCI adapters
 tlan
+
+# SMC 83c170 EPIC series Ethernet driver
 epic100
+
+# SiS
+# --> 900 PCI Fast Ethernet driver
+sis900
+# --> sis190 Gigabit Ethernet driver
 sis190
+
+# ULi M5261/M5263 fast ethernet driver
 uli526x
+
+# Atheros
+# --> L1 Gigabit Ethernet Driver
 atl1
+# --> 1000M Ethernet Network Driver
 atl1e
+# --> Fast Ethernet Network Driver
 atl2
 
+# Chelsio
+# --> T3 Network Driver
+cxgb3
+# --> Chelsio 10Gb Ethernet Driver
+cxgb
+
+# D-Link DL2000-based Gigabit Ethernet Adapter
+dl2k
+
+# Myson MTD-8xx 100/10M Ethernet PCI Adapter Driver
+fealnx
+
+# Packet Engines 'Hamachi' GNIC-II Gigabit Ethernet driver
+hamachi
+
+# HP CASCADE Architecture Driver for 100VG-AnyLan Network Adapters
+hp100
+
+# IC Plus IP1000 Gigabit Ethernet Adapter Linux Driver
+ipg
+
+# Myricom 10G driver (10GbE)
+myri10ge
+
+# NetXen Multi port (1/10) Gigabit Network Driver
+netxen_nic
+
+# NIU ethernet driver
+niu
+
+# QLogic ISP3XXX Network Driver v2.03.00-k5
+qla3xxx
+
+# RDC R6040 NAPI PCI FastEthernet driver
+r6040
+
+# Silan SC92031 PCI Fast Ethernet Adapter driver
+sc92031
+
+# Solarflare Communications network driver
+# needed by sfc
+i2c-core
+# needed by sfc
+i2c-algo-bit
+sfc
+
+# Adaptec Starfire Ethernet driver
+starfire
+
+# Tehuti Networks(R) Network Driver
+tehuti
+
+# Winbond W89c840 Ethernet driver
+winbond-840
+
+# Packet Engines Yellowfin G-NIC Gigabit Ethernet driver
+yellowfin
+
+dummy
+s2io
