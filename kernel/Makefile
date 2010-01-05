@@ -31,24 +31,39 @@ include consts.mk
 all: kernel modules
 
 kernel:
+	# preparation
 	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_LINUXKERNEL) ] || wget $(URI_LINUXKERNEL)/$(TARBALL_LINUXKERNEL) -P $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) ] || tar jxf $(3RDPARTY_FOLDER)/$(TARBALL_LINUXKERNEL) -C $(BUILD_FOLDER)
 	[ -f $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/.config ] || cp -a $(CONFIGS_LINUXKERNEL)/dot-config-$(VERSION_LINUXKERNEL) $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/.config && $(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) ARCH=$(ARCHITECTURE) silentoldconfig
+	
+	# kernel build
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) ARCH=$(ARCHITECTURE) all
 	cp -aL $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/arch/i386/boot/bzImage $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV)
 	/usr/sbin/rdev $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) /dev/ram0
 	ln -sf bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) $(BUILD_FOLDER)/bzImage
+
+	# gather mandatory modules
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/net -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/pcmcia -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/ssb -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/lib -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 	
-	# CD stuff
-	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/ide/ide-cd_mod.ko $(BUILD_FOLDER)/modules/cd/ide-cd.ko
-	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/cdrom/cdrom.ko $(BUILD_FOLDER)/modules/cd/cdrom.ko
-	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/isofs/isofs.ko $(BUILD_FOLDER)/modules/cd/isofs.ko
-	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/usb/storage/usb-storage.ko $(BUILD_FOLDER)/modules/cd/usb-storage.ko
-	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/scsi/sr_mod.ko $(BUILD_FOLDER)/modules/cd/sr_mod.ko
+	# CD modules
+	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/ide/ide-cd_mod.ko		$(BUILD_FOLDER)/modules/cd/ide-cd.ko
+	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/cdrom/cdrom.ko		$(BUILD_FOLDER)/modules/cd
+	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/isofs/isofs.ko			$(BUILD_FOLDER)/modules/cd
+	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/scsi/sr_mod.ko		$(BUILD_FOLDER)/modules/cd
+	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/usb/storage/usb-storage.ko 	$(BUILD_FOLDER)/modules/cd
+
+	# filesystems
+	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/mbcache.ko			$(BUILD_FOLDER)/modules/fs
+	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/fuse/fuse.ko			$(BUILD_FOLDER)/modules/fs
+	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/ext2/ext2.ko			$(BUILD_FOLDER)/modules/fs
+	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/ext3/ext3.ko			$(BUILD_FOLDER)/modules/fs
+	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/xfs/xfs.ko			$(BUILD_FOLDER)/modules/fs
+	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/reiserfs/reiserfs.ko		$(BUILD_FOLDER)/modules/fs
+	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/jbd/jbd.ko			$(BUILD_FOLDER)/modules/fs
+	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/exportfs/exportfs.ko		$(BUILD_FOLDER)/modules/fs
 
 modules: module_e1000 module_e1000e module_igb module_r8168 module_r8169 module_r8101 module_atl2 module_nxii module_sk98 module_570x
 
