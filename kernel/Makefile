@@ -42,6 +42,13 @@ kernel:
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/pcmcia -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/ssb -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/lib -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
+	
+	# CD stuff
+	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/ide/ide-cd_mod.ko $(BUILD_FOLDER)/modules/cd/ide-cd.ko
+	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/cdrom/cdrom.ko $(BUILD_FOLDER)/modules/cd/cdrom.ko
+	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/isofs/isofs.ko $(BUILD_FOLDER)/modules/cd/isofs.ko
+	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/usb/storage/usb-storage.ko $(BUILD_FOLDER)/modules/cd/usb-storage.ko
+	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/scsi/sr_mod.ko $(BUILD_FOLDER)/modules/cd/sr_mod.ko
 
 modules: module_e1000 module_e1000e module_igb module_r8168 module_r8169 module_r8101 module_atl2 module_nxii module_sk98 module_570x
 
