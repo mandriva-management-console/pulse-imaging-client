@@ -177,28 +177,30 @@ setup_diskless_environment (void)
       return 0;
     }
 
+  cls();
+
   /* This will be erased soon, though...  */
 
   print_network_configuration ();
 
   imgname[0] = '\0';
-  grub_printf("Base Dir : %s\n",basedir);
+  grub_printf("Base Folder    : %s\n",basedir);
 
   machex((char *)nic_macaddr);
   grub_sprintf(config_file,"%s/cfg/%s",basedir,ip);
-  grub_printf("Testing : %s\n",config_file);
+  grub_printf("Testing        : %s\n",config_file);
   if (new_tftpdir(config_file) < 0)
   {
         iphex((char *)&arptable[ARP_CLIENT].ipaddr);
         grub_sprintf(config_file,"%s/cfg/%s",basedir,ip);
-        grub_printf("Testing : %s\n",config_file);
+        grub_printf("Testing        : %s\n",config_file);
         if (new_tftpdir(config_file) < 0)
         {
                 grub_sprintf(config_file,"%s/cfg/default",basedir);
         }
   }
 
-  printf("Using : %s as configfile\n",config_file);
+  grub_printf("Using          : %s as configfile\n",config_file);
 
   zcinit();
 

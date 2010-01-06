@@ -86,9 +86,10 @@ scan_pxe (void)
   unsigned long *i;
   int fbm;
 
+#ifndef QUIET
   printf ("Trying to find !PXE , from %dKB to 640KB\n", fbm =
           *(unsigned short *) 0x413);
-
+#endif
   for (i = (unsigned long *) (fbm * 1024); i < (unsigned long *) 0xA0000;
        i += 4)
     if (*i == PXE_ID)
@@ -295,14 +296,18 @@ get_pxe_entry (void)
     }
   else
     {
+#ifndef QUIET
       printf ("Found PXEEntry, directly via pxe_pointer_segment...\n");
+#endif
     }
 
 have_pxe:
+#ifdef DEBUG
   printf ("!PXE Ptr = %x\n", PXEEntry);
   printf ("PXE Entry is calling : %x:%x\n",
           *(unsigned short *) (PXEEntry + 0x12),
           *(unsigned short *) (PXEEntry + 0x10));
+#endif
 #ifdef DEBUG_PXE_STRUCT
   printf ("PXE 32 bits Entry : %x:%x\n",
           *(unsigned short *) (PXEEntry + 0x16),
@@ -503,11 +508,9 @@ P ((void))
     memmove((char*) &nic_macaddr,ptr+28,6);
 */
 
-#ifdef DEBUG
     printf ("Server Name : %s\n", ptr + 34);
     printf ("Filename    : %s\n", ptr + 108);
     printf ("Magic       : %x\n", *(unsigned long *) (ptr + 236));
-#endif
 
     parse_dhcp_options (ptr + 240);
 #endif
@@ -550,8 +553,10 @@ P ((void))
       sprint_ip_addr (server, arptable[ARP_SERVER].ipaddr.s_addr);
       sprint_ip_addr (gw, arptable[ARP_GATEWAY].ipaddr.s_addr);
 
-      printf ("Address: %s    Netmask: %s\nServer : %s    Gateway: %s\n",
-              me, my_mask, server, gw);
+      grub_printf ("Address        : %s\n", me);
+      grub_printf ("Netmask        : %s\n", my_mask);
+      grub_printf ("Server         : %s\n", server);
+      grub_printf ("Gateway        : %s\n", gw);
     }
 }
 
@@ -701,7 +706,7 @@ tftpget (char *addr, int size)
       printf ("Size   : %d)\n", toto.BufferSize);
       printf (".");
       if (toto.Status != 0)
-        printf ("Probleme : %d\n", toto.Status);
+        printf ("Problem : %d\n", toto.Status);
 #endif
       size -= toto.BufferSize;
       addr += toto.BufferSize;
@@ -965,6 +970,7 @@ next:
           pos = (filepos - basepos);
           if (pos > BUFFERSIZE)
             {
+
               printf ("Error : skipping : %d\n", pos);
               return 0;
             }
@@ -1067,7 +1073,7 @@ long new_tftpdir (char *filename) {
           if ((timeout % 2) == 0)
             {
               /* Resend every 2 seconds */
-              printf (".");
+              if (timeout > 0) printf (".");
               ret = udp_send (str, len, ++iport, 69);
             }
           sec = getrtsecs ();
@@ -1089,7 +1095,7 @@ long new_tftpdir (char *filename) {
 
   ptr = str + 8;
   safe_parse_maxint (&ptr, &res);
-#if 0
+#if DEBUG
   printf ("Tsize returned : %d\n", res);
 #endif
 
@@ -1221,21 +1227,31 @@ pxe_unload (void)
 
   toto.Status = 0;
   ret = pxe_call (0x31, &toto); //UDP CLOSE
+#ifndef QUIET
   printf ("PXE UDP Close : %d (%d)\n", ret, toto.Status);
+#endif
   ret = pxe_call (0x5, &toto);  //UNDI SHUTDOWN
+#ifndef QUIET
   printf ("PXE UNDI Shutdown : %d (%d)\n", ret, toto.Status);
+#endif
   ret = pxe_call (0x70, &toto); //UNLOAD STACK
+#ifndef QUIET
   printf ("PXE Unload stack : %d (%d)\n", ret, toto.Status);
+#endif
   if (pxev2)
     {
       ret = pxe_call (0x15, &toto);     //UNDI STOP
+#ifndef QUIET
       printf ("PXE UNDI Stop : %d (%d)\n", ret, toto.Status);
+#endif
     }
   else
     {
       /* Old API <2 */
       ret = pxe_call (0x2, &toto);      //UNDI CLEANUP
+#ifndef QUIET
       printf ("PXE UNDI Cleanup : %d (%d)\n", ret, toto.Status);
+#endif
     }
 /* new_api_unload: PXENV_UDP_CLOSE 31, PXENV_UNDI_SHUTDOWN 5,
  PXENV_UNLOAD_STACK 70,

@@ -45,7 +45,7 @@ struct term_entry term_table[] =
       console_setcolorstate,
       console_setcolor,
       console_setcursor,
-      0, 
+      0,
       0
     },
 #ifdef SUPPORT_SERIAL
@@ -63,7 +63,7 @@ struct term_entry term_table[] =
       serial_setcolorstate,
       0,
       0,
-      0, 
+      0,
       0
     },
 #endif /* SUPPORT_SERIAL */
@@ -83,7 +83,7 @@ struct term_entry term_table[] =
       hercules_setcursor,
       0,
       0
-    },      
+    },
 #endif /* SUPPORT_HERCULES */
 #ifdef SUPPORT_GRAPHICS
     { "graphics",
@@ -157,11 +157,11 @@ convert_to_ascii (char *buf, int c,...)
     char *ptr2 = buf;
     while (ptr1 > ptr2)
       {
-	int tmp = *ptr1;
-	*ptr1 = *ptr2;
-	*ptr2 = tmp;
-	ptr1--;
-	ptr2++;
+        int tmp = *ptr1;
+        *ptr1 = *ptr2;
+        *ptr2 = tmp;
+        ptr1--;
+        ptr2++;
       }
   }
 
@@ -180,39 +180,39 @@ grub_printf (const char *format,...)
 {
   int *dataptr = (int *) &format;
   char c, str[16];
-  
+
   dataptr++;
 
   while ((c = *(format++)) != 0)
     {
       if (c != '%')
-	grub_putchar (c);
+        grub_putchar (c);
       else
-	switch (c = *(format++))
-	  {
+        switch (c = *(format++))
+          {
 #ifndef STAGE1_5
-	  case 'd':
-	  case 'x':
-	  case 'X':
+          case 'd':
+          case 'x':
+          case 'X':
 #endif
-	  case 'u':
-	    *convert_to_ascii (str, c, *((unsigned long *) dataptr++)) = 0;
-	    grub_putstr (str);
-	    break;
-	  case '%':
-	    grub_putchar('%');
-	    break;
+          case 'u':
+            *convert_to_ascii (str, c, *((unsigned long *) dataptr++)) = 0;
+            grub_putstr (str);
+            break;
+          case '%':
+            grub_putchar('%');
+            break;
 
 #ifndef STAGE1_5
-	  case 'c':
-	    grub_putchar ((*(dataptr++)) & 0xff);
-	    break;
+          case 'c':
+            grub_putchar ((*(dataptr++)) & 0xff);
+            break;
 
-	  case 's':
-	    grub_putstr ((char *) *(dataptr++));
-	    break;
+          case 's':
+            grub_putstr ((char *) *(dataptr++));
+            break;
 #endif
-	  }
+          }
     }
 }
 
@@ -231,30 +231,30 @@ grub_sprintf (char *buffer, const char *format, ...)
   while ((c = *format++) != 0)
     {
       if (c != '%')
-	*bp++ = c; /* putchar(c); */
+        *bp++ = c; /* putchar(c); */
       else
-	switch (c = *(format++))
-	  {
-	  case 'd': case 'u': case 'x':
-	    *convert_to_ascii (str, c, *((unsigned long *) dataptr++)) = 0;
+        switch (c = *(format++))
+          {
+          case 'd': case 'u': case 'x':
+            *convert_to_ascii (str, c, *((unsigned long *) dataptr++)) = 0;
 
-	    ptr = str;
+            ptr = str;
 
-	    while (*ptr)
-	      *bp++ = *(ptr++); /* putchar(*(ptr++)); */
-	    break;
+            while (*ptr)
+              *bp++ = *(ptr++); /* putchar(*(ptr++)); */
+            break;
 
-	  case 'c': *bp++ = (*(dataptr++))&0xff;
-	    /* putchar((*(dataptr++))&0xff); */
-	    break;
+          case 'c': *bp++ = (*(dataptr++))&0xff;
+            /* putchar((*(dataptr++))&0xff); */
+            break;
 
-	  case 's':
-	    ptr = (char *) (*(dataptr++));
+          case 's':
+            ptr = (char *) (*(dataptr++));
 
-	    while ((c = *ptr++) != 0)
-	      *bp++ = c; /* putchar(c); */
-	    break;
-	  }
+            while ((c = *ptr++) != 0)
+              *bp++ = c; /* putchar(c); */
+            break;
+          }
     }
 
   *bp = 0;
@@ -290,8 +290,8 @@ static void
 add_history (const char *cmdline, int no)
 {
   grub_memmove ((char *) HISTORY_BUF + MAX_CMDLINE * (no + 1),
-		(char *) HISTORY_BUF + MAX_CMDLINE * no,
-		MAX_CMDLINE * (num_history - no));
+                (char *) HISTORY_BUF + MAX_CMDLINE * no,
+                MAX_CMDLINE * (num_history - no));
   grub_strcpy ((char *) HISTORY_BUF + MAX_CMDLINE * no, cmdline);
   if (num_history < HISTORY_SIZE)
     num_history++;
@@ -299,10 +299,10 @@ add_history (const char *cmdline, int no)
 
 static int
 real_get_cmdline (char *prompt, char *cmdline, int maxlen,
-		  int echo_char, int readline)
+                  int echo_char, int readline)
 {
   /* This is a rather complicated function. So explain the concept.
-     
+
      A command-line consists of ``section''s. A section is a part of the
      line which may be displayed on the screen, but a section is never
      displayed with another section simultaneously.
@@ -334,9 +334,9 @@ real_get_cmdline (char *prompt, char *cmdline, int maxlen,
 
   /* XXX: These should be defined in shared.h, but I leave these here,
      until this code is freezed.  */
-#define CMDLINE_WIDTH	78
-#define CMDLINE_MARGIN	10
-  
+#define CMDLINE_WIDTH   78
+#define CMDLINE_MARGIN  10
+
   int xpos, lpos, c, section;
   /* The length of PROMPT.  */
   int plen;
@@ -348,7 +348,7 @@ real_get_cmdline (char *prompt, char *cmdline, int maxlen,
   char *buf = (char *) CMDLINE_BUF;
   /* The kill buffer.  */
   char *kill_buf = (char *) KILL_BUF;
-  
+
   /* Nested function definitions for code simplicity.  */
 
   /* The forward declarations of nested functions are prefixed
@@ -359,32 +359,32 @@ real_get_cmdline (char *prompt, char *cmdline, int maxlen,
   auto void cl_insert (const char *str);
   auto void cl_delete (int count);
   auto void cl_init (void);
-  
+
   /* Move the cursor backward.  */
   void cl_backward (int count)
     {
       lpos -= count;
-      
-      /* If the cursor is in the first section, display the first section
-	 instead of the second.  */
-      if (section == 1 && plen + lpos < CMDLINE_WIDTH)
-	cl_refresh (1, 0);
-      else if (xpos - count < 1)
-	cl_refresh (1, 0);
-      else
-	{
-	  xpos -= count;
 
-	  if (current_term->flags & TERM_DUMB)
-	    {
-	      int i;
-	      
-	      for (i = 0; i < count; i++)
-		grub_putchar ('\b');
-	    }
-	  else
-	    gotoxy (xpos, getxy () & 0xFF);
-	}
+      /* If the cursor is in the first section, display the first section
+         instead of the second.  */
+      if (section == 1 && plen + lpos < CMDLINE_WIDTH)
+        cl_refresh (1, 0);
+      else if (xpos - count < 1)
+        cl_refresh (1, 0);
+      else
+        {
+          xpos -= count;
+
+          if (current_term->flags & TERM_DUMB)
+            {
+              int i;
+
+              for (i = 0; i < count; i++)
+                grub_putchar ('\b');
+            }
+          else
+            gotoxy (xpos, getxy () & 0xFF);
+        }
     }
 
   /* Move the cursor forward.  */
@@ -394,26 +394,26 @@ real_get_cmdline (char *prompt, char *cmdline, int maxlen,
 
       /* If the cursor goes outside, scroll the screen to the right.  */
       if (xpos + count >= CMDLINE_WIDTH)
-	cl_refresh (1, 0);
+        cl_refresh (1, 0);
       else
-	{
-	  xpos += count;
+        {
+          xpos += count;
 
-	  if (current_term->flags & TERM_DUMB)
-	    {
-	      int i;
-	      
-	      for (i = lpos - count; i < lpos; i++)
-		{
-		  if (! echo_char)
-		    grub_putchar (buf[i]);
-		  else
-		    grub_putchar (echo_char);
-		}
-	    }
-	  else
-	    gotoxy (xpos, getxy () & 0xFF);
-	}
+          if (current_term->flags & TERM_DUMB)
+            {
+              int i;
+
+              for (i = lpos - count; i < lpos; i++)
+                {
+                  if (! echo_char)
+                    grub_putchar (buf[i]);
+                  else
+                    grub_putchar (echo_char);
+                }
+            }
+          else
+            gotoxy (xpos, getxy () & 0xFF);
+        }
     }
 
   /* Refresh the screen. If FULL is true, redraw the full line, otherwise,
@@ -423,101 +423,101 @@ real_get_cmdline (char *prompt, char *cmdline, int maxlen,
       int i;
       int start;
       int pos = xpos;
-      
+
       if (full)
-	{
-	  /* Recompute the section number.  */
-	  if (lpos + plen < CMDLINE_WIDTH)
-	    section = 0;
-	  else
-	    section = ((lpos + plen - CMDLINE_WIDTH)
-		       / (CMDLINE_WIDTH - 1 - CMDLINE_MARGIN) + 1);
+        {
+          /* Recompute the section number.  */
+          if (lpos + plen < CMDLINE_WIDTH)
+            section = 0;
+          else
+            section = ((lpos + plen - CMDLINE_WIDTH)
+                       / (CMDLINE_WIDTH - 1 - CMDLINE_MARGIN) + 1);
 
-	  /* From the start to the end.  */
-	  len = CMDLINE_WIDTH;
-	  pos = 0;
-	  grub_putchar ('\r');
+          /* From the start to the end.  */
+          len = CMDLINE_WIDTH;
+          pos = 0;
+          grub_putchar ('\r');
 
-	  /* If SECTION is the first section, print the prompt, otherwise,
-	     print `<'.  */
-	  if (section == 0)
-	    {
-	      grub_printf ("%s", prompt);
-	      len -= plen;
-	      pos += plen;
-	    }
-	  else
-	    {
-	      grub_putchar ('<');
-	      len--;
-	      pos++;
-	    }
-	}
+          /* If SECTION is the first section, print the prompt, otherwise,
+             print `<'.  */
+          if (section == 0)
+            {
+              grub_printf ("%s", prompt);
+              len -= plen;
+              pos += plen;
+            }
+          else
+            {
+              grub_putchar ('<');
+              len--;
+              pos++;
+            }
+        }
 
       /* Compute the index to start writing BUF and the resulting position
-	 on the screen.  */
+         on the screen.  */
       if (section == 0)
-	{
-	  int offset = 0;
-	  
-	  if (! full)
-	    offset = xpos - plen;
-	  
-	  start = 0;
-	  xpos = lpos + plen;
-	  start += offset;
-	}
+        {
+          int offset = 0;
+
+          if (! full)
+            offset = xpos - plen;
+
+          start = 0;
+          xpos = lpos + plen;
+          start += offset;
+        }
       else
-	{
-	  int offset = 0;
-	  
-	  if (! full)
-	    offset = xpos - 1;
-	  
-	  start = ((section - 1) * (CMDLINE_WIDTH - 1 - CMDLINE_MARGIN)
-		   + CMDLINE_WIDTH - plen - CMDLINE_MARGIN);
-	  xpos = lpos + 1 - start;
-	  start += offset;
-	}
+        {
+          int offset = 0;
+
+          if (! full)
+            offset = xpos - 1;
+
+          start = ((section - 1) * (CMDLINE_WIDTH - 1 - CMDLINE_MARGIN)
+                   + CMDLINE_WIDTH - plen - CMDLINE_MARGIN);
+          xpos = lpos + 1 - start;
+          start += offset;
+        }
 
       /* Print BUF. If ECHO_CHAR is not zero, put it instead.  */
       for (i = start; i < start + len && i < llen; i++)
-	{
-	  if (! echo_char)
-	    grub_putchar (buf[i]);
-	  else
-	    grub_putchar (echo_char);
+        {
+          if (! echo_char)
+            grub_putchar (buf[i]);
+          else
+            grub_putchar (echo_char);
 
-	  pos++;
-	}
-      
+          pos++;
+        }
+
       /* Fill up the rest of the line with spaces.  */
       for (; i < start + len; i++)
-	{
-	  grub_putchar (' ');
-	  pos++;
-	}
-      
+        {
+          grub_putchar (' ');
+          pos++;
+        }
+
       /* If the cursor is at the last position, put `>' or a space,
-	 depending on if there are more characters in BUF.  */
+         depending on if there are more characters in BUF.  */
       if (pos == CMDLINE_WIDTH)
-	{
-	  if (start + len < llen)
-	    grub_putchar ('>');
-	  else
-	    grub_putchar (' ');
-	  
-	  pos++;
-	}
-      
+        {
+          if (start + len < llen)
+            grub_putchar ('>');
+          else
+            grub_putchar (' ');
+
+          pos++;
+        }
+
       /* Back to XPOS.  */
       if (current_term->flags & TERM_DUMB)
-	{
-	  for (i = 0; i < pos - xpos; i++)
-	    grub_putchar ('\b');
-	}
+        {
+          for (i = 0; i < pos - xpos; i++)
+            grub_putchar ('\b');
+        }
       else
-	gotoxy (xpos, getxy () & 0xFF);
+        gotoxy (xpos, getxy () & 0xFF);
     }
 
   /* Initialize the command-line.  */
@@ -536,24 +536,24 @@ real_get_cmdline (char *prompt, char *cmdline, int maxlen,
       int l = grub_strlen (str);
 
       if (llen + l < maxlen)
-	{
-	  if (lpos == llen)
-	    grub_memmove (buf + lpos, str, l + 1);
-	  else
-	    {
-	      grub_memmove (buf + lpos + l, buf + lpos, llen - lpos + 1);
-	      grub_memmove (buf + lpos, str, l);
-	    }
-	  
-	  llen += l;
-	  lpos += l;
-	  if (xpos + l >= CMDLINE_WIDTH)
-	    cl_refresh (1, 0);
-	  else if (xpos + l + llen - lpos > CMDLINE_WIDTH)
-	    cl_refresh (0, CMDLINE_WIDTH - xpos);
-	  else
-	    cl_refresh (0, l + llen - lpos);
-	}
+        {
+          if (lpos == llen)
+            grub_memmove (buf + lpos, str, l + 1);
+          else
+            {
+              grub_memmove (buf + lpos + l, buf + lpos, llen - lpos + 1);
+              grub_memmove (buf + lpos, str, l);
+            }
+
+          llen += l;
+          lpos += l;
+          if (xpos + l >= CMDLINE_WIDTH)
+            cl_refresh (1, 0);
+          else if (xpos + l + llen - lpos > CMDLINE_WIDTH)
+            cl_refresh (0, CMDLINE_WIDTH - xpos);
+          else
+            cl_refresh (0, l + llen - lpos);
+        }
     }
 
   /* Delete COUNT characters in BUF.  */
@@ -561,11 +561,11 @@ real_get_cmdline (char *prompt, char *cmdline, int maxlen,
     {
       grub_memmove (buf + lpos, buf + lpos + count, llen - count + 1);
       llen -= count;
-      
+
       if (xpos + llen + count - lpos > CMDLINE_WIDTH)
-	cl_refresh (0, CMDLINE_WIDTH - xpos);
+        cl_refresh (0, CMDLINE_WIDTH - xpos);
       else
-	cl_refresh (0, llen + count - lpos);
+        cl_refresh (0, llen + count - lpos);
     }
 
   plen = grub_strlen (prompt);
@@ -575,10 +575,10 @@ real_get_cmdline (char *prompt, char *cmdline, int maxlen,
     {
       maxlen = MAX_CMDLINE;
       if (llen >= MAX_CMDLINE)
-	{
-	  llen = MAX_CMDLINE - 1;
-	  cmdline[MAX_CMDLINE] = 0;
-	}
+        {
+          llen = MAX_CMDLINE - 1;
+          cmdline[MAX_CMDLINE] = 0;
+        }
     }
   lpos = llen;
   grub_strcpy (buf, cmdline);
@@ -590,198 +590,198 @@ real_get_cmdline (char *prompt, char *cmdline, int maxlen,
       c = translate_keycode (c);
       /* If READLINE is non-zero, handle readline-like key bindings.  */
       if (readline)
-	{
-	  switch (c)
-	    {
-	    case 9:		/* TAB lists completions */
-	      {
-		int i;
-		/* POS points to the first space after a command.  */
-		int pos = 0;
-		int ret;
-		char *completion_buffer = (char *) COMPLETION_BUF;
-		int equal_pos = -1;
-		int is_filename;
+        {
+          switch (c)
+            {
+            case 9:             /* TAB lists completions */
+              {
+                int i;
+                /* POS points to the first space after a command.  */
+                int pos = 0;
+                int ret;
+                char *completion_buffer = (char *) COMPLETION_BUF;
+                int equal_pos = -1;
+                int is_filename;
 
-		/* Find the first word.  */
-		while (buf[pos] == ' ')
-		  pos++;
-		while (buf[pos] && buf[pos] != '=' && buf[pos] != ' ')
-		  pos++;
+                /* Find the first word.  */
+                while (buf[pos] == ' ')
+                  pos++;
+                while (buf[pos] && buf[pos] != '=' && buf[pos] != ' ')
+                  pos++;
 
-		is_filename = (lpos > pos);
+                is_filename = (lpos > pos);
 
-		/* Find the position of the equal character after a
-		   command, and replace it with a space.  */
-		for (i = pos; buf[i] && buf[i] != ' '; i++)
-		  if (buf[i] == '=')
-		    {
-		      equal_pos = i;
-		      buf[i] = ' ';
-		      break;
-		    }
+                /* Find the position of the equal character after a
+                   command, and replace it with a space.  */
+                for (i = pos; buf[i] && buf[i] != ' '; i++)
+                  if (buf[i] == '=')
+                    {
+                      equal_pos = i;
+                      buf[i] = ' ';
+                      break;
+                    }
 
-		/* Find the position of the first character in this
-		   word.  */
-		for (i = lpos; i > 0 && buf[i - 1] != ' '; i--)
-		  ;
+                /* Find the position of the first character in this
+                   word.  */
+                for (i = lpos; i > 0 && buf[i - 1] != ' '; i--)
+                  ;
 
-		/* Invalidate the cache, because the user may exchange
-		   removable disks.  */
-		buf_drive = -1;
+                /* Invalidate the cache, because the user may exchange
+                   removable disks.  */
+                buf_drive = -1;
 
-		/* Copy this word to COMPLETION_BUFFER and do the
-		   completion.  */
-		grub_memmove (completion_buffer, buf + i, lpos - i);
-		completion_buffer[lpos - i] = 0;
-		ret = print_completions (is_filename, 1);
-		errnum = ERR_NONE;
+                /* Copy this word to COMPLETION_BUFFER and do the
+                   completion.  */
+                grub_memmove (completion_buffer, buf + i, lpos - i);
+                completion_buffer[lpos - i] = 0;
+                ret = print_completions (is_filename, 1);
+                errnum = ERR_NONE;
 
-		if (ret >= 0)
-		  {
-		    /* Found, so insert COMPLETION_BUFFER.  */
-		    cl_insert (completion_buffer + lpos - i);
+                if (ret >= 0)
+                  {
+                    /* Found, so insert COMPLETION_BUFFER.  */
+                    cl_insert (completion_buffer + lpos - i);
 
-		    if (ret > 0)
-		      {
-			/* There are more than one candidates, so print
-			   the list.  */
-			grub_putchar ('\n');
-			print_completions (is_filename, 0);
-			errnum = ERR_NONE;
-		      }
-		  }
+                    if (ret > 0)
+                      {
+                        /* There are more than one candidates, so print
+                           the list.  */
+                        grub_putchar ('\n');
+                        print_completions (is_filename, 0);
+                        errnum = ERR_NONE;
+                      }
+                  }
 
-		/* Restore the command-line.  */
-		if (equal_pos >= 0)
-		  buf[equal_pos] = '=';
+                /* Restore the command-line.  */
+                if (equal_pos >= 0)
+                  buf[equal_pos] = '=';
 
-		if (ret)
-		  cl_init ();
-	      }
-	      break;
-	    case 1:		/* C-a go to beginning of line */
-	      cl_backward (lpos);
-	      break;
-	    case 5:		/* C-e go to end of line */
-	      cl_forward (llen - lpos);
-	      break;
-	    case 6:		/* C-f forward one character */
-	      if (lpos < llen)
-		cl_forward (1);
-	      break;
-	    case 2:		/* C-b backward one character */
-	      if (lpos > 0)
-		cl_backward (1);
-	      break;
-	    case 21:		/* C-u kill to beginning of line */
-	      if (lpos == 0)
-		break;
-	      /* Copy the string being deleted to KILL_BUF.  */
-	      grub_memmove (kill_buf, buf, lpos);
-	      kill_buf[lpos] = 0;
-	      {
-		/* XXX: Not very clever.  */
-		
-		int count = lpos;
-		
-		cl_backward (lpos);
-		cl_delete (count);
-	      }
-	      break;
-	    case 11:		/* C-k kill to end of line */
-	      if (lpos == llen)
-		break;
-	      /* Copy the string being deleted to KILL_BUF.  */
-	      grub_memmove (kill_buf, buf + lpos, llen - lpos + 1);
-	      cl_delete (llen - lpos);
-	      break;
-	    case 25:		/* C-y yank the kill buffer */
-	      cl_insert (kill_buf);
-	      break;
-	    case 16:		/* C-p fetch the previous command */
-	      {
-		char *p;
+                if (ret)
+                  cl_init ();
+              }
+              break;
+            case 1:             /* C-a go to beginning of line */
+              cl_backward (lpos);
+              break;
+            case 5:             /* C-e go to end of line */
+              cl_forward (llen - lpos);
+              break;
+            case 6:             /* C-f forward one character */
+              if (lpos < llen)
+                cl_forward (1);
+              break;
+            case 2:             /* C-b backward one character */
+              if (lpos > 0)
+                cl_backward (1);
+              break;
+            case 21:            /* C-u kill to beginning of line */
+              if (lpos == 0)
+                break;
+              /* Copy the string being deleted to KILL_BUF.  */
+              grub_memmove (kill_buf, buf, lpos);
+              kill_buf[lpos] = 0;
+              {
+                /* XXX: Not very clever.  */
 
-		if (history < 0)
-		  /* Save the working buffer.  */
-		  grub_strcpy (cmdline, buf);
-		else if (grub_strcmp (get_history (history), buf) != 0)
-		  /* If BUF is modified, add it into the history list.  */
-		  add_history (buf, history);
+                int count = lpos;
 
-		history++;
-		p = get_history (history);
-		if (! p)
-		  {
-		    history--;
-		    break;
-		  }
+                cl_backward (lpos);
+                cl_delete (count);
+              }
+              break;
+            case 11:            /* C-k kill to end of line */
+              if (lpos == llen)
+                break;
+              /* Copy the string being deleted to KILL_BUF.  */
+              grub_memmove (kill_buf, buf + lpos, llen - lpos + 1);
+              cl_delete (llen - lpos);
+              break;
+            case 25:            /* C-y yank the kill buffer */
+              cl_insert (kill_buf);
+              break;
+            case 16:            /* C-p fetch the previous command */
+              {
+                char *p;
 
-		grub_strcpy (buf, p);
-		llen = grub_strlen (buf);
-		lpos = llen;
-		cl_refresh (1, 0);
-	      }
-	      break;
-	    case 14:		/* C-n fetch the next command */
-	      {
-		char *p;
+                if (history < 0)
+                  /* Save the working buffer.  */
+                  grub_strcpy (cmdline, buf);
+                else if (grub_strcmp (get_history (history), buf) != 0)
+                  /* If BUF is modified, add it into the history list.  */
+                  add_history (buf, history);
 
-		if (history < 0)
-		  {
-		    break;
-		  }
-		else if (grub_strcmp (get_history (history), buf) != 0)
-		  /* If BUF is modified, add it into the history list.  */
-		  add_history (buf, history);
+                history++;
+                p = get_history (history);
+                if (! p)
+                  {
+                    history--;
+                    break;
+                  }
 
-		history--;
-		p = get_history (history);
-		if (! p)
-		  p = cmdline;
+                grub_strcpy (buf, p);
+                llen = grub_strlen (buf);
+                lpos = llen;
+                cl_refresh (1, 0);
+              }
+              break;
+            case 14:            /* C-n fetch the next command */
+              {
+                char *p;
 
-		grub_strcpy (buf, p);
-		llen = grub_strlen (buf);
-		lpos = llen;
-		cl_refresh (1, 0);
-	      }
-	      break;
-	    }
-	}
+                if (history < 0)
+                  {
+                    break;
+                  }
+                else if (grub_strcmp (get_history (history), buf) != 0)
+                  /* If BUF is modified, add it into the history list.  */
+                  add_history (buf, history);
+
+                history--;
+                p = get_history (history);
+                if (! p)
+                  p = cmdline;
+
+                grub_strcpy (buf, p);
+                llen = grub_strlen (buf);
+                lpos = llen;
+                cl_refresh (1, 0);
+              }
+              break;
+            }
+        }
 
       /* ESC, C-d and C-h are always handled. Actually C-d is not
-	 functional if READLINE is zero, as the cursor cannot go
-	 backward, but that's ok.  */
+         functional if READLINE is zero, as the cursor cannot go
+         backward, but that's ok.  */
       switch (c)
-	{
-	case 27:	/* ESC immediately return 1 */
-	  return 1;
-	case 4:		/* C-d delete character under cursor */
-	  if (lpos == llen)
-	    break;
-	  cl_delete (1);
-	  break;
-	case 8:		/* C-h backspace */
+        {
+        case 27:        /* ESC immediately return 1 */
+          return 1;
+        case 4:         /* C-d delete character under cursor */
+          if (lpos == llen)
+            break;
+          cl_delete (1);
+          break;
+        case 8:         /* C-h backspace */
 # ifdef GRUB_UTIL
-	case 127:	/* also backspace */
+        case 127:       /* also backspace */
 # endif
-	  if (lpos > 0)
-	    {
-	      cl_backward (1);
-	      cl_delete (1);
-	    }
-	  break;
-	default:		/* insert printable character into line */
-	  if (c >= ' ' && c <= '~')
-	    {
-	      char str[2];
+          if (lpos > 0)
+            {
+              cl_backward (1);
+              cl_delete (1);
+            }
+          break;
+        default:                /* insert printable character into line */
+          if (c >= ' ' && c <= '~')
+            {
+              char str[2];
 
-	      str[0] = c;
-	      str[1] = 0;
-	      cl_insert (str);
-	    }
-	}
+              str[0] = c;
+              str[1] = 0;
+              cl_insert (str);
+            }
+        }
     }
 
   grub_putchar ('\n');
@@ -813,13 +813,13 @@ real_get_cmdline (char *prompt, char *cmdline, int maxlen,
    If ECHO_CHAR is nonzero, echo it instead of the typed character. */
 int
 get_cmdline (char *prompt, char *cmdline, int maxlen,
-	     int echo_char, int readline)
+             int echo_char, int readline)
 {
   int old_cursor;
   int ret;
 
   old_cursor = setcursor (1);
-  
+
   /* Because it is hard to deal with different conditions simultaneously,
      less functional cases are handled here. Assume that TERM_NO_ECHO
      implies TERM_NO_EDIT.  */
@@ -827,42 +827,42 @@ get_cmdline (char *prompt, char *cmdline, int maxlen,
     {
       char *p = cmdline;
       int c;
-      
+
       /* Make sure that MAXLEN is not too large.  */
       if (maxlen > MAX_CMDLINE)
-	maxlen = MAX_CMDLINE;
+        maxlen = MAX_CMDLINE;
 
       /* Print only the prompt. The contents of CMDLINE is simply discarded,
-	 even if it is not empty.  */
+         even if it is not empty.  */
       grub_printf ("%s", prompt);
 
       /* Gather characters until a newline is gotten.  */
       while ((c = ASCII_CHAR (getkey ())) != '\n' && c != '\r')
-	{
-	  c = translate_keycode (c);
-	  /* Return immediately if ESC is pressed.  */
-	  if (c == 27)
-	    {
-	      setcursor (old_cursor);
-	      return 1;
-	    }
+        {
+          c = translate_keycode (c);
+          /* Return immediately if ESC is pressed.  */
+          if (c == 27)
+            {
+              setcursor (old_cursor);
+              return 1;
+            }
 
-	  /* Printable characters are added into CMDLINE.  */
-	  if (c >= ' ' && c <= '~')
-	    {
-	      if (! (current_term->flags & TERM_NO_ECHO))
-		grub_putchar (c);
+          /* Printable characters are added into CMDLINE.  */
+          if (c >= ' ' && c <= '~')
+            {
+              if (! (current_term->flags & TERM_NO_ECHO))
+                grub_putchar (c);
 
-	      /* Preceding space characters must be ignored.  */
-	      if (c != ' ' || p != cmdline)
-		*p++ = c;
-	    }
-	}
+              /* Preceding space characters must be ignored.  */
+              if (c != ' ' || p != cmdline)
+                *p++ = c;
+            }
+        }
 
       *p = 0;
 
       if (! (current_term->flags & TERM_NO_ECHO))
-	grub_putchar ('\n');
+        grub_putchar ('\n');
 
       setcursor (old_cursor);
       return 0;
@@ -893,25 +893,25 @@ safe_parse_maxint (char **str_ptr, int *myint_ptr)
   while (1)
     {
       /* A bit tricky. This below makes use of the equivalence:
-	 (A >= B && A <= C) <=> ((A - B) <= (C - B))
-	 when C > B and A is unsigned.  */
+         (A >= B && A <= C) <=> ((A - B) <= (C - B))
+         when C > B and A is unsigned.  */
       unsigned int digit;
 
       digit = tolower (*ptr) - '0';
       if (digit > 9)
-	{
-	  digit -= 'a' - '0';
-	  if (mult == 10 || digit > 5)
-	    break;
-	  digit += 10;
-	}
+        {
+          digit -= 'a' - '0';
+          if (mult == 10 || digit > 5)
+            break;
+          digit += 10;
+        }
 
       found = 1;
       if (myint > ((MAXINT - digit) / mult))
-	{
-	  errnum = ERR_NUMBER_OVERFLOW;
-	  return 0;
-	}
+        {
+          errnum = ERR_NUMBER_OVERFLOW;
+          return 0;
+        }
       myint = (myint * mult) + digit;
       ptr++;
     }
@@ -964,9 +964,9 @@ grub_memcmp (const char *s1, const char *s2, int n)
   while (n)
     {
       if (*s1 < *s2)
-	return -1;
+        return -1;
       else if (*s1 > *s2)
-	return 1;
+        return 1;
       s1++;
       s2++;
       n--;
@@ -1010,9 +1010,9 @@ grub_strcmp (const char *s1, const char *s2)
   while (*s1 || *s2)
     {
       if (*s1 < *s2)
-	return -1;
+        return -1;
       else if (*s1 > *s2)
-	return 1;
+        return 1;
       s1 ++;
       s2 ++;
     }
@@ -1047,62 +1047,62 @@ grub_putchar (int c)
   else if (c == '\t' && current_term->getxy)
     {
       int n;
-      
+
       n = 8 - ((current_term->getxy () >> 8) & 3);
       while (n--)
-	grub_putchar (' ');
-      
+        grub_putchar (' ');
+
       return;
     }
 #endif /* ! STAGE1_5 */
-  
+
 #ifdef STAGE1_5
-  
+
   /* In Stage 1.5, only the normal console is supported.  */
   console_putchar (c);
-  
+
 #else /* ! STAGE1_5 */
 
   if (c == '\n')
     {
       /* Internal `more'-like feature.  */
       if (count_lines >= 0)
-	{
-	  count_lines++;
-	  if (count_lines >= max_lines - 2)
-	    {
-	      int tmp;
-	      
-	      /* It's important to disable the feature temporarily, because
-		 the following grub_printf call will print newlines.  */
-	      count_lines = -1;
+        {
+          count_lines++;
+          if (count_lines >= max_lines - 2)
+            {
+              int tmp;
 
-	      grub_printf("\n");
-	      if (current_term->setcolorstate)
-		current_term->setcolorstate (COLOR_STATE_HIGHLIGHT);
-	      
-	      grub_printf ("[Hit return to continue]");
+              /* It's important to disable the feature temporarily, because
+                 the following grub_printf call will print newlines.  */
+              count_lines = -1;
 
-	      if (current_term->setcolorstate)
-		current_term->setcolorstate (COLOR_STATE_NORMAL);
-	        
-	      
-	      do
-		{
-		  tmp = ASCII_CHAR (getkey ());
-		}
-	      while (tmp != '\n' && tmp != '\r');
-	      grub_printf ("\r                        \r");
-	      
-	      /* Restart to count lines.  */
-	      count_lines = 0;
-	      return;
-	    }
-	}
+              grub_printf("\n");
+              if (current_term->setcolorstate)
+                current_term->setcolorstate (COLOR_STATE_HIGHLIGHT);
+
+              grub_printf ("[Hit return to continue]");
+
+              if (current_term->setcolorstate)
+                current_term->setcolorstate (COLOR_STATE_NORMAL);
+
+
+              do
+                {
+                  tmp = ASCII_CHAR (getkey ());
+                }
+              while (tmp != '\n' && tmp != '\r');
+              grub_printf ("\r                        \r");
+
+              /* Restart to count lines.  */
+              count_lines = 0;
+              return;
+            }
+        }
     }
 
   current_term->putchar (c);
-  
+
 #endif /* ! STAGE1_5 */
 }
 
@@ -1123,7 +1123,7 @@ void
 cls (void)
 {
   /* If the terminal is dumb, there is no way to clean the terminal.  */
-  if (current_term->flags & TERM_DUMB) 
+  if (current_term->flags & TERM_DUMB)
     grub_putchar ('\n');
   else
     current_term->cls ();
@@ -1146,7 +1146,7 @@ substring (const char *s1, const char *s2)
     {
       /* The strings match exactly. */
       if (! *(s1++))
-	return 0;
+        return 0;
       s2 ++;
     }
 
@@ -1164,7 +1164,7 @@ int
 nul_terminate (char *str)
 {
   int ch;
-  
+
   while (*str && ! grub_isspace (*str))
     str++;
 
@@ -1184,10 +1184,10 @@ grub_strstr (const char *s1, const char *s2)
       tmp = s2;
 
       while (*tmp && *ptr == *tmp)
-	ptr++, tmp++;
-      
+        ptr++, tmp++;
+
       if (tmp > s2 && ! *tmp)
-	return (char *) s1;
+        return (char *) s1;
 
       s1++;
     }
@@ -1215,9 +1215,9 @@ memcheck (int addr, int len)
     {
       int ret;
 # if defined(HAVE_START_SYMBOL)
-      asm volatile ("movl	$start, %0" : "=a" (ret));
+      asm volatile ("movl       $start, %0" : "=a" (ret));
 # elif defined(HAVE_USCORE_START_SYMBOL)
-      asm volatile ("movl	$_start, %0" : "=a" (ret));
+      asm volatile ("movl       $_start, %0" : "=a" (ret));
 # endif
       return ret;
     }
@@ -1226,9 +1226,9 @@ memcheck (int addr, int len)
     {
       int ret;
 # if defined(HAVE_END_SYMBOL)
-      asm volatile ("movl	$end, %0" : "=a" (ret));
+      asm volatile ("movl       $end, %0" : "=a" (ret));
 # elif defined(HAVE_USCORE_END_SYMBOL)
-      asm volatile ("movl	$_end, %0" : "=a" (ret));
+      asm volatile ("movl       $_end, %0" : "=a" (ret));
 # endif
       return ret;
     }
@@ -1239,9 +1239,9 @@ memcheck (int addr, int len)
 
   if ((addr < RAW_ADDR (0x1000))
       || (addr < RAW_ADDR (0x100000)
-	  && RAW_ADDR (mbi.mem_lower * 1024) < (addr + len))
+          && RAW_ADDR (mbi.mem_lower * 1024) < (addr + len))
       || (addr >= RAW_ADDR (0x100000)
-	  && RAW_ADDR (mbi.mem_upper * 1024) < ((addr - 0x100000) + len)))
+          && RAW_ADDR (mbi.mem_upper * 1024) < ((addr - 0x100000) + len)))
     errnum = ERR_WONT_FIT;
 
   return ! errnum;
@@ -1263,31 +1263,31 @@ grub_memmove (void *to, const void *from, int len)
    if (memcheck ((int) to, len))
      {
        /* This assembly code is stolen from
-	  linux-2.2.2/include/asm-i386/string.h. This is not very fast
-	  but compact.  */
+          linux-2.2.2/include/asm-i386/string.h. This is not very fast
+          but compact.  */
        int d0, d1, d2;
 
        if (to < from)
-	 {
-	   asm volatile ("cld\n\t"
-			 "rep\n\t"
-			 "movsb"
-			 : "=&c" (d0), "=&S" (d1), "=&D" (d2)
-			 : "0" (len),"1" (from),"2" (to)
-			 : "memory");
-	 }
+         {
+           asm volatile ("cld\n\t"
+                         "rep\n\t"
+                         "movsb"
+                         : "=&c" (d0), "=&S" (d1), "=&D" (d2)
+                         : "0" (len),"1" (from),"2" (to)
+                         : "memory");
+         }
        else
-	 {
-	   asm volatile ("std\n\t"
-			 "rep\n\t"
-			 "movsb\n\t"
-			 "cld"
-			 : "=&c" (d0), "=&S" (d1), "=&D" (d2)
-			 : "0" (len),
-			 "1" (len - 1 + (const char *) from),
-			 "2" (len - 1 + (char *) to)
-			 : "memory");
-	 }
+         {
+           asm volatile ("std\n\t"
+                         "rep\n\t"
+                         "movsb\n\t"
+                         "cld"
+                         : "=&c" (d0), "=&S" (d1), "=&D" (d2)
+                         : "0" (len),
+                         "1" (len - 1 + (const char *) from),
+                         "2" (len - 1 + (char *) to)
+                         : "memory");
+         }
      }
 
    return errnum ? NULL : to;
@@ -1301,7 +1301,7 @@ grub_memset (void *start, int c, int len)
   if (memcheck ((int) start, len))
     {
       while (len -- > 0)
-	*p ++ = c;
+        *p ++ = c;
     }
 
   return errnum ? NULL : start;

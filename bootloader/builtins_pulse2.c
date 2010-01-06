@@ -287,8 +287,9 @@ drive_info (unsigned char *buffer)
 
       grub_sprintf (buffer, "D:%s:CHS(%d,%d,%d)=%d\n", disk, geom.cylinders,
                     geom.heads, geom.sectors, geom.total_sectors);
+
 #ifndef QUIET
-      grub_printf ("%s: %d MB\n", disk, geom.total_sectors / 2048);
+      grub_printf ("\t%s: %d MB\n", disk, geom.total_sectors / 2048);
 #endif
       while (*buffer)
         buffer++;
@@ -308,7 +309,7 @@ drive_info (unsigned char *buffer)
               grub_sprintf (buffer, "P:%d,t:%x,s:%d,l:%d\n",
                             (partition >> 16), type, start, len);
 #ifndef QUIET
-              grub_printf (" P:%d,t:%x,s:%d,l:%d\n", (partition >> 16), type,
+              grub_printf ("\t\tP:%d, t:%x, s:%d, l:%d\n", (partition >> 16), type,
                            start, len);
 #endif
               while (*buffer)
@@ -388,7 +389,7 @@ partcopy_func (char *arg, int flags)
       //return 1;
     }
 
-#if 0
+#ifdef DEBUG
   grub_printf ("GEO : %d, %d, %d, %d E: %d DR: %d err=%d\n",
                buf_geom.total_sectors, buf_geom.cylinders, buf_geom.heads,
                buf_geom.sectors, entry, current_drive, 0);
@@ -1071,10 +1072,10 @@ int smbios_init(void)
             smbios_base = *(__u32 *)(check+0x18);
             if (smbios_base == 0 || smbios_num == 0 || smbios_len == 0) continue;
 #ifdef DEBUG
-            grub_printf("SMBios found. version %d.%d len %d  num %d %x\n", *(check+6), *(check+7), smbios_len, smbios_num, smbios_base );
+            grub_printf("SMBios         : version %d.%d len %d  num %d %x\n", *(check+6), *(check+7), smbios_len, smbios_num, smbios_base );
             getkey();
 #else
-            grub_printf("SMBios found. version %d.%d\n", *(check+6), *(check+7) );
+            grub_printf("SMBios         : %d.%d\n", *(check+6), *(check+7) );
             smbios_ver = (*(check+6)) * 10 + (*(check+7));
 #endif
             return 1;
@@ -1200,12 +1201,10 @@ void smbios_get_sysinfo(char **p1, char **p2, char **p3, char **p4, char **p5)
   *p2 = smbios_string(ptr, ptr[0x5]);
   *p3 = smbios_string(ptr, ptr[0x6]);
   *p4 = smbios_string(ptr, ptr[0x7]);
-#ifdef DEBUG
-  printf("Manufacturer: %s\n", *p1);
-  printf("Product: %s\n", *p2);
-  printf("Version: %s\n", *p3);
-  printf("Serial: %s\n", *p4);
-#endif
+  printf("Manufacturer   : %s\n", *p1);
+  printf("Product        : %s\n", *p2);
+  printf("Version        : %s\n", *p3);
+  printf("Serial         : %s\n", *p4);
   /* in smbios 2.1+ only */
   *p5 = &ptr[8];
 }
