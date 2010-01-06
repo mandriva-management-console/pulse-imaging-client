@@ -33,4 +33,4 @@
 #define DATA32 data32
 
 #define PACKAGE "Pulse2BootLoader"
-#define VERSION "1.40"
+#define VERSION "1.41"
