@@ -39,6 +39,7 @@
 #include <fcntl.h>
 #include <stddef.h>
 #include <dirent.h>
+#include <ctype.h>
 
 #include "zlib.h"
 
@@ -171,7 +172,7 @@ main (int argc, char *argv[])
     }
   else
     {
-      while (ep = readdir (dp))
+      while ((ep = readdir (dp)))
         {
           name = ep->d_name;
           l = strlen(name);
