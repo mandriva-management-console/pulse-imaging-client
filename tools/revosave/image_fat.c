@@ -327,7 +327,6 @@ main (int argc, char *argv[])
   PARAMS params;
   CPARAMS cp;
   int fd;
-  char tmp[255];
 
   // Just some verifications : sanity check
   //

@@ -79,9 +79,9 @@ parse_filename (unsigned char *ptr, PARAMS * p, CPARAMS * cp)
   debug (" Real Length : %lld\t", cp->filelg =
           *(unsigned long long *) (ptr + 0x30));
   debug ("(%08llx)\n", cp->filelg);
-  debug (" Allocated lg: %llu\t", p->bitmaplg =
+  debug (" Allocated lg: %lu\t", p->bitmaplg =
           *(unsigned long long *) (ptr + 0x28));
-  debug ("(%08llx)\n", p->bitmaplg);
+  debug ("(%08lx)\n", p->bitmaplg);
   p->bitmaplg *= cp->boot.spc;
   p->bitmap = (unsigned char *) calloc (p->bitmaplg, 1);
   //debug ("Memory for bitmap : %lld\n", p->bitmaplg);
@@ -151,7 +151,7 @@ parse_datarun (unsigned char *ptr, FILE * file, PARAMS * p, CPARAMS * cp)
 
     }
 
-  debug ("Bitmap size : %llu\n", p->bitmaplg);
+  debug ("Bitmap size : %lu\n", p->bitmaplg);
 
   ptr += 0x40;
 
@@ -280,8 +280,8 @@ parse_mft (unsigned char *ptr, FILE * file, PARAMS * p, CPARAMS * cp)
       case 0x10:
         debug ("Standard Information :\n");
         ptr += 0x18;
-        debug(" File perm: %04x\n", *(unsigned long *)(ptr+0x20));
-        debug(" Version  : %04x\n", *(unsigned long *)(ptr+0x28));
+        debug(" File perm: %04lx\n", *(unsigned long *)(ptr+0x20));
+        debug(" Version  : %04lx\n", *(unsigned long *)(ptr+0x28));
         break;
       case 0x30:
         debug ("FileName : \n");
@@ -515,7 +515,6 @@ main (int argc, char *argv[])
   PARAMS p;
   CPARAMS cp;
   int fd;
-  char tmp[255];
 
   if (argc != 3)
     {

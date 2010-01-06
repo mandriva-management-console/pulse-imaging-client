@@ -63,7 +63,7 @@ allocated_sectors (PARAMS * p)
   for (i = 0; i < 8; i++)
     p->bitmap[i] = 0xFF;
 
-  sprintf(info1, "%u", p->nb_sect);
+  sprintf(info1, "%u", (unsigned int)p->nb_sect);
   sprintf(info2, "%u", used);
   print_sect_info(p->nb_sect, used);
 }
