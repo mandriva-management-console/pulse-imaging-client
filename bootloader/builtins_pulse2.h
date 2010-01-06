@@ -39,7 +39,6 @@ int test_func (char *arg, int flags);
 int identify_func (char *arg, int flags);
 int identifyauto_func (char *arg, int flags);
 int kbdfr_func (char *arg, int flags);
-int nop_func (char *arg, int flags);
 
 /* macros */
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
@@ -129,14 +128,3 @@ static struct builtin builtin_kbdfr = {
   "azerty keymap"
 #endif
 };
-
-static struct builtin builtin_nop = {
-  "nop",
-  nop_func,
-  BUILTIN_MENU,
-#ifdef HELP_ON
-  "nop",
-  "Do nothing"
-#endif
-};
-

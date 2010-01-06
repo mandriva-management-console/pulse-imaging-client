@@ -388,7 +388,7 @@ partcopy_func (char *arg, int flags)
       //return 1;
     }
 
-#if DEBUG
+#if 0
   grub_printf ("GEO : %d, %d, %d, %d E: %d DR: %d err=%d\n",
                buf_geom.total_sectors, buf_geom.cylinders, buf_geom.heads,
                buf_geom.sectors, entry, current_drive, 0);
@@ -742,7 +742,7 @@ restart:
                               grub_printf
                                 ("\n!!! Disk Write Error (%d) sector %d, drive %d\nPress a key\n",
                                  ret, sect, current_drive);
-#if DEBUG
+#if 0
                               grub_printf ("GEO : %d, %d, %d, %d E: %d DR: %d err=%d\n",
                                            buf_geom.total_sectors, buf_geom.cylinders, buf_geom.heads,
                                            buf_geom.sectors, 0, current_drive, 0);
@@ -1393,12 +1393,5 @@ kbdfr_func (char *arg, int flags)
   *ptr++=0;
   *ptr++=0;
 
-  return 0;
-}
-
-/* do nothing */
-int
-nop_func (char *arg, int flags)
-{
   return 0;
 }

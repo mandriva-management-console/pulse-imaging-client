@@ -1,9 +1,10 @@
 /*
- *  $Id: udp.c,v 1.4 2003/04/10 09:37:14 ludo Exp $
+ *  $Id$
  */
 /*
  *  GRUB Pulse 2 functions
- *  Copyright (C) 2002 Linbox Free & Alter Soft
+ *  Copyright (C) 2008-2010 Mandriva
+ *  Copyright (C) 2002-2007 Linbox Free & Alter Soft
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -22,7 +23,7 @@
 
 #include "etherboot.h"
 #ifndef FSYS_TFTP
-    #define FSYS_TFTP
+#define FSYS_TFTP
 #endif
 #include <filesys.h>
 #include <shared.h>
@@ -88,6 +89,7 @@ int udp_send(char *buf,int size,int s_port,int d_port)
     udp_w->buffer_size=size;
 
 #ifdef DEBUG
+    int i;
     for(i=0;i<size;i++) printf("%x ",udp_packet_s[i]);
     printf("\n");
 #endif

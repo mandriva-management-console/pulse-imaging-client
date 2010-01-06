@@ -25,7 +25,7 @@
 #include "etherboot.h"
 #include "generic.h"
 #ifndef FSYS_TFTP
-    #define FSYS_TFTP
+#define FSYS_TFTP
 #endif
 #include <filesys.h>
 #include <shared.h>
