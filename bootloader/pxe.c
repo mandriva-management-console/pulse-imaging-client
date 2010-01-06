@@ -84,7 +84,7 @@ unsigned char *
 scan_pxe (void)
 {
   unsigned long *i;
-  int fbm;
+  int fbm = 0;
 
 #ifndef QUIET
   printf ("Trying to find !PXE , from %dKB to 640KB\n", fbm =
