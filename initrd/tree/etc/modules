@@ -1,10 +1,5 @@
 # /etc/modules: kernel modules to load at boot time.
 
-
-pcmcia_core
-rsrc_nonstatic
-yenta_socket
-
 # needed by atl1, b44, e100, eepro100, epic100, fealnx, hamachi, ipg, pcnet32, r6040, sfc, sis190, sis900, starfire, sundance, via-rhine, winbond-840
 mii
 
