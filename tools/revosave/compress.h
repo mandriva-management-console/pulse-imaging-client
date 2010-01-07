@@ -35,8 +35,9 @@
 #define TOTALLG 24064L
 #define ALLOCLG (TOTALLG-HEADERLG)
 
+#ifndef BLKGETSIZE
 #define BLKGETSIZE _IO(0x12,96) /* return device size /512 (long *arg) */
-
+#endif
 #define debug(...) fprintf(stderr, __VA_ARGS__)
 
 typedef struct {
