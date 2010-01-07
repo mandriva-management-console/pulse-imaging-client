@@ -45,17 +45,6 @@ ixgb
 # Davicom DM910X fast ethernet driver
 dmfe
 
-# needed by ne2k-pci
-8390
-# PCI NE2000 clone driver
-ne2k-pci
-
-# PCnet32 and PCnetPCI based ethercards
-pcnet32
-
-# AceNIC/3C985/GA620 Gigabit Ethernet driver
-acenic
-
 # National Semiconductor
 # --> DP8381x series PCI Ethernet driver
 natsemi
@@ -184,6 +173,17 @@ winbond-840
 
 # Packet Engines Yellowfin G-NIC Gigabit Ethernet driver
 yellowfin
+
+# needed by ne2k-pci
+8390
+# PCI NE2000 clone driver
+ne2k-pci
+
+# PCnet32 and PCnetPCI based ethercards
+pcnet32
+
+# AceNIC/3C985/GA620 Gigabit Ethernet driver
+acenic
 
 dummy
 s2io
