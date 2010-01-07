@@ -22,15 +22,14 @@
 
 OBJ			= compress.o
 LIBOBJ		= compress.o easy_sock.o client.o
-OBJS		= decompress-bitmap.o decompress.o decompress-test.o image_e2fs.o image_fat.o image_jfs.o image_lvm.o image_ntfs.o image_raw.o image_swap.o image_xfs.o lvm.o
-# image_lvmreiserfs no not compile anymore
-IMGFILES	= image_swap image_fat image_ntfs image_e2fs image_xfs image_jfs image_lvm decompress decompress-test image_raw decompress-bitmap
+OBJS		= decompress-bitmap.o decompress.o decompress-test.o image_e2fs.o image_fat.o image_jfs.o image_lvm.o image_ntfs.o image_raw.o image_swap.o image_xfs.o lvm.o image_lvmreiserfs.o
+IMGFILES	= image_swap image_fat image_ntfs image_e2fs image_xfs image_jfs image_lvm decompress decompress-test image_raw decompress-bitmap image_lvmreiserfs
 
-CFLAGS	= -Wall -O2 -DLBLIMAGEVER='1.2' -I$(ZLIB_DIR) -I$(E2FS_DIR)/lib
+CFLAGS	= -Wall -O2 -DLBLIMAGEVER='1.2' -I$(ZLIB_DIR)
 LDFLAGS	= -s
 LIBLRS	= -L. -llrs
 LIBZ	= -L$(ZLIB_DIR) -lz
-RFSLIBS	= -L$(RFS_DIR)/lib -lcore -lmisc
+RFSLIBS	= -L$(RFS_DIR)/lib -lcore  -lmisc
 LIBE2FS	= -L$(E2FS_DIR)/lib -lext2fs -le2p -luuid -lcom_err
 
 all: $(OBJ) $(LIBOBJ) liblrs.so.1 liblrs.a $(IMGFILES)
@@ -75,7 +74,10 @@ decompress-bitmap: decompress-bitmap.o $(OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< $(LIBZ)
 
 image_lvmreiserfs.o: image_lvmreiserfs.c
-	$(CC) $(CFLAGS) -o image_lvmreiserfs.o -c image_lvmreiserfs.c -I$(RFS_DIR)
+	$(CC) $(CFLAGS) -I$(RFS_DIR) -o image_lvmreiserfs.o -c image_lvmreiserfs.c
+
+image_e2fs.o: image_e2fs.c
+	$(CC) $(CFLAGS) -I$(E2FS_DIR)/lib -o image_e2fs.o -c image_e2fs.c
 
 liblrs.so.1: $(LIBOBJ)
 	$(CC) -shared -Wl,-soname,$@ -o $@ $^ $(LIBZ)
