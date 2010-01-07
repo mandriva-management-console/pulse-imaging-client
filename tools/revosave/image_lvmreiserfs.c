@@ -43,10 +43,10 @@
 #include <stdint.h>
 #include <sys/vfs.h>
 
+
 #include "include/io.h"
 #include "include/misc.h"
 #include "include/reiserfs_lib.h"
-#include "include/reiserfs_fs.h"
 #include "version.h"
 
 #include "compress.h"
