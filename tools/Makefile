@@ -35,21 +35,22 @@ all: image save restore ui_newt bench ntblfix
 
 image: zlib e2fs reiserfs
 	$(MAKE) -C revosave CC=$(CC) ZLIB_DIR=$(BUILD_FOLDER)/$(ZLIB_FOLDER) RFS_DIR=$(BUILD_FOLDER)/$(REISER_FOLDER) E2FS_DIR=$(BUILD_FOLDER)/$(E2FS_FOLDER)
-	cp -a revosave/image_raw 	$(BUILD_FOLDER)/revobin
-	cp -a revosave/image_swap 	$(BUILD_FOLDER)/revobin
-	cp -a revosave/image_e2fs 	$(BUILD_FOLDER)/revobin
-	cp -a revosave/image_fat 	$(BUILD_FOLDER)/revobin
-	cp -a revosave/image_ntfs 	$(BUILD_FOLDER)/revobin
-	cp -a revosave/image_jfs 	$(BUILD_FOLDER)/revobin
-	cp -a revosave/image_ufs 	$(BUILD_FOLDER)/revobin
-	cp -a revosave/image_lvm 	$(BUILD_FOLDER)/revobin
-	cp -a revosave/image_xfs 	$(BUILD_FOLDER)/revobin
-	cp -a revosave/liblrs.so*	$(BUILD_FOLDER)/lib
+	cp -a revosave/image_raw 		$(BUILD_FOLDER)/revobin
+	cp -a revosave/image_swap 		$(BUILD_FOLDER)/revobin
+	cp -a revosave/image_e2fs 		$(BUILD_FOLDER)/revobin
+	cp -a revosave/image_fat 		$(BUILD_FOLDER)/revobin
+	cp -a revosave/image_ntfs 		$(BUILD_FOLDER)/revobin
+	cp -a revosave/image_jfs 		$(BUILD_FOLDER)/revobin
+	cp -a revosave/image_ufs 		$(BUILD_FOLDER)/revobin
+	cp -a revosave/image_lvm 		$(BUILD_FOLDER)/revobin
+	cp -a revosave/image_lvmreiserfs	$(BUILD_FOLDER)/revobin
+	cp -a revosave/image_xfs 		$(BUILD_FOLDER)/revobin
+	cp -a revosave/liblrs.so*		$(BUILD_FOLDER)/lib
 
 save: image
 	$(MAKE) -C autosave CC=$(CC) LRS_DIR=../revosave
-	cp -a autosave/autosave 	$(BUILD_FOLDER)/bin
-	cp -a autosave/floppysave 	$(BUILD_FOLDER)/bin
+	cp -a autosave/autosave 		$(BUILD_FOLDER)/bin
+	cp -a autosave/floppysave 		$(BUILD_FOLDER)/bin
 
 restore: image
 	$(MAKE) -C autorestore CC=$(CC) ZLIB_DIR=$(BUILD_FOLDER)/$(ZLIB_FOLDER) LRS_DIR=../revosave
