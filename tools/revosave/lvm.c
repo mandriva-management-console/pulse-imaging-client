@@ -126,7 +126,7 @@ void lvm_check(char *device, long long *offset)
         /* pv_header */
         pv = (__u64 *) (((__u8 *) & buf[128]) + buf[133]);
         /* copy this PV uuid */
-        pvuuid = pv;
+        pvuuid = (char *)pv;
         debug("LVM2 pv UUID: %32s\n", (char *) pvuuid);
         /* skip data */
         pv += 5;
