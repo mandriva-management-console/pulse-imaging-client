@@ -1,0 +1,14 @@
+The Pulse 2 imaging project come from the LRS imaging modules, which is
+a *really* old project.
+
+Most of the code here was written between 2001 and 2003, using libs from
+those time, and not effort has been done to use newer libs.
+
+In the "3rd party" folder, you will find archives of those libs, in the
+event they disappeared of the Internet. At the time of writting almost
+all of them are still available (and can still be build).
+
+One exception: the reiserfs prog suite. Not only it only build on a pre
+glibc 2.1 system, but it was also heavily patched by Linbox. The
+furnished archive contains this patched version *and* libs build on a
+debian sarge system. Feel free to rebuild them if you need to.

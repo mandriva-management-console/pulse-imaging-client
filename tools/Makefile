@@ -105,12 +105,11 @@ e2fs:
 	[ -f $(BUILD_FOLDER)/$(E2FS_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(E2FS_FOLDER); ./configure)
 	$(MAKE) -C $(BUILD_FOLDER)/$(E2FS_FOLDER) CC=$(CC) libs
 
+# please see README.rebuild to learn :
+# - why we do not d/l it
+# - why we do not build it it
 reiserfs:
-	[ -e $(3RDPARTY_FOLDER)/$(REISER_TARBALL) ] || wget $(REISER_URI)/$(REISER_TARBALL) -P $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(REISER_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(REISER_TARBALL) -C $(BUILD_FOLDER)
-	[ -f $(BUILD_FOLDER)/$(REISER_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(REISER_FOLDER); ./configure)
-	$(MAKE) -C $(BUILD_FOLDER)/$(REISER_FOLDER) CC=$(CC) reiserfscore
-	$(MAKE) -C $(BUILD_FOLDER)/$(REISER_FOLDER) CC=$(CC) lib
 
 ui_newt: save newt
 	$(MAKE) -C ui_newt CC=$(CC) LRS_DIR=../revosave SLANG_DIR=../$(SLANG_FOLDER) NEWT_DIR=../$(NEWT_FOLDER)
