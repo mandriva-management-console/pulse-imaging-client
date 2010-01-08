@@ -461,11 +461,10 @@ P ((void))
     *(unsigned short *) &(nic_macaddr[4]) = *(unsigned short *) (ptr + 32);
 
 #ifdef DEBUG
-    printf ("Server Name : %s\n", ptr + 34);
-    printf ("Filename    : %s\n", ptr + 108);
-    printf ("Magic       : %x\n", *(unsigned long *) (ptr + 236));
+    printf ("Server Name       : %s\n", ptr + 34);
+    printf ("Filename          : %s\n", ptr + 108);
+    printf ("Magic             : %x\n", *(unsigned long *) (ptr + 236));
 #endif
-
     // guest basedir using ptr + 108, aka "filename"
     // filename max len is 128
     cmp = ptr + 108;
@@ -479,10 +478,25 @@ P ((void))
         for (i = 235; i >= 109; i--) {
             if (*(ptr + i) == '/' ) {
                 *(ptr + i) = 0;
+                if (i >= 109 + 4) {
+                    // special case to ensure back compatibility with older LRS installations :
+                    // if the basedir finished by '/bin', also strip it
+                    if (*(ptr + i - 4) == '/'
+                        &&
+                        *(ptr + i - 3) == 'b'
+                        &&
+                        *(ptr + i - 2) == 'i'
+                        &&
+                        *(ptr + i - 1) == 'n'
+                    ) {
+                        *(ptr + i - 4) = 0;
+                    }
+                }
                 break;
             }
         }
     }
+
     strcpy(basedir, ptr + 108);
 
     parse_dhcp_options(ptr + 240);
