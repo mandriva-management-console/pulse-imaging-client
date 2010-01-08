@@ -468,6 +468,7 @@ P ((void))
     // guest basedir using ptr + 108, aka "filename"
     // filename max len is 128
     cmp = ptr + 108;
+    strcpy(basedir, cmp);
 
     // to obtain the basename, we reverse count from ptr + 235 to ptr + 109
     // if we found a '/', we replace it by a \0 to terminate the string
@@ -475,29 +476,27 @@ P ((void))
     {
         int i;
 
-        for (i = 235; i >= 109; i--) {
-            if (*(ptr + i) == '/' ) {
-                *(ptr + i) = 0;
-                if (i >= 109 + 4) {
+        for (i = 128; i > 0; i--) {
+            if (*(cmp + i) == '/' ) {
+                basedir[i] = 0;
+                if (i >= 4) {
                     // special case to ensure back compatibility with older LRS installations :
                     // if the basedir finished by '/bin', also strip it
-                    if (*(ptr + i - 4) == '/'
+                    if (*(cmp + i - 4) == '/'
                         &&
-                        *(ptr + i - 3) == 'b'
+                        *(cmp + i - 3) == 'b'
                         &&
-                        *(ptr + i - 2) == 'i'
+                        *(cmp + i - 2) == 'i'
                         &&
-                        *(ptr + i - 1) == 'n'
+                        *(cmp + i - 1) == 'n'
                     ) {
-                        *(ptr + i - 4) = 0;
+                        basedir[i-4] = 0;
                     }
                 }
                 break;
             }
         }
     }
-
-    strcpy(basedir, ptr + 108);
 
     parse_dhcp_options(ptr + 240);
 
