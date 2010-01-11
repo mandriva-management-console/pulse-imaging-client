@@ -1,11 +1,11 @@
-ARCHITECTURE		= i386
-CC			= gcc-3.4
+ARCHITECTURE			= i386
+CC				= gcc-3.4
 
-VERSION_LINUXKERNEL	= 2.6.27.42
-URI_LINUXKERNEL     	= http://www.kernel.org/pub/linux/kernel/v2.6
-FOLDER_LINUXKERNEL  	= linux-$(VERSION_LINUXKERNEL)
-TARBALL_LINUXKERNEL	= linux-$(VERSION_LINUXKERNEL).tar.bz2
-CONFIGS_LINUXKERNEL	= dot-configs
+VERSION_LINUXKERNEL		= 2.6.27.43
+URI_LINUXKERNEL     		= http://www.kernel.org/pub/linux/kernel/v2.6
+FOLDER_LINUXKERNEL  		= linux-$(VERSION_LINUXKERNEL)
+TARBALL_LINUXKERNEL		= linux-$(VERSION_LINUXKERNEL).tar.bz2
+CONFIGS_LINUXKERNEL		= dot-configs
 
 VERSION_E1000			= 8.0.16
 URI_E1000			= http://downloadmirror.intel.com/9180/eng
