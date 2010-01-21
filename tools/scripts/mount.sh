@@ -46,3 +46,5 @@ while ! mount-$TYPE.sh $SRV $PREFIX $DIR
 do
     sleep 1
 done
+
+cat /proc/mounts
