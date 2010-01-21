@@ -23,9 +23,6 @@
 # MA 02110-1301, USA.
 #
 # Mount helper script for NFS
-#
-# $Id$
-#
 
 SIP=$1
 PREFIX=$2
@@ -55,7 +52,7 @@ echo
 sleep 1
 if echo "$RPCINFO"|grep -q nfs
 then
-    echo "*** NFS seems to be ok on $SIP"
+    echo "*** NFS service seems to be ok on $SIP"
 else
     echo "*** Warning : the NFS service does not seem to work on the LRS !"
     echo "*** IP configuration :"
@@ -63,23 +60,42 @@ else
     sleep 10
 fi
 
-# Get NFS options
-if grep -q slownfs /etc/cmdline
-then
-    NFSOPT=rsize=1024,wsize=1024,udp
+# NFS base options
+NFSOPT="hard,intr,ac,nfsvers=3,async"
+
+# Get NFS proto
+if grep -q 'revoproto=nfsudp' /etc/cmdline; then
+    NFSOPT="$NFSOPT,proto=udp"
+    echo "*** Using NFS over UDP"
 else
-    if echo "$RPCINFO"|grep nfs|grep -q tcp
-    then
-    NFSOPT=rsize=8192,wsize=8192,tcp
+    if echo "$RPCINFO" | grep nfs | grep -q tcp; then
+        NFSOPT="$NFSOPT,proto=tcp"
+        echo "*** Using NFS over TCP"
     else
-    echo "*** No TCP on NFS server switching to UDP"
-    NFSOPT=rsize=8192,wsize=8192,udp
-    sleep 2
+        NFSOPT="$NFSOPT,proto=udp"
+        echo "*** Using NFS over UDP"
     fi
 fi
 
+# Get NFS block size
+if grep -q 'revonfsbsize' /etc/cmdline; then
+    NFSBSIZE=`sed -e 's/.*revonfsbsize=\([^ ]*\).*/\1/' < /etc/cmdline`
+    NFSOPT="$NFSOPT,rsize=$NFSBSIZE,wsize=$NFSBSIZE"
+    echo "*** Using blocks of $NFSBSIZE bytes"
+else
+    echo "*** Autonegociating block size"
+fi
+
+# Full NFS bypass, if needed
+if grep -q 'revonfsopts' /etc/cmdline; then
+    NFSOPT=`sed -e 's/.*revonfsopts=\([^ ]*\).*/\1/' < /etc/cmdline`
+    echo "*** Bypassing NFS options : $NFSOPT"
+fi
+
+echo "*** Using the following NFS options : $NFSOPT"
+
 # shared backup ?
-if echo $SUBDIR|grep -q /imgbase
+if echo $SUBDIR | grep -q /imgbase
 then
     getmac
     # adjust the remote /revoinfo directory
@@ -88,12 +104,15 @@ fi
 
 if [ -z "$Option_177" ]
 then
-    echo "Using $SIP:$PREFIX as backup dir"
+    echo "*** Using $SIP:$PREFIX as backup dir"
     mount -t nfs $SIP:$PREFIX$SUBDIR /revoinfo -o hard,intr,nolock,sync,$NFSOPT
     mount -t nfs $SIP:$PREFIX$DIR /revosave -o hard,intr,nolock,sync,$NFSOPT
 else
-    echo "Using Option 177: $Option_177 as backup dir"
+    echo "*** Using Option 177: $Option_177 as backup dir"
     mount -t nfs $Option_177$SUBDIR /revoinfo -o hard,intr,nolock,sync,$NFSOPT
     mount -t nfs $Option_177$DIR /revosave -o hard,intr,nolock,sync,$NFSOPT
 fi
-# IMPORTANT !!! NO OTHER INSTRUCTIONS AFTER MOUNTS !!!
+
+EXITCODE=$?
+
+exit $EXITCODE
