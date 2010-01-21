@@ -925,6 +925,7 @@ int main(int argc, char *argv[])
     system(tmprintf("du -k %s > %s/size.txt", revosave, revosave));
 
     if (!nolrs) {
+        mysystem1("cat /proc/mounts");
         mysystem1("cat /var/log/messages");
         system("revosendlog 5");
         system("revosetdefault 0");
