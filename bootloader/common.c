@@ -53,8 +53,7 @@ char *err_list[] =
 {
   [ERR_NONE] = 0,
   [ERR_BAD_ARGUMENT] = "Invalid argument",
-  [ERR_BAD_FILENAME] =
-  "Filename must be either an absolute pathname or blocklist",
+  [ERR_BAD_FILENAME] = "Filename must be either an absolute pathname or blocklist",
   [ERR_BAD_FILETYPE] = "Bad file or directory type",
   [ERR_BAD_GZIP_DATA] = "Bad or corrupt data while decompressing file",
   [ERR_BAD_GZIP_HEADER] = "Bad or incompatible header in compressed file",
@@ -67,8 +66,7 @@ char *err_list[] =
   [ERR_DEV_FORMAT] = "Unrecognized device string",
   [ERR_DEV_VALUES] = "Invalid device requested",
   [ERR_EXEC_FORMAT] = "Invalid or unsupported executable format",
-  [ERR_FILELENGTH] =
-  "Filesystem compatibility error, cannot read whole file",
+  [ERR_FILELENGTH] = "Filesystem compatibility error, cannot read whole file",
   [ERR_FILE_NOT_FOUND] = "File not found",
   [ERR_FSYS_CORRUPT] = "Inconsistent filesystem structure",
   [ERR_FSYS_MOUNT] = "Cannot mount selected partition",
