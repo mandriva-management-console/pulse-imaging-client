@@ -28,7 +28,10 @@ OBJ 		= asm.o bios.o boot.o pci.o char_io.o builtins.o common.o stage2.o cmdline
 # remove -DQUIET to recover the original Grub behavior
 DEFINES 	= -DHELP_ON -DNO_DECOMPRESSION -DSUPPORT_NETBOOT -DSUPPORT_DISKLESS -DFSYS_TFTP -DFSYS_EXT2FS -DFSYS_FAT -DNO_INT13_FALLBACK -DSUPPORT_GRAPHICS=1 -DQUIET
 ARCH		= i386
-CFLAGS		= -I. -Os -Wall $(DEFINES) -nostdinc -falign-jumps -falign-loops -falign-functions -march=$(ARCH) -m32
+# don't f****g know why, but with -Os (legacy) instalead of -O2 I got a really strange behavior
+# note : -Os perfectly works under gcc 3.3.x and earlier
+# TODO : FIND OUT WHY !
+CFLAGS		= -I. -O2 -Wall $(DEFINES) -nostdinc -falign-jumps -falign-loops -falign-functions -march=$(ARCH) -m32
 CC			= gcc-3.4
 
 OBJZLIB		= adler32.o inflate.o infblock.o infcodes.o inftrees.o inffast.o infutil.o zfunc.o
@@ -49,12 +52,6 @@ adjust_length: adjust_length.c
 
 asm.o: asm.S
 	$(CC) -I. -O9 -Wall $(DEFINES) -nostdinc -fno-builtin -c -o $@ $^ -m32
-
-# don't f****g know why, but without -O0 I got a really strange behavior
-# note : -O0 is unnecessary under gcc 3.3.x and earlier
-# TODO : FIND OUT WHY !
-common.o: common.c builtins_pulse2.h
-	$(CC) $(CFLAGS) -c -o $@ $< -O0
 
 dist-clean: clean
 
