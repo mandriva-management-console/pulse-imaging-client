@@ -130,7 +130,7 @@ clean:
 	$(MAKE) clean -C $(BUILD_FOLDER)/$(ZLIB_FOLDER)
 	-[ -f $(BUILD_FOLDER)/$(NEWT_FOLDER)/Makefile ] && $(MAKE) clean -C $(BUILD_FOLDER)/$(NEWT_FOLDER) && rm -f $(BUILD_FOLDER)/$(NEWT_FOLDER)/Makefile
 	-[ -f $(BUILD_FOLDER)/$(SLANG_FOLDER)/Makefile ] && $(MAKE) clean -C $(BUILD_FOLDER)/$(SLANG_FOLDER) && rm -f $(BUILD_FOLDER)/$(SLANG_FOLDER)/Makefile
-	-[ -f $(BUILD_FOLDER)/$(REISER_FOLDER)/Makefile ] && $(MAKE) clean -C $(BUILD_FOLDER)/$(REISER_FOLDER) && rm -f $(BUILD_FOLDER)/$(REISER_FOLDER)/Makefile
+	-rm -rf $(BUILD_FOLDER)/$(REISER_FOLDER)
 	$(MAKE) clean -C $(BUILD_FOLDER)/$(E2FS_FOLDER)
 	rm -f $(BUILD_FOLDER)/revobin/*
 	rm -f $(BUILD_FOLDER)/bin/*
