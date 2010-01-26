@@ -40,94 +40,89 @@
 
 char info1[32], info2[32];
 
-void checkit(char *dev)
-{
-  int fd, bs;
-  __u8 buf[512];
+void checkit(char *dev) {
+    int fd, bs;
+    __u8 buf[512];
 
-  fd = open (dev, O_RDONLY);
-  if (fd == -1) exit(1);
-  lseek(fd, 0x8000, SEEK_SET);
-  if (read(fd, buf, 256) != 256) exit(1);
+    fd = open(dev, O_RDONLY);
+    if (fd == -1)
+        exit(1);
+    lseek(fd, 0x8000, SEEK_SET);
+    if (read(fd, buf, 256) != 256)
+        exit(1);
 
-  if (strncmp (buf, "JFS1", 4) == 0)
-    {
-      debug("JFS1 magic found\n");
-      bs = (buf[7]<<24) + (buf[6]<<16) + (buf[5]<<8) + (buf[4]);
-      debug("version: %d\n", bs);
-    }
-  else
-    {
-      debug("magic not found\n");
-      exit(1);
+    if (strncmp(buf, "JFS1", 4) == 0) {
+        debug("JFS1 magic found\n");
+        bs = (buf[7] << 24) + (buf[6] << 16) + (buf[5] << 8) + (buf[4]);
+        debug("version: %d\n", bs);
+    } else {
+        debug("magic not found\n");
+        exit(1);
     }
 
-  close (fd);
+    close(fd);
 }
 
-void
-allocated_sectors (PARAMS * p, char *dev)
-{
-  int i, fd, bytes;
-  int size;
+void allocated_sectors(PARAMS * p, char *dev) {
+    int i, fd, bytes;
+    int size;
 
-  if ((fd = open (dev, O_RDONLY)) == -1) exit(1);
+    if ((fd = open(dev, O_RDONLY)) == -1)
+        exit(1);
 
-  if (ioctl(fd, BLKGETSIZE, &size) < 0) {
-    /* it's a file not a block dev */
-    struct stat st;
+    if (ioctl(fd, BLKGETSIZE, &size) < 0) {
+        /* it's a file not a block dev */
+        struct stat st;
 
-    fstat(fd, &st);
-    size = (st.st_size/512);
-    debug("Regular file: %d sectors\n",size);
-  } else {
-    debug("Block device: %d sectors\n",size);
-  }
-  close(fd);
-  if (size == 0) exit(1);
+        fstat(fd, &st);
+        size = (st.st_size / 512);
+        debug("Regular file: %d sectors\n", size);
+    } else {
+        debug("Block device: %d sectors\n", size);
+    }
+    close(fd);
+    if (size == 0)
+        exit(1);
 
-  bytes = (size+7)/8;
-  p->bitmap = (unsigned char *) calloc (1, bytes);
-  p->bitmaplg = bytes;
+    bytes = (size + 7) / 8;
+    p->bitmap = (unsigned char *)calloc(1, bytes);
+    p->bitmaplg = bytes;
 
-  p->nb_sect = size;
+    p->nb_sect = size;
 
-  for (i = 0; i < bytes-1; i++)
-    p->bitmap[i] = 0xFF;
-  /* mark remaining sectors */
-  if (size & 7) {
-    p->bitmap[i] = (0xFF >> (8-(size & 7))) & 0xFF;
-  }
+    for (i = 0; i < bytes - 1; i++)
+        p->bitmap[i] = 0xFF;
+    /* mark remaining sectors */
+    if (size & 7) {
+        p->bitmap[i] = (0xFF >> (8 - (size & 7))) & 0xFF;
+    }
 
-  sprintf(info1, "%u", size);
-  sprintf(info2, "%u", size);
-  print_sect_info(size, size);
+    sprintf(info1, "%u", size);
+    sprintf(info2, "%u", size);
+    print_sect_info(size, size);
 }
 
 /*  */
-int
-main (int argc, char *argv[])
-{
-  int fd;
-  PARAMS params;
+int main(int argc, char *argv[]) {
+    int fd;
+    PARAMS params;
 
-  if (argc != 3)
-    {
-      fprintf (stderr, "Usage : image_jfs [device] [image prefix name]\n");
-      exit (1);
+    if (argc != 3) {
+        fprintf(stderr, "Usage : image_jfs [device] [image prefix name]\n");
+        exit(1);
     }
 
-  checkit(argv[1]);
+    checkit(argv[1]);
 
-  if (argv[2][0] == '?')
-      exit (0);
+    if (argv[2][0] == '?')
+        exit(0);
 
-  allocated_sectors(&params, argv[1]);
+    allocated_sectors(&params, argv[1]);
 
-  ui_send("init_backup", 5, argv[1], argv[2], info1, info2, argv[0]);
-  fd = open (argv[1], O_RDONLY);
-  compress_volume (fd, argv[2], &params, "");
-  close (fd);
+    ui_send("init_backup", 5, argv[1], argv[2], info1, info2, argv[0]);
+    fd = open(argv[1], O_RDONLY);
+    compress_volume(fd, argv[2], &params, "");
+    close(fd);
 
-  return 0;
+    return 0;
 }

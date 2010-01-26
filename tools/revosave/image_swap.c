@@ -34,70 +34,63 @@
 
 char info1[32], info2[32];
 
-void
-check_signature (FILE * f, PARAMS * p)
-{
-  char dum[4096];
+void check_signature(FILE * f, PARAMS * p) {
+    char dum[4096];
 
-  fread (dum, 4096, 1, f);
+    fread(dum, 4096, 1, f);
 
-  if (strncmp (dum + 4096 - 10, "SWAP-SPACE", 10) == 0)
-    return;
-  if (strncmp (dum + 4096 - 10, "SWAPSPACE2", 10) == 0)
-    return;
+    if (strncmp(dum + 4096 - 10, "SWAP-SPACE", 10) == 0)
+        return;
+    if (strncmp(dum + 4096 - 10, "SWAPSPACE2", 10) == 0)
+        return;
 
-  exit (1);
+    exit(1);
 }
 
-void
-allocated_sectors (PARAMS * p)
-{
-  int i, used;
+void allocated_sectors(PARAMS * p) {
+    int i, used;
 
-  p->bitmap = (unsigned char *) calloc (8, 1);
-  p->bitmaplg = 8;
+    p->bitmap = (unsigned char *)calloc(8, 1);
+    p->bitmaplg = 8;
 
-  p->nb_sect = 8;
-  used = 8;
+    p->nb_sect = 8;
+    used = 8;
 
-  for (i = 0; i < 8; i++)
-    p->bitmap[i] = 0xFF;
+    for (i = 0; i < 8; i++)
+        p->bitmap[i] = 0xFF;
 
-  sprintf(info1, "%u", (unsigned int)p->nb_sect);
-  sprintf(info2, "%u", used);
-  print_sect_info(p->nb_sect, used);
+    sprintf(info1, "%u", (unsigned int)p->nb_sect);
+    sprintf(info2, "%u", used);
+    print_sect_info(p->nb_sect, used);
 }
 
 /*  */
-int main (int argc, char *argv[])
-{
-  FILE *fi;
-  PARAMS params;
-  int fd;
+int main(int argc, char *argv[]) {
+    FILE *fi;
+    PARAMS params;
+    int fd;
 
-  if (argc != 3)
-    {
-      fprintf (stderr, "Usage : image_swap [device] [image prefix name]\n");
-      exit (1);
+    if (argc != 3) {
+        fprintf(stderr, "Usage : image_swap [device] [image prefix name]\n");
+        exit(1);
     }
+    // Just check for SWAP-SPACE or SWAPSPACE2
 
-  // Just check for SWAP-SPACE or SWAPSPACE2
+    fi = fopen(argv[1], "rb");
+    check_signature(fi, &params);
+    allocated_sectors(&params);
+    fclose(fi);
 
-  fi = fopen (argv[1], "rb");
-  check_signature (fi, &params);
-  allocated_sectors (&params);
-  fclose (fi);
+    if (argv[2][0] == '?')
+        exit(0);
 
-  if (argv[2][0] == '?')
-    exit (0);
+    // Compress now
+    //
 
-  // Compress now
-  //
+    ui_send("init_backup", 5, argv[1], argv[2], info1, info2, argv[0]);
+    fd = open(argv[1], O_RDONLY);
+    compress_volume(fd, argv[2], &params, "SWAP=1");
+    close(fd);
 
-  ui_send("init_backup", 5, argv[1], argv[2], info1, info2, argv[0]);
-  fd = open (argv[1], O_RDONLY);
-  compress_volume (fd, argv[2], &params, "SWAP=1");
-  close (fd);
-
-  return 0;
+    return 0;
 }

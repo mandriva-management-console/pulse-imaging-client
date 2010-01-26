@@ -52,8 +52,7 @@
 char info1[32], info2[32];
 unsigned long lvm_sect;
 
-void allocated_sectors(PARAMS * p)
-{
+void allocated_sectors(PARAMS * p) {
     unsigned long i;
     unsigned long bitmap_lg;
     int off = 0;
@@ -67,7 +66,7 @@ void allocated_sectors(PARAMS * p)
 
     off = p->nb_sect;
 
-    p->bitmap = (unsigned char *) calloc(bitmap_lg = (off + 7) / 8, 1);
+    p->bitmap = (unsigned char *)calloc(bitmap_lg = (off + 7) / 8, 1);
     p->bitmaplg = bitmap_lg;
 
     // backup LVM: everything
@@ -81,22 +80,21 @@ void allocated_sectors(PARAMS * p)
 }
 
 /* main */
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     PARAMS params;
     long long offset;
     int fd;
 
     if (argc != 3) {
-        fprintf(stderr,
-                "Usage : image_lvm [device] [image prefix name]\n");
+        fprintf(stderr, "Usage : image_lvm [device] [image prefix name]\n");
         exit(1);
     }
     // check for LVM
     lvm_check(argv[1], &offset);
-    if (offset == 0) exit(1);
+    if (offset == 0)
+        exit(1);
 
-    params.nb_sect = offset/512;
+    params.nb_sect = offset / 512;
     allocated_sectors(&params);
 
     if (argv[2][0] == '?')

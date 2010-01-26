@@ -28,24 +28,19 @@
 #include <newt.h>
 #include <time.h>
 
+int main(int argc, char *argv[]) {
+    int i;
 
-int
-main (int argc, char *argv[])
-{
-  int i;
-
-  if (argc != 2)
-    {
-      fprintf (stderr, "Usage : image_error message-to-display\n");
-      exit (1);
+    if (argc != 2) {
+        fprintf(stderr, "Usage : image_error message-to-display\n");
+        exit(1);
     }
 
-  init_newt (argv[1]);
- // close_newt ();
+    init_newt(argv[1]);
+    // close_newt ();
 
-  return 0;
+    return 0;
 }
-
 
 /* newt */
 
@@ -60,44 +55,39 @@ unsigned long olddiff, bps;
 unsigned long long olddone;
 unsigned long long done, todo;
 
-void
-init_newt (unsigned char *message)
-{
-  newtComponent myForm, l;
+void init_newt(unsigned char *message) {
+    newtComponent myForm, l;
 
-  newtInit ();
-  newtCls ();
+    newtInit();
+    newtCls();
 
-  newtDrawRootText (0, 0, "LBLImage");
+    newtDrawRootText(0, 0, "LBLImage");
 
-  newtOpenWindow (2, 2, 72, 20, "LBLImage v" LBLIMAGEVER);
+    newtOpenWindow(2, 2, 72, 20, "LBLImage v" LBLIMAGEVER);
 
-  newtRefresh ();
+    newtRefresh();
 
-  newtCenteredWindow (60, 10, "LBL Error");
+    newtCenteredWindow(60, 10, "LBL Error");
 
-  myForm = newtForm (NULL, NULL, 0);
-  //l = newtLabel (1, 1, message);
-  l = newtTextbox(1, 1, 58, 8, NEWT_FLAG_WRAP);
-  newtTextboxSetText(l, message);
-  newtFormAddComponents (myForm, l, NULL);
-  newtDrawForm (myForm);
+    myForm = newtForm(NULL, NULL, 0);
+    //l = newtLabel (1, 1, message);
+    l = newtTextbox(1, 1, 58, 8, NEWT_FLAG_WRAP);
+    newtTextboxSetText(l, message);
+    newtFormAddComponents(myForm, l, NULL);
+    newtDrawForm(myForm);
 
-  newtBell();
+    newtBell();
 
-  newtRefresh ();
-
+    newtRefresh();
 
 }
 
-void
-close_newt (void)
-{
-  newtFormDestroy (f);
+void close_newt(void) {
+    newtFormDestroy(f);
 
-  //SLsmg_refresh();
-  //SLsmg_reset_smg();
-  SLang_reset_tty();
+    //SLsmg_refresh();
+    //SLsmg_reset_smg();
+    SLang_reset_tty();
 
-          //newtFinished ();
+    //newtFinished ();
 }

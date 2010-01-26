@@ -46,7 +46,6 @@
 
 #define FMTT_MAGIC "\040\114\126\115\062\040\170\133\065\101\045\162\060\116\052\076"
 
-
 extern unsigned long lvm_sect;
 
 /* compare two UUID strings
@@ -54,8 +53,7 @@ extern unsigned long lvm_sect;
  * return 1 if equal, else return 0
  * '-' characters are ignored in s2
  */
-int uuid_compare(char *s1, char *s2)
-{
+int uuid_compare(char *s1, char *s2) {
     int i;
 
     for (i = 0; i < 32; i++) {
@@ -67,10 +65,8 @@ int uuid_compare(char *s1, char *s2)
     return 1;
 }
 
-
 /* check if it's a LVM partition */
-void lvm_check(char *device, long long *offset)
-{
+void lvm_check(char *device, long long *offset) {
     unsigned long buf[256];
     FILE *fi;
 
@@ -91,7 +87,7 @@ void lvm_check(char *device, long long *offset)
         *offset = buf[9] + buf[10];
         debug("LVM: Real part offset: %16llx\n", *offset);
 
-        debug("LVM: VG name : '%32s'\n", (char *) &buf[11 + 32]);
+        debug("LVM: VG name : '%32s'\n", (char *)&buf[11 + 32]);
         debug("LVM: PV Num  : %ld\n", buf[108]);
         debug("LVM: PE Size : %ld\n", buf[113] / 2);
         debug("LVM: PE Total: %ld\n", buf[114]);
@@ -99,7 +95,6 @@ void lvm_check(char *device, long long *offset)
 
         lvm_sect = buf[113] * buf[115];
         debug("LVM: Total sectors: %ld\n", lvm_sect);
-
 
         if (fseek(fi, buf[9], SEEK_SET) != 0) {
             debug("Seek error\n");
@@ -127,7 +122,7 @@ void lvm_check(char *device, long long *offset)
         pv = (__u64 *) (((__u8 *) & buf[128]) + buf[133]);
         /* copy this PV uuid */
         pvuuid = (char *)pv;
-        debug("LVM2 pv UUID: %32s\n", (char *) pvuuid);
+        debug("LVM2 pv UUID: %32s\n", (char *)pvuuid);
         /* skip data */
         pv += 5;
         while (*pv) {
@@ -138,7 +133,7 @@ void lvm_check(char *device, long long *offset)
         debug("LVM2: Mdh offset: 0x%llX\n", mdh_offset);
         fseek(fi, mdh_offset, SEEK_SET);
         fread(buf, 128 * 4, 1, fi);
-        if (strncmp((char *) &buf[1], (char *) FMTT_MAGIC, 16)) {
+        if (strncmp((char *)&buf[1], (char *)FMTT_MAGIC, 16)) {
             debug("LVM: FMTT_MAGIC not found\n");
             return;
         }
@@ -193,7 +188,6 @@ void lvm_check(char *device, long long *offset)
         *offset *= 512;
         lvm_sect = extent * pe_count;
     }
-
 
     fclose(fi);
 

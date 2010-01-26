@@ -43,7 +43,6 @@
 #include <stdint.h>
 #include <sys/vfs.h>
 
-
 #include "include/io.h"
 #include "include/misc.h"
 #include "include/reiserfs_lib.h"
@@ -66,8 +65,7 @@ unsigned long lvm_sect = 0;
 
 /* fixme: this assumes that journal start and journal size are set
    correctly */
-static void check_first_bitmap(reiserfs_filsys_t fs, char *bitmap)
-{
+static void check_first_bitmap(reiserfs_filsys_t fs, char *bitmap) {
     int i;
     int bad;
 
@@ -85,10 +83,8 @@ static void check_first_bitmap(reiserfs_filsys_t fs, char *bitmap)
                          "reiserfs_open: first bitmap looks corrupted\n");
 }
 
-
 /* read bitmap blocks */
-void myreiserfs_read_bitmap_blocks(reiserfs_filsys_t fs, long offset)
-{
+void myreiserfs_read_bitmap_blocks(reiserfs_filsys_t fs, long offset) {
     struct reiserfs_super_block *rs = fs->s_rs;
     struct buffer_head *bh = SB_BUFFER_WITH_SB(fs);
     int fd = fs->s_dev;
@@ -113,8 +109,7 @@ void myreiserfs_read_bitmap_blocks(reiserfs_filsys_t fs, long offset)
         /* all bitmaps have to have itself marked used on it */
         if (bh->b_blocknr == 16) {
             if (!test_bit
-                (block % (fs->s_blocksize * 8),
-                 SB_AP_BITMAP(fs)[i]->b_data)) {
+                (block % (fs->s_blocksize * 8), SB_AP_BITMAP(fs)[i]->b_data)) {
                 reiserfs_warning(stderr,
                                  "reiserfs_open: bitmap %d was marked free\n",
                                  i);
@@ -147,8 +142,7 @@ void myreiserfs_read_bitmap_blocks(reiserfs_filsys_t fs, long offset)
 /* read super block and bitmaps. fixme: only 4k blocks, pre-journaled format
    is refused */
 reiserfs_filsys_t myreiserfs_open(char *filename, int flags, int *error,
-                                  void *vp, long offset)
-{
+                                  void *vp, long offset) {
     reiserfs_filsys_t fs;
     struct buffer_head *bh;
     struct reiserfs_super_block *rs;
@@ -175,7 +169,7 @@ reiserfs_filsys_t myreiserfs_open(char *filename, int flags, int *error,
                              "reiserfs_open: bread failed reading block %d\n",
                              i);
         } else {
-            rs = (struct reiserfs_super_block *) bh->b_data;
+            rs = (struct reiserfs_super_block *)bh->b_data;
 
             if (is_reiser2fs_magic_string(rs)
                 || is_reiserfs_magic_string(rs))
@@ -193,7 +187,7 @@ reiserfs_filsys_t myreiserfs_open(char *filename, int flags, int *error,
         *error = 666;
     return fs;
 
-  found:
+ found:
 
     /* fixme: we could make some check to make sure that super block looks
        correctly */
@@ -206,19 +200,14 @@ reiserfs_filsys_t myreiserfs_open(char *filename, int flags, int *error,
     fs->s_flags = flags;        /* O_RDONLY or O_RDWR */
     fs->s_vp = vp;
 
-
     myreiserfs_read_bitmap_blocks(fs, offset);
 
     return fs;
 
 }
 
-
-
 /* copy reiserfs filesystem bitmap into memory bitmap */
-int myreiserfs_fetch_disk_bitmap(reiserfs_bitmap_t bm,
-                                 reiserfs_filsys_t fs)
-{
+int myreiserfs_fetch_disk_bitmap(reiserfs_bitmap_t bm, reiserfs_filsys_t fs) {
     int i;
     int bytes;
     char *p;
@@ -262,9 +251,7 @@ int myreiserfs_fetch_disk_bitmap(reiserfs_bitmap_t bm,
     return 0;
 }
 
-
-void allocated_sectors(PARAMS * p, CPARAMS * cp)
-{
+void allocated_sectors(PARAMS * p, CPARAMS * cp) {
     unsigned long i, used = 0;
     unsigned long bitmap_lg;
     int off = 0;
@@ -281,8 +268,8 @@ void allocated_sectors(PARAMS * p, CPARAMS * cp)
     p->nb_sect = cp->blocks * 8;
     off = cp->offset / 512;
 
-    p->bitmap = (unsigned char *) calloc(bitmap_lg =
-                                         (p->nb_sect + off + 7) / 8, 1);
+    p->bitmap = (unsigned char *)calloc(bitmap_lg =
+                                        (p->nb_sect + off + 7) / 8, 1);
     p->bitmaplg = bitmap_lg;
 
     // backup LVM: everything
@@ -300,18 +287,16 @@ void allocated_sectors(PARAMS * p, CPARAMS * cp)
     print_sect_info(p->nb_sect + off, used + off);
 
     if (p->nb_sect != lvm_sect && lvm_sect != 0) {
-      debug("Cannot backup this LVM/Reiserfs volume in optimized mode\n"
-            "because data may span multiple volumes.\n");
-      exit(1);
+        debug("Cannot backup this LVM/Reiserfs volume in optimized mode\n"
+              "because data may span multiple volumes.\n");
+        exit(1);
 
     }
     p->nb_sect += off;
 
 }
 
-
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
     reiserfs_bitmap_t bm;
     reiserfs_filsys_t fs;
     PARAMS params;

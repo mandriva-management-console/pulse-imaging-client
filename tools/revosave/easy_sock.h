@@ -22,7 +22,6 @@
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA
  */
 
-
 #ifndef __EASY_SOCK__
 #define __EASY_SOCK__
 
@@ -59,7 +58,7 @@ char easy_sock_err_msg[EASY_SOCK_ERR_MSG_LEN];
 /*
  * Installs an error handler.
  */
-void easy_error(void (*handler)(int));
+void easy_error(void (*handler) (int));
 
 /*
  * This is a very useful function used to connect an host on a port.
@@ -78,7 +77,6 @@ int easy_tcp_connect(char *host, int port);
  * return a socket descriptor
  */
 int easy_tcp_bind(char *host, int port, int backlog);
-
 
 /*
  * This is a function that read a char from a socket.
@@ -118,7 +116,7 @@ double read_double(int sock);
  *          use malloc() to allocate new string so it can be read.
  *          Remember! It's your own responsibility free() the string.
  */
-char* read_string(int sock);
+char *read_string(int sock);
 
 /*
  * This is a function that write a char to a socket.
@@ -163,9 +161,7 @@ int write_double(int sock, double d);
  * Details: this function writes first the string length (int) then
  *          the string itself, so read_string() can read it.
  */
-int write_string(int sock, char* string);
-
-
+int write_string(int sock, char *string);
 
 /*
  * This is a function that read a char from a socket.
@@ -206,7 +202,7 @@ double read_double_c(int sock);
  *          use malloc() to allocate new string so it can be read.
  *          Remember! It's your own responsibility free() the string.
  */
-char* read_string_c(int sock);
+char *read_string_c(int sock);
 
 /*
  * This is a function that write a char to a socket.
@@ -252,7 +248,6 @@ int write_double_c(int sock, double d);
  * Details: this function writes first the string length (as chars) then
  *          the string itself, so read_string_c() can read it.
  */
-int write_string_c(int sock, char* string);
+int write_string_c(int sock, char *string);
 
 #endif
-
