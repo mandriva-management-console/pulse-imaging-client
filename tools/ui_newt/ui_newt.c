@@ -47,7 +47,6 @@ void suspend(void *d)
     newtResume();
 }
 
-
 newtComponent sc1, sc2, f;
 newtComponent t, i1, i2, l1, l2, l3, l4, t1;
 newtComponent time1, time2, bitrate;
@@ -59,7 +58,6 @@ unsigned long olddiff, bps;
 unsigned long long olddone;
 unsigned long long done, todo;
 
-
 /* update the bitrate, times */
 void update_misc(void)
 {
@@ -68,9 +66,9 @@ void update_misc(void)
     int h, m, s;
 
     now = time(NULL);
-    diff = (unsigned long) difftime(now, start);
+    diff = (unsigned long)difftime(now, start);
     if (diff == olddiff)
-    return;
+	return;
 
     h = diff / 3600;
     m = (diff / 60) % 60;
@@ -86,22 +84,22 @@ void update_misc(void)
 //    if (bps>0) remain=(todo-done)/bps;
 //          else remain=99*60*60+59*60+59;
     if (diff > 9)
-    remain = (((double) todo / (double) done) * (double) diff) - diff;
+	remain = (((double)todo / (double)done) * (double)diff) - diff;
     else
-    remain = 0;
+	remain = 0;
 
     if (remain < 0)
-    remain = 0;
+	remain = 0;
     h = remain / 3600;
     m = (remain / 60) % 60;
     s = remain % 60;
     sprintf(buf, "Remaining time : %02dh%02dm%02d", h, m, s);
-    if (remain) newtLabelSetText(time2, buf);
+    if (remain)
+	newtLabelSetText(time2, buf);
 
     olddone = done;
     olddiff = diff;
 }
-
 
 /* update the partition number */
 void update_part(char *dev)
@@ -109,12 +107,12 @@ void update_part(char *dev)
     struct stat st;
 
     if (stat(dev, &st) == 0) {
-    g_partnum = (minor(st.st_rdev) & 15) - 1;
-    if (major(st.st_rdev) == 254) {
-        g_partnum |= 0x100;
-    }
+	g_partnum = (minor(st.st_rdev) & 15) - 1;
+	if (major(st.st_rdev) == 254) {
+	    g_partnum |= 0x100;
+	}
     } else {
-    g_partnum = -1;
+	g_partnum = -1;
     }
 }
 
@@ -126,12 +124,12 @@ void update_file(int perc)
     /* only update if the file exists */
 
     if ((f = open(path, O_TRUNC | O_WRONLY)) != -1) {
-    char buf[256];
+	char buf[256];
 
-    snprintf(buf, 255, "%s%d: %d%%", (g_partnum > 255) ? "Lvm " : "",
-         g_partnum & 255, perc);
-    write(f, buf, strlen(buf));
-    close(f);
+	snprintf(buf, 255, "%s%d: %d%%", (g_partnum > 255) ? "Lvm " : "",
+		 g_partnum & 255, perc);
+	write(f, buf, strlen(buf));
+	close(f);
     }
 }
 
@@ -150,11 +148,11 @@ void read_update_head(void)
 
     msg[0] = 0;
     if ((f = open(path, O_RDONLY)) != -1) {
-    int sz = read(f, msg, 511);
-    close(f);
+	int sz = read(f, msg, 511);
+	close(f);
 
-    msg[sz] = 0;
-    update_head(msg);
+	msg[sz] = 0;
+	update_head(msg);
     }
 }
 
@@ -201,19 +199,18 @@ char *init_newt(int argc, char **argv)
     //newtScaleSet(sc2,0);
 
     sprintf(name, "- Total sectors : %lu = %d MiB\n", tot_sec,
-        (int) (tot_sec / 2048));
+	    (int)(tot_sec / 2048));
     i1 = newtLabel(3, 7, name);
     sprintf(name, "- Used sectors  : %lu = %d MiB (%3.2f%%)\n", used_sec,
-        (int) (used_sec / 2048), 100.0 * (float) used_sec / tot_sec);
+	    (int)(used_sec / 2048), 100.0 * (float)used_sec / tot_sec);
     i2 = newtLabel(3, 8, name);
 
     time1 = newtLabel(3, 15, "Elapsed time   : ..H..M..");
     time2 = newtLabel(3, 16, "Remaining time : ..H..M..");
     bitrate = newtLabel(3, 17, "Bitrate        : ...... KBps");
 
-
     newtFormAddComponents(f, sc1, i1, i2, l1, l3, l4, time1, time2,
-              bitrate, t1, NULL);
+			  bitrate, t1, NULL);
 
     read_update_head();
     update_part(device);
@@ -226,7 +223,7 @@ char *init_newt(int argc, char **argv)
     olddone = 0;
     bps = 0;
 
-    todo = used_sec * (unsigned long long) 512;
+    todo = used_sec * (unsigned long long)512;
     done = 0;
 
     return "OK";
@@ -239,7 +236,7 @@ char *init_newt(int argc, char **argv)
  */
 char *init_newt_restore(int argc, char **argv)
 {
-    char *oargv[] = { argv[0], argv[1], argv[3], argv[3], "_restore"};
+    char *oargv[] = { argv[0], argv[1], argv[3], argv[3], "_restore" };
 
     char name[80];
 
@@ -250,15 +247,20 @@ char *init_newt_restore(int argc, char **argv)
 
     init_newt(5, oargv);
 
-    snprintf (name, 63, " %s:%s -> %s                                                 ", device, savedir, hn);
+    snprintf(name, 63,
+	     " %s:%s -> %s                                                 ",
+	     device, savedir, hn);
     newtLabelSetText(l1, name);
-    snprintf (name, 63, "- Compressed data : %llu MiB                                 ", size/1024);
+    snprintf(name, 63,
+	     "- Compressed data : %llu MiB                                 ",
+	     size / 1024);
     newtLabelSetText(i1, name);
-    snprintf (name, 63, "- Restoring :                                                " );
+    snprintf(name, 63,
+	     "- Restoring :                                                ");
     newtLabelSetText(i2, name);
     newtRefresh();
 
-    todo = size*1024;
+    todo = size * 1024;
     done = 0;
 
     return "OK";
@@ -298,7 +300,6 @@ char *backup_write_error(int argc, char **argv)
     return "OK";
 }
 
-
 /*
 * update the scale and bitrate calcs
  *
@@ -312,14 +313,14 @@ char *update_progress(int argc, char **argv)
     static int pold = 0;
 
     done = atoll(argv[0]);
-    p = (100.0 * (float) done) / (float) todo;
+    p = (100.0 * (float)done) / (float)todo;
 
     if (p > 100)
-    p = 100;
+	p = 100;
 
     if (p - pold >= 1) {
-    /* update the stats on disk for the LRS */
-        update_file(p);
+	/* update the stats on disk for the LRS */
+	update_file(p);
     }
     pold = p;
 
@@ -339,35 +340,36 @@ char *update_progress(int argc, char **argv)
  */
 char *update_file_restore(int argc, char **argv)
 {
-  char buf[256];
-  int fi;
-  char *path = "/revoinfo/progress.txt";
+    char buf[256];
+    int fi;
+    char *path = "/revoinfo/progress.txt";
 
-  char *f = argv[0];
-  int n = atoi(argv[1]);
-  int max = atoi(argv[2]);
-  char *dev = argv[3];
+    char *f = argv[0];
+    int n = atoi(argv[1]);
+    int max = atoi(argv[2]);
+    char *dev = argv[3];
 
-  if (max == -1)
-    sprintf (buf, "- Restoring : %s%03d  -> %s\n       ", f, n, dev);
-  else if (max == -2)
-    sprintf (buf, "- Restoring : %s%03d (%s)  ", f, n, dev);
-  else
-    sprintf (buf, "- Restoring : %s%03d (/%d) -> %s\n     ", f, n, max-1, dev);
-  newtLabelSetText(i2, buf);
-  newtRefresh();
+    if (max == -1)
+	sprintf(buf, "- Restoring : %s%03d  -> %s\n       ", f, n, dev);
+    else if (max == -2)
+	sprintf(buf, "- Restoring : %s%03d (%s)  ", f, n, dev);
+    else
+	sprintf(buf, "- Restoring : %s%03d (/%d) -> %s\n     ", f, n, max - 1,
+		dev);
+    newtLabelSetText(i2, buf);
+    newtRefresh();
 
-  /* only update the restore progress info if the file exists */
-  if ((fi = open(path, O_TRUNC|O_WRONLY)) != -1)
-    {
-      int p = 100*done/todo;
+    /* only update the restore progress info if the file exists */
+    if ((fi = open(path, O_TRUNC | O_WRONLY)) != -1) {
+	int p = 100 * done / todo;
 
-      if (p > 100) p = 100;
-      snprintf(buf, 255, "%d%%", p);
-      write(fi, buf, strlen(buf));
-      close(fi);
+	if (p > 100)
+	    p = 100;
+	snprintf(buf, 255, "%d%%", p);
+	write(fi, buf, strlen(buf));
+	close(fi);
     }
-  return "OK";
+    return "OK";
 }
 
 /*
@@ -395,44 +397,43 @@ char *zlib_error(int argc, char **argv)
     return "OK";
 }
 
-
 /*
  * Display an error message
  *
  * arguments: title, message
  */
-char *misc_error (int argc, char **argv)
+char *misc_error(int argc, char **argv)
 {
-  newtComponent myForm, l;
+    newtComponent myForm, l;
 
-  newtInit ();
-  newtCls ();
+    newtInit();
+    newtCls();
 
-  // FIXME. Really needed?
-  newtDrawRootText (0, 0, "Pulse 2 Imaging");
+    // FIXME. Really needed?
+    newtDrawRootText(0, 0, "Pulse 2 Imaging");
 
-  newtOpenWindow (2, 2, 72, 20, "LBLImage v" LBLIMAGEVER);
+    newtOpenWindow(2, 2, 72, 20, "LBLImage v" LBLIMAGEVER);
 
-  newtRefresh ();
+    newtRefresh();
 
-  newtCenteredWindow (60, 10, argv[0]);
+    newtCenteredWindow(60, 10, argv[0]);
 
-  myForm = newtForm (NULL, NULL, 0);
-  l = newtTextbox(1, 1, 58, 8, NEWT_FLAG_WRAP);
-  newtTextboxSetText(l, argv[1]);
-  newtFormAddComponents (myForm, l, NULL);
-  newtDrawForm (myForm);
+    myForm = newtForm(NULL, NULL, 0);
+    l = newtTextbox(1, 1, 58, 8, NEWT_FLAG_WRAP);
+    newtTextboxSetText(l, argv[1]);
+    newtFormAddComponents(myForm, l, NULL);
+    newtDrawForm(myForm);
 
-  newtBell();
-  newtRefresh ();
+    newtBell();
+    newtRefresh();
 
-  waitkey();
+    waitkey();
 
-  newtPopWindow();
-  newtFormDestroy (myForm);
-  newtRefresh ();
+    newtPopWindow();
+    newtFormDestroy(myForm);
+    newtRefresh();
 
-  return "OK";
+    return "OK";
 }
 
 /*
@@ -444,14 +445,14 @@ void waitkey(void)
 
     fd = open("/dev/input/event1", O_RDONLY);
     if (fd != -1) {
-        unsigned short ev[8];
+	unsigned short ev[8];
 
-        while (read(fd, &ev, sizeof(ev))) {
-            if (ev[5] == 0x2e) {
-                break;
-            }
-        }
-        close(fd);
+	while (read(fd, &ev, sizeof(ev))) {
+	    if (ev[5] == 0x2e) {
+		break;
+	    }
+	}
+	close(fd);
     }
     sleep(1);
 }
@@ -463,15 +464,15 @@ int main(void)
 {
 
     struct cmd_s commands[] = {
-    {"init_backup", 5, init_newt},
-    {"init_restore", 4, init_newt_restore},
-    {"close", 0, close_newt},
-    {"refresh_backup_progress", 1, update_progress},
-    {"refresh_file", 5, update_file_restore},
-    {"backup_write_error", 0, backup_write_error},
-    {"zlib_error", 1, zlib_error},
-    {"misc_error", 2, misc_error},
-    {NULL, 0, NULL}
+	{"init_backup", 5, init_newt},
+	{"init_restore", 4, init_newt_restore},
+	{"close", 0, close_newt},
+	{"refresh_backup_progress", 1, update_progress},
+	{"refresh_file", 5, update_file_restore},
+	{"backup_write_error", 0, backup_write_error},
+	{"zlib_error", 1, zlib_error},
+	{"misc_error", 2, misc_error},
+	{NULL, 0, NULL}
     };
 
     server_loop(7001, commands);

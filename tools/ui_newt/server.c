@@ -75,10 +75,10 @@ static void ctrlC(int sig)
     debug(sd);
 
     if (sig == SIGUSR1)
-        close(sock_1);
+	close(sock_1);
     else {
-        close(sock);
-        close(sock_1);
+	close(sock);
+	close(sock_1);
     }
 
     /*for (j = 0; j < MAX_VARS; j++)
@@ -87,8 +87,8 @@ static void ctrlC(int sig)
 
     sprintf(sd, "Raising signal: %i\n", SIGKILL);
     debug(sd);
-    raise(SIGKILL);             /* send a signal to the current process */
-}                               /* ctrlC */
+    raise(SIGKILL);		/* send a signal to the current process */
+}				/* ctrlC */
 
 /**
  * Handles inplicit reading errors
@@ -96,11 +96,10 @@ static void ctrlC(int sig)
 static void onError(int err)
 {
     if (err != 0)
-        debug(easy_sock_err_msg);
+	debug(easy_sock_err_msg);
     close(sock_1);
     sock_1 = -1;
 }
-
 
 /*
  * Main server loop never returns
@@ -128,9 +127,9 @@ int server_loop(int port, struct cmd_s *commands)
     /* binding address */
     sock = easy_tcp_bind(host, port, BACKLOG);
     if (sock == -1) {
-        debug("Can't bind address!\n");
-        debug(easy_sock_err_msg);
-        exit(EXIT_FAILURE);
+	debug("Can't bind address!\n");
+	debug(easy_sock_err_msg);
+	exit(EXIT_FAILURE);
     }
 
     /* Set signal handler */
@@ -143,55 +142,57 @@ int server_loop(int port, struct cmd_s *commands)
     easy_error(onError);
 
     while (1) {
-        /* accepting connections */
-        if (sock_1 == -1) {
-            sock_1 = accept(sock, 0, 0);
-        }
-        if (sock_1 == -1) {
-            //close(sock);
-            //close(sock_1);
-            continue;
-            //exit(1);
-        }
+	/* accepting connections */
+	if (sock_1 == -1) {
+	    sock_1 = accept(sock, 0, 0);
+	}
+	if (sock_1 == -1) {
+	    //close(sock);
+	    //close(sock_1);
+	    continue;
+	    //exit(1);
+	}
 
-        /* Reading data */
-        cmd = read_string(sock_1);
-        if (sock_1 == -1) continue;
-        args = read_int(sock_1);
-        if (sock_1 == -1) continue;
+	/* Reading data */
+	cmd = read_string(sock_1);
+	if (sock_1 == -1)
+	    continue;
+	args = read_int(sock_1);
+	if (sock_1 == -1)
+	    continue;
 
-        /* Read arguments */
-        for (i = 0; i < args; i++) {
-            arg[i] = read_string(sock_1);
-        }
+	/* Read arguments */
+	for (i = 0; i < args; i++) {
+	    arg[i] = read_string(sock_1);
+	}
 
-        /* lookup table */
-        curcmd = commands;
-        while (1) {
-            //printf("%s\n", curcmd->name);
-            if (curcmd->name == NULL)
-                break;
-            if (!strcmp(curcmd->name, cmd)) {
-                /* command found */
-                ret = (curcmd->func) (args, arg);
-                /* return string */
-                write_string(sock_1, ret);
-                break;
-            }
-            curcmd++;
-        }
+	/* lookup table */
+	curcmd = commands;
+	while (1) {
+	    //printf("%s\n", curcmd->name);
+	    if (curcmd->name == NULL)
+		break;
+	    if (!strcmp(curcmd->name, cmd)) {
+		/* command found */
+		ret = (curcmd->func) (args, arg);
+		/* return string */
+		write_string(sock_1, ret);
+		break;
+	    }
+	    curcmd++;
+	}
 
-        /* free the strings */
-        if (cmd)
-            free(cmd);
-        for (i = 0; i < args; i++) {
-            if (arg[i])
-                free(arg[i]);
-        }
+	/* free the strings */
+	if (cmd)
+	    free(cmd);
+	for (i = 0; i < args; i++) {
+	    if (arg[i])
+		free(arg[i]);
+	}
 
 //      if (strcmp(curcmd->name, "close") == 0) {
-            close(sock_1);
-            sock_1 = -1;
+	close(sock_1);
+	sock_1 = -1;
 //      }
 
     }
