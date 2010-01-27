@@ -38,6 +38,40 @@
 #include "ui_newt.h"
 #include "server.h"
 
+char *humanReadable(float num, char* unit, int base, int padded ) {
+    char *units[8] = {"Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi"};
+    char *defaultUnit = "B";
+    int defaultBase = 1024;
+    char* output = malloc(256);
+    int i;
+
+    if (base == 0)
+        base = defaultBase;
+
+    if (unit == NULL)
+        unit = defaultUnit;
+
+    if (num < defaultBase) {
+        if (padded)
+            snprintf(output, 256, "%5.0f   %s", num, unit);
+        else
+            snprintf(output, 256, "%.0f %s", num, unit);
+    } else {
+        for (i = 0; i < 8; i++) {
+            num /=  base;
+            if (num < defaultBase) {
+                if (padded)
+                    snprintf(output, 256, "%5.1f %s%s", num, units[i], unit);
+                else
+                    snprintf(output, 256, "%.1f %s%s", num, units[i], unit);
+                break;
+            }
+        }
+    }
+
+    return output;
+}
+
 void suspend(void *d) {
     newtSuspend();
     raise(SIGTSTP);
@@ -46,7 +80,7 @@ void suspend(void *d) {
 
 newtComponent sc1, sc2, f;
 newtComponent t, i1, i2, l1, l2, l3, l4, t1;
-newtComponent time1, time2, bitrate;
+newtComponent time1, time2, bitrate, netrate;
 
 time_t start, now;
 int g_old_curr, g_old_nb, g_partnum;
@@ -59,22 +93,21 @@ unsigned long long done, todo;
 void update_misc(void) {
     char buf[80];
     unsigned long diff, remain;
-    int h, m, s;
+    int m, s;
 
     now = time(NULL);
     diff = (unsigned long)difftime(now, start);
     if (diff == olddiff)
         return;
 
-    h = diff / 3600;
-    m = (diff / 60) % 60;
-    s = diff % 60;
-    sprintf(buf, "Elapsed time   : %02dh%02dm%02d", h, m, s);
+    m = (int)(diff / 60);
+    s = (int)(diff % 60);
+    sprintf(buf, "Elapsed time   : %5d min %02d sec", m, s);
     newtLabelSetText(time1, buf);
 
     bps = ((9 * bps) / 10) + (done - olddone) / (10 * (diff - olddiff));
 
-    sprintf(buf, "Bitrate        : %ld KBps", bps / 1024);
+    sprintf(buf, "Disk bitrate   : %s", humanReadable(bps, "B/s", 1024, 1));
     newtLabelSetText(bitrate, buf);
 
 //    if (bps>0) remain=(todo-done)/bps;
@@ -86,10 +119,9 @@ void update_misc(void) {
 
     if (remain < 0)
         remain = 0;
-    h = remain / 3600;
-    m = (remain / 60) % 60;
-    s = remain % 60;
-    sprintf(buf, "Remaining time : %02dh%02dm%02d", h, m, s);
+    m = (int)(remain / 60);
+    s = (int)(remain % 60);
+    sprintf(buf, "Remaining time : %5d min %02d sec", m, s);
     if (remain)
         newtLabelSetText(time2, buf);
 
@@ -170,16 +202,16 @@ char *init_newt(int argc, char **argv) {
 
     newtSetSuspendCallback(suspend, NULL);
 
-    newtDrawRootText(0, 0, "Linbox Rescue Server");
+    newtDrawRootText(0, 0, "Pulse 2 Imaging Client");
 
-    sprintf(name, "LBLImage v%s %s", LBLIMAGEVER, rindex(argv0, '_'));
+    sprintf(name, "Pulse 2 Imager %s v%s", rindex(argv0, '_') + 1, LBLIMAGEVER);
     newtOpenWindow(2, 2, 72, 20, name);
 
     f = newtForm(NULL, NULL, 0);
 
     t1 = newtTextbox(1, 1, 70, 5, NEWT_FLAG_WRAP);
 
-    sprintf(name, " %s --> %s ", device, savedir);
+    sprintf(name, " %s ==> %s ", device, savedir);
     l1 = newtLabel(3, 20, name);
 
     l3 = newtLabel(37, 12, "%");
@@ -189,16 +221,15 @@ char *init_newt(int argc, char **argv) {
     //sc2=newtScale(13,12,54,100);
     //newtScaleSet(sc2,0);
 
-    sprintf(name, "- Total sectors : %lu = %d MiB\n", tot_sec,
-            (int)(tot_sec / 2048));
+    sprintf(name, "Total size : %s\n",humanReadable((float)tot_sec * 512, "B", 1024, 0));
     i1 = newtLabel(3, 7, name);
-    sprintf(name, "- Used sectors  : %lu = %d MiB (%3.2f%%)\n", used_sec,
-            (int)(used_sec / 2048), 100.0 * (float)used_sec / tot_sec);
+    sprintf(name, "Total data : %s\n",humanReadable((float)used_sec * 512, "B", 1024, 0));
     i2 = newtLabel(3, 8, name);
 
-    time1 = newtLabel(3, 15, "Elapsed time   : ..H..M..");
-    time2 = newtLabel(3, 16, "Remaining time : ..H..M..");
-    bitrate = newtLabel(3, 17, "Bitrate        : ...... KBps");
+    time1 = newtLabel(3, 14,   "Elapsed time   :       min    sec");
+    time2 = newtLabel(3, 15,   "Remaining time :       min    sec");
+    bitrate = newtLabel(3, 16, "Disk bitrate   :");
+    netrate = newtLabel(3, 17, "Disk netrate   :");
 
     newtFormAddComponents(f, sc1, i1, i2, l1, l3, l4, time1, time2,
                           bitrate, t1, NULL);
@@ -394,9 +425,9 @@ char *misc_error(int argc, char **argv) {
     newtCls();
 
     // FIXME. Really needed?
-    newtDrawRootText(0, 0, "Pulse 2 Imaging");
+    newtDrawRootText(0, 0, "Pulse 2 Imaging Client");
 
-    newtOpenWindow(2, 2, 72, 20, "LBLImage v" LBLIMAGEVER);
+    newtOpenWindow(2, 2, 72, 20, "Pulse 2 Imager v" LBLIMAGEVER);
 
     newtRefresh();
 
