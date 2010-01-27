@@ -38,6 +38,18 @@
 #include "ui_newt.h"
 #include "server.h"
 
+newtComponent newtProgressScale, f;
+newtComponent t, i1, i2, l1, l2, l3, l4, t1;
+newtComponent newtElapsedTime, newtRemainingTime, newtBitrate, newtNetrate;
+
+time_t start;
+int g_old_curr, g_old_nb, g_partnum;
+
+unsigned long gDiskIoBps, gNetIoBps;
+unsigned long gPreviousElapsedTime;
+unsigned long long gDiskIODone, gPreviousDiskIODone, gDiskIOTodo;
+unsigned long long gNetIODone, gPreviousNetIODone, gNetIOTodo;
+
 char *humanReadable(float num, char* unit, int base, int padded ) {
     char *units[8] = {"Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi"};
     char *defaultUnit = "B";
@@ -78,55 +90,44 @@ void suspend(void *d) {
     newtResume();
 }
 
-newtComponent sc1, sc2, f;
-newtComponent t, i1, i2, l1, l2, l3, l4, t1;
-newtComponent time1, time2, bitrate, netrate;
-
-time_t start, now;
-int g_old_curr, g_old_nb, g_partnum;
-
-unsigned long olddiff, bps;
-unsigned long long olddone;
-unsigned long long done, todo;
-
 /* update the bitrate, times */
 void update_misc(void) {
     char buf[80];
-    unsigned long diff, remain;
-    int m, s;
+    unsigned long elapsedTime, remainingTime;
 
-    now = time(NULL);
-    diff = (unsigned long)difftime(now, start);
-    if (diff == olddiff)
+    elapsedTime = (unsigned long)difftime(time(NULL), start);
+    if (elapsedTime == gPreviousElapsedTime)
         return;
 
-    m = (int)(diff / 60);
-    s = (int)(diff % 60);
-    sprintf(buf, "Elapsed time   : %5d min %02d sec", m, s);
-    newtLabelSetText(time1, buf);
+    // Bps ponderation :
+    // we sum 90% from the previous (average) computed value
+    // with 10% from the current (instantaneous) value
+    gDiskIoBps = (9 * gDiskIoBps / 10) + (gDiskIODone - gPreviousDiskIODone) / (10 * (elapsedTime - gPreviousElapsedTime));
+    gNetIoBps  = (9 * gNetIoBps / 10)  + (gNetIODone  - gPreviousNetIODone)  / (10 * (elapsedTime - gPreviousElapsedTime));
 
-    bps = ((9 * bps) / 10) + (done - olddone) / (10 * (diff - olddiff));
+    sprintf(buf, "Elapsed time   : %5d min %02d sec", (int)(elapsedTime / 60), (int)(elapsedTime % 60));
+    newtLabelSetText(newtElapsedTime, buf);
+    sprintf(buf, "Disk bitrate   : %s", humanReadable(gDiskIoBps, "B/s", 1024, 1));
+    newtLabelSetText(newtBitrate, buf);
+    //MDV/NR sprintf(buf, "Storage I/O    : %s", humanReadable(gNetIoBps, "B/s", 1024, 1));
+    //MDV/NR newtLabelSetText(newtNetrate, buf);
 
-    sprintf(buf, "Disk bitrate   : %s", humanReadable(bps, "B/s", 1024, 1));
-    newtLabelSetText(bitrate, buf);
-
-//    if (bps>0) remain=(todo-done)/bps;
-//          else remain=99*60*60+59*60+59;
-    if (diff > 9)
-        remain = (((double)todo / (double)done) * (double)diff) - diff;
+    if (elapsedTime > 9)
+        remainingTime = (((double)gDiskIOTodo / (double)gDiskIODone) * (double)elapsedTime) - elapsedTime;
     else
-        remain = 0;
+        remainingTime = 0;
 
-    if (remain < 0)
-        remain = 0;
-    m = (int)(remain / 60);
-    s = (int)(remain % 60);
-    sprintf(buf, "Remaining time : %5d min %02d sec", m, s);
-    if (remain)
-        newtLabelSetText(time2, buf);
+    if (remainingTime < 0)
+        remainingTime = 0;
 
-    olddone = done;
-    olddiff = diff;
+    if (remainingTime) {
+        sprintf(buf, "Remaining time : %5d min %02d sec", (int)(remainingTime / 60), (int)(remainingTime % 60));
+        newtLabelSetText(newtRemainingTime, buf);
+    }
+
+    gPreviousDiskIODone = gDiskIODone;
+    gPreviousNetIODone = gNetIODone;
+    gPreviousElapsedTime = elapsedTime;
 }
 
 /* update the partition number */
@@ -215,24 +216,24 @@ char *init_newt(int argc, char **argv) {
     l1 = newtLabel(3, 20, name);
 
     l3 = newtLabel(37, 12, "%");
-    sc1 = newtScale(13, 11, 54, 100);
-    newtScaleSet(sc1, 0);
+    newtProgressScale = newtScale(13, 11, 54, 100);
+    newtScaleSet(newtProgressScale, 0);
     l4 = newtLabel(3, 11, "Progress: ");
-    //sc2=newtScale(13,12,54,100);
-    //newtScaleSet(sc2,0);
 
     sprintf(name, "Total size : %s\n",humanReadable((float)tot_sec * 512, "B", 1024, 0));
     i1 = newtLabel(3, 7, name);
     sprintf(name, "Total data : %s\n",humanReadable((float)used_sec * 512, "B", 1024, 0));
     i2 = newtLabel(3, 8, name);
 
-    time1 = newtLabel(3, 14,   "Elapsed time   :       min    sec");
-    time2 = newtLabel(3, 15,   "Remaining time :       min    sec");
-    bitrate = newtLabel(3, 16, "Disk bitrate   :");
-    netrate = newtLabel(3, 17, "Disk netrate   :");
+    newtElapsedTime =   newtLabel(3, 14, "Elapsed time   :       min    sec");
+    newtRemainingTime = newtLabel(3, 15, "Remaining time :       min    sec");
+    newtBitrate =       newtLabel(3, 16, "Disk bitrate   :");
+    //MDV/NR newtNetrate =       newtLabel(3, 17, "Storage I/O    :");
 
-    newtFormAddComponents(f, sc1, i1, i2, l1, l3, l4, time1, time2,
-                          bitrate, t1, NULL);
+    //MDV/NR newtFormAddComponents(f, newtProgressScale, i1, i2, l1, l3, l4, newtElapsedTime, newtRemainingTime,
+                          //MDV/NR newtBitrate, newtNetrate, t1, NULL);
+    newtFormAddComponents(f, newtProgressScale, i1, i2, l1, l3, l4, newtElapsedTime, newtRemainingTime,
+                          newtBitrate, t1, NULL);
 
     read_update_head();
     update_part(device);
@@ -241,12 +242,12 @@ char *init_newt(int argc, char **argv) {
     newtRefresh();
 
     start = time(NULL);
-    olddiff = 0;
-    olddone = 0;
-    bps = 0;
+    gPreviousElapsedTime = 0;
+    gPreviousDiskIODone = 0;
+    gDiskIoBps = 0;
 
-    todo = used_sec * (unsigned long long)512;
-    done = 0;
+    gDiskIOTodo = used_sec * (unsigned long long)512;
+    gDiskIODone = 0;
 
     return "OK";
 }
@@ -281,8 +282,8 @@ char *init_newt_restore(int argc, char **argv) {
     newtLabelSetText(i2, name);
     newtRefresh();
 
-    todo = size * 1024;
-    done = 0;
+    gDiskIOTodo = size * 1024;
+    gDiskIODone = 0;
 
     return "OK";
 }
@@ -327,27 +328,26 @@ char *backup_write_error(int argc, char **argv) {
 char *update_progress(int argc, char **argv) {
     char buf[80];
     // only use the amount of real data read
-    float p;
-    static int pold = 0;
+    float progressPercentile;
+    static int oldProgressPercentile = 0;
 
-    done = atoll(argv[0]);
-    p = (100.0 * (float)done) / (float)todo;
+    gDiskIODone = atoll(argv[0]);
+    gNetIODone = atoll(argv[1]);
 
-    if (p > 100)
-        p = 100;
+    progressPercentile = (100.0 * (float)gDiskIODone) / (float)gDiskIOTodo;
+    if (progressPercentile > 100)
+        progressPercentile = 100;
 
-    if (p - pold >= 1) {
-        /* update the stats on disk for the LRS */
-        update_file(p);
-    }
-    pold = p;
-
-    newtScaleSet(sc1, p);
-
-    sprintf(buf, "%3.2f%%", p);
+    newtScaleSet(newtProgressScale, progressPercentile);
+    sprintf(buf, "%3.2f%%", progressPercentile);
     newtLabelSetText(l3, buf);
     update_misc();
     newtRefresh();
+
+    if (progressPercentile >= oldProgressPercentile + 1)
+        update_file(progressPercentile);
+
+    oldProgressPercentile = progressPercentile;
     return "OK";
 }
 
@@ -367,18 +367,18 @@ char *update_file_restore(int argc, char **argv) {
     char *dev = argv[3];
 
     if (max == -1)
-        sprintf(buf, "- Restoring : %s%03d  -> %s\n       ", f, n, dev);
+        sprintf(buf, "- Restoring : %s%03d  => %s\n       ", f, n, dev);
     else if (max == -2)
         sprintf(buf, "- Restoring : %s%03d (%s)  ", f, n, dev);
     else
-        sprintf(buf, "- Restoring : %s%03d (/%d) -> %s\n     ", f, n, max - 1,
+        sprintf(buf, "- Restoring : %s%03d (/%d) => %s\n     ", f, n, max - 1,
                 dev);
     newtLabelSetText(i2, buf);
     newtRefresh();
 
     /* only update the restore progress info if the file exists */
     if ((fi = open(path, O_TRUNC | O_WRONLY)) != -1) {
-        int p = 100 * done / todo;
+        int p = 100 * gDiskIODone / gDiskIOTodo;
 
         if (p > 100)
             p = 100;
