@@ -20,7 +20,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 
-CFLAGS	= -O2 -Wall -DBENCH -I$(ZLIB_DIR) -I../revosave
+CFLAGS	= -O2 -Wall -DBENCH -I$(ZLIB_DIR)
 LIBS	= -L$(ZLIB_DIR) -lz
 OBJS	= main.o compress.o disk.o nfs.o
 LDFLAGS	=
