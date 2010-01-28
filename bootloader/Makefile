@@ -44,7 +44,7 @@ revoboot.pxe: $(OBJ) adjust_length
 	rm -f revoboot.pxe
 	$(MAKE) -f Makefile.zlib CC=$(CC)
 	$(CC) -o revoboot.pxe.exec -nostdlib -Wl,-N -Wl,-Ttext -Wl,7C00 $(OBJ) $(OBJZLIB) -m32
-	objcopy -O binary revoboot.pxe.exec revoboot.pxe
+	objcopy -O binary revoboot.pxe.exec revoboot.pxe && rm revoboot.pxe.exec
 	./adjust_length
 
 adjust_length: adjust_length.c
@@ -57,6 +57,6 @@ dist-clean: clean
 
 clean:
 	$(MAKE) -f Makefile.zlib clean
-	rm -r -f $(OBJ) revoboot.pxe revoboot.pxe.* adjust_length
+	rm -r -f $(OBJ) revoboot.pxe revoboot.pxe-* adjust_length
 
 .PHONY: revoboot.pxe
