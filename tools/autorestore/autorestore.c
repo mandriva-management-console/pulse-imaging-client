@@ -559,9 +559,10 @@ void restore(char *device, unsigned int sect, char *fname)
 
             if ( upcnt++ % 100 == 0 ) {
                 /* update status */
-                char tmp[32];
-                sprintf(tmp, "%llu", ((long long unsigned)done)*1024 + zptr.total_in);
-                ui_send("refresh_backup_progress", 1, tmp);
+                char tmp1[32], tmp2[32];
+                sprintf(tmp1, "%llu", ((long long unsigned)done)*1024 + zptr.total_in);
+                sprintf(tmp2, "%llu", ((long long unsigned)done)*1024 + zptr.total_in);
+                ui_send("refresh_backup_progress", 2, tmp1, tmp2);
             }
             if ((ret == Z_OK) && (zptr.avail_out == 0)) {
                 if (firstpass) {
