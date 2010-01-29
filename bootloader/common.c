@@ -195,6 +195,13 @@ setup_diskless_environment (void)
         if (new_tftpdir(config_file) < 0)
         {
                 grub_sprintf(config_file,"%s/cfg/default",basedir);
+                grub_printf("Testing        : %s\n",config_file);
+                if (new_tftpdir(config_file) < 0)
+                {
+                        grub_printf ("\nCan't find a valid boot menu !");
+                        grub_printf ("\nThis is not supposed to happen, please contact your system administrator.");
+                        return 0;
+                }
         }
   }
 
