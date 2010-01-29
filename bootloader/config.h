@@ -32,5 +32,5 @@
 #define ADDR32 addr32
 #define DATA32 data32
 
-#define PACKAGE "Pulse2BootLoader"
-#define VERSION "1.41"
+#define PACKAGE "Pulse 2 Bootloader"
+#define VERSION "1.50"
