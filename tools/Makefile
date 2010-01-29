@@ -29,7 +29,7 @@ BUILD_FOLDER = $(shell pwd)/build
 
 include consts.mk
 
-all: image save restore ui_newt bench ntblfix
+all: image save restore ui_newt bench ntblfix memtest
 	cp -a scripts/mount.sh 		$(BUILD_FOLDER)/bin
 	cp -a scripts/mount-nfs.sh 	$(BUILD_FOLDER)/bin
 
@@ -120,6 +120,14 @@ ntblfix:
 	$(MAKE) -C ntblfix CC=$(CC)
 	cp -a ntblfix/ntblfix $(BUILD_FOLDER)/bin
 
+
+memtest:
+	[ -e $(3RDPARTY_FOLDER)/$(MEMTEST_TARBALL) ] || wget $(MEMTEST_URI)/$(MEMTEST_TARBALL) -P $(3RDPARTY_FOLDER)
+	[ -d $(BUILD_FOLDER)/$(MEMTEST_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(MEMTEST_TARBALL) -C $(BUILD_FOLDER)
+	# see http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=319837#33
+	sed -i "s/0x10000;/0x100000;/" $(BUILD_FOLDER)/$(MEMTEST_FOLDER)/memtest.lds
+	$(MAKE) -C $(BUILD_FOLDER)/$(MEMTEST_FOLDER) CC=$(CC)
+
 clean:
 	$(MAKE) clean -C revosave
 	$(MAKE) clean -C autosave
@@ -128,6 +136,7 @@ clean:
 	$(MAKE) clean -C ntblfix
 	$(MAKE) clean -C bench
 	$(MAKE) clean -C $(BUILD_FOLDER)/$(ZLIB_FOLDER)
+	$(MAKE) clean -C $(BUILD_FOLDER)/$(MEMTEST_FOLDER)
 	-[ -f $(BUILD_FOLDER)/$(NEWT_FOLDER)/Makefile ] && $(MAKE) clean -C $(BUILD_FOLDER)/$(NEWT_FOLDER) && rm -f $(BUILD_FOLDER)/$(NEWT_FOLDER)/Makefile
 	-[ -f $(BUILD_FOLDER)/$(SLANG_FOLDER)/Makefile ] && $(MAKE) clean -C $(BUILD_FOLDER)/$(SLANG_FOLDER) && rm -f $(BUILD_FOLDER)/$(SLANG_FOLDER)/Makefile
 	-rm -rf $(BUILD_FOLDER)/$(REISER_FOLDER)

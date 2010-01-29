@@ -34,3 +34,9 @@ POPT_URI		= http://rpm5.org/files/popt
 POPT_FOLDER		= popt-$(POPT_VERSION)
 POPT_TARBALL	= popt-$(POPT_VERSION).tar.gz
 
+# MEMTEST86+
+MEMTEST_VERSION = 4.00
+MEMTEST_URI     = http://www.memtest.org/download/$(MEMTEST_VERSION)
+MEMTEST_FOLDER  = memtest86+-$(MEMTEST_VERSION)
+MEMTEST_TARBALL = memtest86+-$(MEMTEST_VERSION).tar.gz
+
