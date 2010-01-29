@@ -38,7 +38,6 @@ OBJZLIB		= adler32.o inflate.o infblock.o infcodes.o inftrees.o inffast.o infuti
 
 all: revoboot.pxe
 	mv revoboot.pxe revoboot.pxe-$(SVNREV)
-	ln -sf revoboot.pxe-$(SVNREV) revoboot.pxe
 
 revoboot.pxe: $(OBJ) adjust_length
 	rm -f revoboot.pxe

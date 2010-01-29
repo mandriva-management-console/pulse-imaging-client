@@ -61,12 +61,18 @@ imaging: kernel bootloader tools initrd
 
 kernel:
 	$(MAKE) -C $(FOLDER_KERNEL) SVNREV=$(SVNREV)
+	cp -a $(FOLDER_KERNEL)/$(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV)
+	ln -sf bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) $(BUILD_FOLDER)/bzImage
 
 bootloader:
 	$(MAKE) -C $(FOLDER_BOOTLOADER) SVNREV=$(SVNREV)
+	cp -a $(FOLDER_BOOTLOADER)/revoboot.pxe-$(SVNREV) $(BUILD_FOLDER)/revoboot.pxe-$(SVNREV)
+	ln -sf revoboot.pxe-$(SVNREV) $(BUILD_FOLDER)/revoboot.pxe
 
 tools:
 	$(MAKE) -C $(FOLDER_TOOLS) SVNREV=$(SVNREV)
+	# see http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=319837#33
+	cp -a $(FOLDER_TOOLS)/$(BUILD_FOLDER)/$(MEMTEST_FOLDER)/memtest $(BUILD_FOLDER)/memtest
 
 initrd:
 	$(MAKE) -C $(FOLDER_INITRD) SVNREV=$(SVNREV)
