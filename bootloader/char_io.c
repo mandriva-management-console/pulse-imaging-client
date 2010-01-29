@@ -267,9 +267,9 @@ init_page (void)
 {
   cls ();
 
-  grub_printf ("\n  "PACKAGE" version "VERSION"            (%dK lower / %dK upper mem)\n\n",
-          mbi.mem_lower, mbi.mem_upper);
+  grub_printf ("\n様様様様様様様様様様様様裕   Pulse 2 Imaging Server   突様様様様様様様様様様様様");
 }
+
 
 /* The number of the history entries.  */
 static int num_history = 0;
