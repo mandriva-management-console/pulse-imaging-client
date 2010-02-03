@@ -105,9 +105,9 @@ void update_misc(void) {
     gDiskIoBps = (9 * gDiskIoBps / 10) + (gDiskIODone - gPreviousDiskIODone) / (10 * (elapsedTime - gPreviousElapsedTime));
     gNetIoBps  = (9 * gNetIoBps / 10)  + (gNetIODone  - gPreviousNetIODone)  / (10 * (elapsedTime - gPreviousElapsedTime));
 
-    sprintf(buf, "Elapsed time   : %5d min %02d sec", (int)(elapsedTime / 60), (int)(elapsedTime % 60));
+    sprintf(buf, "Elapsed   : %5d min %02d sec", (int)(elapsedTime / 60), (int)(elapsedTime % 60));
     newtLabelSetText(newtElapsedTime, buf);
-    sprintf(buf, "Disk bitrate   : %s", humanReadable(gDiskIoBps, "B/s", 1024, 1));
+    sprintf(buf, "Speed     : %s", humanReadable(gDiskIoBps, "B/s", 1024, 1));
     newtLabelSetText(newtBitrate, buf);
     //MDV/NR sprintf(buf, "Storage I/O    : %s", humanReadable(gNetIoBps, "B/s", 1024, 1));
     //MDV/NR newtLabelSetText(newtNetrate, buf);
@@ -121,7 +121,7 @@ void update_misc(void) {
         remainingTime = 0;
 
     if (remainingTime) {
-        sprintf(buf, "Remaining time : %5d min %02d sec", (int)(remainingTime / 60), (int)(remainingTime % 60));
+        sprintf(buf, "Remaining : %5d min %02d sec", (int)(remainingTime / 60), (int)(remainingTime % 60));
         newtLabelSetText(newtRemainingTime, buf);
     }
 
@@ -225,9 +225,9 @@ char *init_newt(int argc, char **argv) {
     sprintf(name, "Total data : %s\n",humanReadable((float)used_sec * 512, "B", 1024, 0));
     i2 = newtLabel(3, 8, name);
 
-    newtElapsedTime =   newtLabel(3, 14, "Elapsed time   :       min    sec");
-    newtRemainingTime = newtLabel(3, 15, "Remaining time :       min    sec");
-    newtBitrate =       newtLabel(3, 16, "Disk bitrate   :");
+    newtElapsedTime =   newtLabel(3, 14, "Elapsed   :       min    sec");
+    newtRemainingTime = newtLabel(3, 15, "Remaining :       min    sec");
+    newtBitrate =       newtLabel(3, 16, "Speed     :");
     //MDV/NR newtNetrate =       newtLabel(3, 17, "Storage I/O    :");
 
     //MDV/NR newtFormAddComponents(f, newtProgressScale, i1, i2, l1, l3, l4, newtElapsedTime, newtRemainingTime,
