@@ -27,8 +27,6 @@
  * - logs and info are taken from /revoinfo
  */
 
-char *cvsid = "$Id: autorestore.c 4039 2007-02-20 09:59:46Z root $";
-
 #define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
@@ -54,6 +52,7 @@ char *cvsid = "$Id: autorestore.c 4039 2007-02-20 09:59:46Z root $";
 
 //#include "autosave.h"
 #include "client.h"
+#include "image.h"
 
 #define DEBUG(a)
 //#define TEST 1
@@ -63,57 +62,41 @@ char *cvsid = "$Id: autorestore.c 4039 2007-02-20 09:59:46Z root $";
 
 #define INSIZE 2048
 
-unsigned char *BUFFER;
-unsigned char *Bitmap;
-unsigned char *IN;
-unsigned char zero[512];
+static unsigned char *BUFFER;
+static unsigned char *Bitmap;
+static unsigned char *IN;
+static unsigned char zero[512];
 
-unsigned long s_min = 0xFFFFFFFF, s_max = 0;
-
-int dnum;
 /* hd space checks enabled ? */
-int revonospc = 0;
+static int revonospc = 0;
 /* hd fix the NT boot loader ? */
-int revontblfix = 0;
+static int revontblfix = 0;
 /* cdrom restoration ? */
-int cdrom = 0;
+static int cdrom = 0;
 /* mtftp restoration ? */
-int mtftp = 0;
+static int mtftp = 0;
 /* do not run LRS specific code */
-int nolrs = 0;
+static int nolrs = 0;
 
-unsigned char buf[512];
-
-unsigned char command[120];
+static unsigned char buf[512];
 
 /* paths mainly used  by mtftp restoration */
-unsigned char servip[40] = "127.0.0.1";
-unsigned char servprefix[80] = "/";
-unsigned char storagedir[80] = "/";
-char hostname[32] = "";
+static unsigned char servip[40] = "127.0.0.1";
+static unsigned char servprefix[80] = "/";
+static unsigned char storagedir[80] = "/";
+static char hostname[32] = "";
 
 /* paths */
-char *revosave = "/revosave";
-char *revoinfo = "/revoinfo";
-char *revobin = "/revobin";
-char *outdir = NULL;
-char tmppath[1024];
-char logtxt[1024];
+static const char *revosave = "/revosave";
+static const char *revoinfo = "/revoinfo";
+static const char *revobin = "/revobin";
+static const char *outdir = NULL;
+static char tmppath[1024];
+static char logtxt[1024];
 
 /* do we have the bios HD map ? */
-int has_hdmap = 0;
-char *hdmap[65536];
-unsigned int exclude[65536];
-int nonewt = 0;
-
-
-/* LDM's privhead */
-typedef struct privhead_s {
-    __u64 logical_disk_start;
-    __u64 logical_disk_size;
-    __u64 config_start;
-    __u64 config_size;
-} privhead;
+static char *hdmap[65536];
+static int nonewt = 0;
 
 /* */
 typedef struct params_ {
@@ -121,11 +104,6 @@ typedef struct params_ {
     int fo;
     __u64 offset;
 } PARAMS;
-
-
-/* proto */
-int gethdbios(unsigned int sect);
-int isexcluded(int d, int p);
 
 /* Q&D IO abstraction layer */
 struct fops_ {
@@ -135,13 +113,14 @@ struct fops_ {
 } fops;
 
 /* KB decompressed */
-unsigned int todo = 0, done = 0;
-char todos[32];
+static unsigned int todo = 0;
+static unsigned int done = 0;
+static char todos[32];
 
 /*
  * printf() func with logging
  */
-void myprintf(const char *format_str, ...)
+static void myprintf(const char *format_str, ...)
 {
     va_list ap;
     FILE *foerr;
@@ -158,7 +137,7 @@ void myprintf(const char *format_str, ...)
 /*
  * system() func with logging
  */
-int mysystem(const char *s)
+static int mysystem(const char *s)
 {
     char cmd[1025];
     FILE *foerr;
@@ -184,7 +163,7 @@ int mysystem(const char *s)
 /*
  * system() func with logging (logs stdout not stderr)
  */
-int mysystem1(const char *s)
+static int mysystem1(const char *s)
 {
     char cmd[1024];
     char *redir = " 1>> ";
@@ -207,7 +186,7 @@ int mysystem1(const char *s)
 /*
  * snprintf to tmppath global var
  */
-char *tmprintf(const char *format_str, ...)
+static char *tmprintf(const char *format_str, ...)
 {
     va_list ap;
 
@@ -221,7 +200,7 @@ char *tmprintf(const char *format_str, ...)
 /*
  * Fatal error
  */
-void fatal(void)
+static void fatal(void)
 {
     if (!nolrs)
         return;
@@ -230,7 +209,7 @@ void fatal(void)
 }
 
 /* Update the current file label */
-void update_file(char *f, int n, int max, char *dev)
+static void update_file(char *f, int n, int max, char *dev)
 {
     char ns[32], maxs[32];
 
@@ -240,7 +219,7 @@ void update_file(char *f, int n, int max, char *dev)
 }
 
 /* fatal write error */
-void ui_seek_error(char *s, int l, int err, int fd, off64_t seek)
+static void ui_seek_error(char *s, int l, int err, int fd, off64_t seek)
 {
     char tmp[256];
     int bs=0, mb=0;
@@ -268,14 +247,14 @@ void ui_seek_error(char *s, int l, int err, int fd, off64_t seek)
     ui_send("misc_error", 2, "HD Write error", tmp);
 }
 
-void ui_write_error(char *s, int l, int err, int fd)
+static void ui_write_error(char *s, int l, int err, int fd)
 {
     ui_seek_error(s, l, err, fd, 0);
 }
 
 
 /* zlib error */
-void ui_zlib_error(int err)
+static void ui_zlib_error(int err)
 {
     char tmp[32];
 
@@ -286,7 +265,7 @@ void ui_zlib_error(int err)
 /*
  * Restore a raw partition file to 'device'x
  */
-void restore_raw(char *device, char *fname)
+static void restore_raw(char *device, char *fname)
 {
     char buffer[1024];
     __u32 sect;
@@ -325,7 +304,7 @@ void restore_raw(char *device, char *fname)
 /*
  * File ops
  */
-int file_get(char *fname, int filenum)
+static int file_get(char *fname, int filenum)
 {
     char f[64];
     struct stat st;
@@ -349,7 +328,7 @@ int file_get(char *fname, int filenum)
     return (ret);
 }
 
-FILE *file_open(char *fname, int filenum)
+static FILE *file_open(char *fname, int filenum)
 {
     char f[64];
     FILE *fid;
@@ -359,7 +338,7 @@ FILE *file_open(char *fname, int filenum)
     return (fid);
 }
 
-int file_close(FILE * stream)
+static int file_close(FILE * stream)
 {
     return fclose(stream);
 }
@@ -367,7 +346,7 @@ int file_close(FILE * stream)
 /*
  * Tftp ops
  */
-int tftp_get(char *fname, int filenum)
+static int tftp_get(char *fname, int filenum)
 {
     char f[64], cmd[512];
     struct stat st;
@@ -392,7 +371,7 @@ int tftp_get(char *fname, int filenum)
     return (stat(f, &st));
 }
 
-FILE *tftp_open(char *fname, int filenum)
+static FILE *tftp_open(char *fname, int filenum)
 {
     char f[64];
 
@@ -400,7 +379,7 @@ FILE *tftp_open(char *fname, int filenum)
     return (fopen(f, "r"));
 }
 
-int tftp_close(FILE * stream)
+static int tftp_close(FILE * stream)
 {
     int ret = fclose(stream);
 
@@ -408,46 +387,9 @@ int tftp_close(FILE * stream)
 }
 
 /*
- */
-int eof(int fd)
-{
-    __off64_t pos, end;
-    pos = lseek64(fd, 0, SEEK_CUR);
-    if (pos < 0) {
-        fprintf(stderr, "Error LSEEK : eof,pos\n");
-    }
-    end = lseek64(fd, 0, SEEK_END);
-    if (end < 0) {
-        fprintf(stderr, "Error LSEEK : eof,end\n");
-    }
-    if (lseek64(fd, pos, SEEK_SET) < 0) {
-        fprintf(stderr, "Error LSEEK, reseek\n");
-    }
-    if (end == pos)
-        return 1;
-    return 0;
-}
-
-/*
  *
  */
-void fill(int fd, int bytes, int dir)
-{
-    /* fills are not larger than 90MB so an 'int'should be enough */
-    int err = 0;
-
-    if (lseek64(fd, bytes, dir) < 0) {
-        ui_write_error(__FILE__, __LINE__, errno, fd);
-        err = 1;
-    }
-}
-
-
-/*
- *
- */
-void
-flushToDisk(unsigned char *buff, unsigned char *bit, PARAMS * cp, int lg)
+static void flushToDisk(unsigned char *buff, unsigned char *bit, PARAMS * cp, int lg)
 {
     unsigned char *ptr = buff;
     unsigned char mask[] =
@@ -486,7 +428,7 @@ flushToDisk(unsigned char *buff, unsigned char *bit, PARAMS * cp, int lg)
 /*
  *
  */
-void restore(char *device, unsigned int sect, char *fname)
+static void restore(char *device, unsigned int sect, char *fname)
 {
     int fo;                     /* output device */
     z_stream zptr;
@@ -548,7 +490,7 @@ void restore(char *device, unsigned int sect, char *fname)
 
         zptr.next_in = (unsigned char *) IN;
         zptr.next_out = (unsigned char *) BUFFER;       // was dbuf.data;
-        zptr.avail_out = 24064;
+        zptr.avail_out = TOTALLG;
 
         inflateInit(&zptr);
 
@@ -577,15 +519,15 @@ void restore(char *device, unsigned int sect, char *fname)
                     if (strstr(BUFFER, "ALLOCTABLELG="))
                         sscanf(strstr(BUFFER, "ALLOCTABLELG=") + 13, "%d",
                                &bitmaplg);
-                    memcpy(Bitmap, BUFFER + 2048, 24064 - 2048);
+                    memcpy(Bitmap, BUFFER + HEADERLG, ALLOCLG);
                     currentparams.bitindex = 0;
                     firstpass = 0;
                 } else {
-                    flushToDisk(BUFFER, Bitmap, &currentparams, 24064);
+                    flushToDisk(BUFFER, Bitmap, &currentparams, TOTALLG);
                 }
 
                 zptr.next_out = (unsigned char *) BUFFER;
-                zptr.avail_out = 24064;
+                zptr.avail_out = TOTALLG;
             }
 
             if ((ret == Z_OK) && (zptr.avail_in == 0)) {
@@ -609,18 +551,18 @@ void restore(char *device, unsigned int sect, char *fname)
                     if (strstr(BUFFER, "ALLOCTABLELG="))
                         sscanf(strstr(BUFFER, "ALLOCTABLELG=") + 13, "%d",
                                &bitmaplg);
-                    memcpy(Bitmap, BUFFER + 2048, 24064 - 2048);
+                    memcpy(Bitmap, BUFFER + HEADERLG, ALLOCLG);
                     zptr.next_out = (unsigned char *) BUFFER;
-                    zptr.avail_out = 24064;
+                    zptr.avail_out = TOTALLG;
                 }
             }
 
             //printf ("Flushing to EOF ... (%d bytes)\n",
             //      24064 - zptr.avail_out);
             flushToDisk(BUFFER, Bitmap, &currentparams,
-                        24064 - zptr.avail_out);
+                        TOTALLG - zptr.avail_out);
             zptr.next_out = (unsigned char *) BUFFER;
-            zptr.avail_out = 24064;
+            zptr.avail_out = TOTALLG;
         }
 
         ret = inflate(&zptr, Z_FINISH);
@@ -670,7 +612,7 @@ void restore(char *device, unsigned int sect, char *fname)
 
 /*
  */
-char *find(const char *str, const char *fname)
+static char *find(const char *str, const char *fname)
 {
     FILE *f;
 
@@ -690,7 +632,7 @@ char *find(const char *str, const char *fname)
 /*
  * Get NFS server informations
  */
-void netinfo(void)
+static void netinfo(void)
 {
     char *ptr, *ptr2;
 
@@ -719,7 +661,7 @@ void netinfo(void)
 /*
  * Get the LBS host name
  */
-void gethost(void)
+static void gethost(void)
 {
     FILE *f;
 
@@ -740,7 +682,7 @@ void gethost(void)
 }
 
 
-void setdefault(char *v)
+static void setdefault(char *v)
 {
     char buf[256];
 
@@ -751,7 +693,7 @@ void setdefault(char *v)
 /*
  * interprets the conf.txt file
  */
-void restoreimage(void)
+static void restoreimage(void)
 {
     FILE *f;
     char buf[255], buf2[255], lvm[255];
@@ -846,7 +788,7 @@ void restoreimage(void)
 /*
  * Check if the image can fit
  */
-void checkhdspace(__u32 major, __u32 minor, __u32 sect)
+static void checkhdspace(__u32 major, __u32 minor, __u32 sect)
 {
     FILE *f;
     char command[256];
@@ -876,7 +818,7 @@ void checkhdspace(__u32 major, __u32 minor, __u32 sect)
  * Build a BIOS number to device map
  * (should use the 'hdmap' file if present)
  */
-void makehdmap(void)
+static void makehdmap(void)
 {
     FILE *fp;
     int i = 0;
@@ -928,7 +870,7 @@ void makehdmap(void)
 /*
  * Get the total image size (from /revosave/size.txt)
  */
-int getbytes(void)
+static int getbytes(void)
 {
     int kb = 0;
     FILE *f;
@@ -950,7 +892,7 @@ int getbytes(void)
 /*
  * command line parsing
  */
-void commandline(int argc, char *argv[])
+static void commandline(int argc, char *argv[])
 {
     char *ptr, *ptr2;
     int c;
@@ -1039,8 +981,8 @@ int main(int argc, char *argv[])
 {
     /* init */
     FILE *f;
-    BUFFER = malloc(24064);
-    Bitmap = malloc(24064 - 2048);
+    BUFFER = malloc(TOTALLG);
+    Bitmap = malloc(ALLOCLG);
     IN = malloc(INSIZE);
 
     netinfo();
