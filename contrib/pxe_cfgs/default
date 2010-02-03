@@ -1,27 +1,15 @@
 timeout 20
 color 7/1 15/3
-default 2
-# uncomment to switch to fr_FR layout
-# kbdfr
+default 0
 
-splashimage=(nd)/pulse2/background/mandriva.xpm
+splashimage=(nd)/pulse2/bootsplash
 
 title Continue Normal Startup
 desc Start as usual
 root (hd0)
 chainloader +1
 
-title -- Pulse 2 Boot Services --
-desc -- Pulse 2 Boot Services --
-root
-
-title ¯ Add as Pulse 2 Client
+title Add as Pulse 2 Client
 desc Record this computer in Pulse 2 Server
 identify
 reboot
-
-title ¯ Try a diskless boot
-desc Try a diskless boot
-kernel (nd)/pulse2/kernel/bzImage revodebug revobase=/var/lib/pulse2/imaging quiet
-initrd (nd)/pulse2/kernel/initrd.img
-
