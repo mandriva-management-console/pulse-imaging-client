@@ -184,32 +184,66 @@ setup_diskless_environment (void)
   imgname[0] = '\0';
   grub_printf("Base Folder    : %s\n",basedir);
 
-  machex((char *)nic_macaddr);
-  grub_sprintf(config_file,"%s/cfg/%s",basedir,ip);
-  grub_printf("Testing        : %s\n",config_file);
-  if (new_tftpdir(config_file) < 0)
-  {
-        iphex((char *)&arptable[ARP_CLIENT].ipaddr);
-        grub_sprintf(config_file,"%s/cfg/%s",basedir,ip);
-        grub_printf("Testing        : %s\n",config_file);
-        if (new_tftpdir(config_file) < 0)
-        {
-                grub_sprintf(config_file,"%s/cfg/default",basedir);
-                grub_printf("Testing        : %s\n",config_file);
-                if (new_tftpdir(config_file) < 0)
-                {
-                        grub_printf ("\nCan't find a valid boot menu !");
-                        grub_printf ("\nThis is not supposed to happen, please contact your system administrator.");
-                        return 0;
-                }
-        }
-  }
+    grub_printf("Configuration  : ");
+    // attempt to get menu corresponding to our MAC address
+    machex((char *)nic_macaddr);
 
-  grub_printf("Using          : %s as configfile\n",config_file);
+    // Pulse 2 mode
+    grub_sprintf(config_file,"/bootmenus/%s", basedir, ip);
+    if (new_tftpdir(config_file) >= 0) {
+        grub_printf("%s\n", config_file);
+        zcinit();
+        return 1;
+    }
 
-  zcinit();
+    // LRS mode
+    grub_sprintf(config_file,"%s/cfg/%s", basedir, ip);
+    if (new_tftpdir(config_file) >= 0) {
+        grub_printf("%s\n", config_file);
+        zcinit();
+        return 1;
+    }
 
-  return 1;
+    // attempt to get menu corresponding to our IP address
+    iphex((char *)&arptable[ARP_CLIENT].ipaddr);
+
+    // Pulse 2 mode
+    grub_sprintf(config_file,"/bootmenus/%s", basedir, ip);
+    if (new_tftpdir(config_file) >= 0) {
+        grub_printf("%s\n", config_file);
+        zcinit();
+        return 1;
+    }
+
+    // LRS mode
+    grub_sprintf(config_file,"%s/cfg/%s", basedir, ip);
+    if (new_tftpdir(config_file) >= 0) {
+        grub_printf("%s\n", config_file);
+        zcinit();
+        return 1;
+    }
+
+    // attempt to get default menu
+    // Pulse 2 mode
+    grub_sprintf(config_file,"/bootmenus/default", basedir, ip);
+    if (new_tftpdir(config_file) >= 0) {
+        grub_printf("default configuration\n");
+        zcinit();
+        return 1;
+    }
+
+    // LRS mode
+    grub_sprintf(config_file,"%s/cfg/default", basedir);
+    if (new_tftpdir(config_file) >= 0) {
+        grub_printf("default configuration\n");
+        zcinit();
+        return 1;
+    }
+
+    grub_printf ("\nCan't find a valid boot menu !");
+    grub_printf ("\nThis is not supposed to happen, please contact your system administrator.");
+    return 0;
+
 }
 #endif /* SUPPORT_DISKLESS */
 
