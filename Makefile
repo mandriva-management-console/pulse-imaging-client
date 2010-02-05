@@ -27,7 +27,7 @@ TFTPGRP		= root
 
 INSTALL = $(shell which install)
 
-SVNREV:=$(shell echo $Rev: 4657 $ | tr -cd [[:digit:]])
+SVNREV:=$(shell echo $Rev$ | tr -cd [[:digit:]])
 
 FOLDER_BOOTLOADER	= bootloader
 FOLDER_KERNEL		= kernel
