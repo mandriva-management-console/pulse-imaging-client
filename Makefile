@@ -21,6 +21,12 @@
 # MA 02110-1301, USA.
 #
 
+VARDIR 		= /var/lib/pulse2/imaging
+TFTPOWNER	= root
+TFTPGRP		= root
+
+INSTALL = $(shell which install)
+
 SVNREV:=$(shell echo $Rev: 4657 $ | tr -cd [[:digit:]])
 
 FOLDER_BOOTLOADER	= bootloader
@@ -34,6 +40,23 @@ include $(FOLDER_INITRD)/consts.mk
 
 BUILD_FOLDER		= build
 INITRAMFS_FOLDER	= $(BUILD_FOLDER)/initramfs
+
+all : imaging
+
+install:
+	$(INSTALL) -m 550 -o $(TFTPOWNER) -g $(TFTPGRP) $(VARDIR)/bootloader -d
+	$(INSTALL) -m 440 -o $(TFTPOWNER) -g $(TFTPGRP) $(BUILD_FOLDER)/revoboot.pxe-$(SVNREV) $(VARDIR)/bootloader
+	$(INSTALL) -m 440 -o $(TFTPOWNER) -g $(TFTPGRP) $(BUILD_FOLDER)/bootloader $(VARDIR)/bootloader
+
+	$(INSTALL) -m 550 -o $(TFTPOWNER) -g $(TFTPGRP) $(VARDIR)/diskless -d
+	$(INSTALL) -m 440 -o $(TFTPOWNER) -g $(TFTPGRP) $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) $(VARDIR)/diskless
+	$(INSTALL) -m 440 -o $(TFTPOWNER) -g $(TFTPGRP) $(BUILD_FOLDER)/kernel $(VARDIR)/diskless
+	$(INSTALL) -m 440 -o $(TFTPOWNER) -g $(TFTPGRP) $(BUILD_FOLDER)/initrd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz $(VARDIR)/diskless
+	$(INSTALL) -m 440 -o $(TFTPOWNER) -g $(TFTPGRP) $(BUILD_FOLDER)/initrd $(VARDIR)/diskless
+
+	$(INSTALL) -m 550 -o $(TFTPOWNER) -g $(TFTPGRP) $(VARDIR)/tools -d
+	$(INSTALL) -m 440 -o $(TFTPOWNER) -g $(TFTPGRP) $(BUILD_FOLDER)/memtest-$(SVNREV) $(VARDIR)/tools
+	$(INSTALL) -m 440 -o $(TFTPOWNER) -g $(TFTPGRP) $(BUILD_FOLDER)/memtest $(VARDIR)/tools
 
 imaging: kernel bootloader tools initrd
 	# initial tree
@@ -57,22 +80,23 @@ imaging: kernel bootloader tools initrd
 	cp -a $(FOLDER_KERNEL)/build/modules/cd $(INITRAMFS_FOLDER)/lib/modules
 
 	(cd $(INITRAMFS_FOLDER); find . | cpio -o -H newc ) | gzip -c -9 > $(BUILD_FOLDER)/initrd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz
-	ln -sf initrd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz $(BUILD_FOLDER)/initrd.img
+	ln -sf initrd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz $(BUILD_FOLDER)/initrd
 
 kernel:
 	$(MAKE) -C $(FOLDER_KERNEL) SVNREV=$(SVNREV)
 	cp -a $(FOLDER_KERNEL)/$(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV)
-	ln -sf bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) $(BUILD_FOLDER)/bzImage
+	ln -sf bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) $(BUILD_FOLDER)/kernel
 
 bootloader:
 	$(MAKE) -C $(FOLDER_BOOTLOADER) SVNREV=$(SVNREV)
 	cp -a $(FOLDER_BOOTLOADER)/revoboot.pxe-$(SVNREV) $(BUILD_FOLDER)/revoboot.pxe-$(SVNREV)
-	ln -sf revoboot.pxe-$(SVNREV) $(BUILD_FOLDER)/revoboot.pxe
+	ln -sf revoboot.pxe-$(SVNREV) $(BUILD_FOLDER)/bootloader
 
 tools:
 	$(MAKE) -C $(FOLDER_TOOLS) SVNREV=$(SVNREV)
 	# see http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=319837#33
-	cp -a $(FOLDER_TOOLS)/$(BUILD_FOLDER)/$(MEMTEST_FOLDER)/memtest $(BUILD_FOLDER)/memtest
+	cp -a $(FOLDER_TOOLS)/$(BUILD_FOLDER)/$(MEMTEST_FOLDER)/memtest $(BUILD_FOLDER)/memtest-$(SVNREV)
+	ln -sf memtest-$(SVNREV) $(BUILD_FOLDER)/memtest
 
 initrd:
 	$(MAKE) -C $(FOLDER_INITRD) SVNREV=$(SVNREV)
