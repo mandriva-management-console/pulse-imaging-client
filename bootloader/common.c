@@ -191,7 +191,7 @@ setup_diskless_environment (void)
     machex((char *)nic_macaddr);
 
     // Pulse 2 mode
-    grub_sprintf(config_file,"/bootmenus/%s", basedir, ip);
+    grub_sprintf(config_file,"/bootmenus/%s", ip);
     if (new_tftpdir(config_file) >= 0) {
         isLRSEnvironment = 0;
         grub_printf("%s\n", config_file);
@@ -211,7 +211,7 @@ setup_diskless_environment (void)
     iphex((char *)&arptable[ARP_CLIENT].ipaddr);
 
     // Pulse 2 mode
-    grub_sprintf(config_file,"/bootmenus/%s", basedir, ip);
+    grub_sprintf(config_file,"/bootmenus/%s", ip);
     if (new_tftpdir(config_file) >= 0) {
         isLRSEnvironment = 0;
         grub_printf("%s\n", config_file);
@@ -229,7 +229,7 @@ setup_diskless_environment (void)
 
     // attempt to get default menu
     // Pulse 2 mode
-    grub_sprintf(config_file,"/bootmenus/default", basedir, ip);
+    grub_sprintf(config_file,"/bootmenus/default");
     if (new_tftpdir(config_file) >= 0) {
         isLRSEnvironment = 0;
         grub_printf("default configuration\n");
