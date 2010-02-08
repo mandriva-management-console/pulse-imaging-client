@@ -25,10 +25,6 @@
 #ifndef GRUB_SHARED_HEADER
 #define GRUB_SHARED_HEADER  1
 
-#ifndef ASM_FILE
-static int isLRSEnvironment = 0;
-#endif
-
 #include <config.h>
 
 /* Add an underscore to a C symbol in assembler code if needed. */

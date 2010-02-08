@@ -23,6 +23,8 @@
 #include "pci.h"
 #include "builtins_pulse2.h"
 
+int isLRSEnvironment = 1;
+
 #ifdef SUPPORT_DISKLESS
 # include <etherboot.h>
 extern char imgname[32];
@@ -191,6 +193,7 @@ setup_diskless_environment (void)
     // Pulse 2 mode
     grub_sprintf(config_file,"/bootmenus/%s", basedir, ip);
     if (new_tftpdir(config_file) >= 0) {
+        isLRSEnvironment = 0;
         grub_printf("%s\n", config_file);
         zcinit();
         return 1;
@@ -199,7 +202,6 @@ setup_diskless_environment (void)
     // LRS mode
     grub_sprintf(config_file,"%s/cfg/%s", basedir, ip);
     if (new_tftpdir(config_file) >= 0) {
-        isLRSEnvironment = 1;
         grub_printf("%s\n", config_file);
         zcinit();
         return 1;
@@ -211,6 +213,7 @@ setup_diskless_environment (void)
     // Pulse 2 mode
     grub_sprintf(config_file,"/bootmenus/%s", basedir, ip);
     if (new_tftpdir(config_file) >= 0) {
+        isLRSEnvironment = 0;
         grub_printf("%s\n", config_file);
         zcinit();
         return 1;
@@ -219,7 +222,6 @@ setup_diskless_environment (void)
     // LRS mode
     grub_sprintf(config_file,"%s/cfg/%s", basedir, ip);
     if (new_tftpdir(config_file) >= 0) {
-        isLRSEnvironment = 1;
         grub_printf("%s\n", config_file);
         zcinit();
         return 1;
@@ -229,6 +231,7 @@ setup_diskless_environment (void)
     // Pulse 2 mode
     grub_sprintf(config_file,"/bootmenus/default", basedir, ip);
     if (new_tftpdir(config_file) >= 0) {
+        isLRSEnvironment = 0;
         grub_printf("default configuration\n");
         zcinit();
         return 1;
@@ -237,7 +240,6 @@ setup_diskless_environment (void)
     // LRS mode
     grub_sprintf(config_file,"%s/cfg/default", basedir);
     if (new_tftpdir(config_file) >= 0) {
-        isLRSEnvironment = 1;
         grub_printf("default configuration\n");
         zcinit();
         return 1;

@@ -18,6 +18,8 @@
  *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+extern int isLRSEnvironment;
+
 #include <shared.h>
 #include <term.h>
 
