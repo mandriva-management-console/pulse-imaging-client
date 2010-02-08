@@ -21,9 +21,9 @@
 # MA 02110-1301, USA.
 #
 
-VARDIR 		= /var/lib/pulse2/imaging
-TFTPOWNER	= root
-TFTPGRP		= root
+VARDIR 			:= /var/lib/pulse2/imaging
+PULSE2_OWNER	:= root
+PULSE2_GROUP	:= root
 
 INSTALL = $(shell which install)
 
@@ -44,19 +44,23 @@ INITRAMFS_FOLDER	= $(BUILD_FOLDER)/initramfs
 all : imaging
 
 install:
-	$(INSTALL) -m 550 -o $(TFTPOWNER) -g $(TFTPGRP) $(VARDIR)/bootloader -d
-	$(INSTALL) -m 440 -o $(TFTPOWNER) -g $(TFTPGRP) $(BUILD_FOLDER)/revoboot.pxe-$(SVNREV) $(VARDIR)/bootloader
-	$(INSTALL) -m 440 -o $(TFTPOWNER) -g $(TFTPGRP) $(BUILD_FOLDER)/bootloader $(VARDIR)/bootloader
+	# bootloader stuff (revoboot)
+	$(INSTALL) -m 550 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/bootloader -d
+	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/revoboot.pxe-$(SVNREV) $(VARDIR)/bootloader
+	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/bootloader $(VARDIR)/bootloader
+	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) contrib/bootsplash/bootsplash.xpm $(VARDIR)/bootloader
 
-	$(INSTALL) -m 550 -o $(TFTPOWNER) -g $(TFTPGRP) $(VARDIR)/diskless -d
-	$(INSTALL) -m 440 -o $(TFTPOWNER) -g $(TFTPGRP) $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) $(VARDIR)/diskless
-	$(INSTALL) -m 440 -o $(TFTPOWNER) -g $(TFTPGRP) $(BUILD_FOLDER)/kernel $(VARDIR)/diskless
-	$(INSTALL) -m 440 -o $(TFTPOWNER) -g $(TFTPGRP) $(BUILD_FOLDER)/initrd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz $(VARDIR)/diskless
-	$(INSTALL) -m 440 -o $(TFTPOWNER) -g $(TFTPGRP) $(BUILD_FOLDER)/initrd $(VARDIR)/diskless
+	# diskless stuff (kernel and initramfs)
+	$(INSTALL) -m 550 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/diskless -d
+	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) $(VARDIR)/diskless
+	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/kernel $(VARDIR)/diskless
+	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/initrd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz $(VARDIR)/diskless
+	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/initrd $(VARDIR)/diskless
 
-	$(INSTALL) -m 550 -o $(TFTPOWNER) -g $(TFTPGRP) $(VARDIR)/tools -d
-	$(INSTALL) -m 440 -o $(TFTPOWNER) -g $(TFTPGRP) $(BUILD_FOLDER)/memtest-$(SVNREV) $(VARDIR)/tools
-	$(INSTALL) -m 440 -o $(TFTPOWNER) -g $(TFTPGRP) $(BUILD_FOLDER)/memtest $(VARDIR)/tools
+	# additionnal tools (memtest)
+	$(INSTALL) -m 550 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/tools -d
+	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/memtest-$(SVNREV) $(VARDIR)/tools
+	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/memtest $(VARDIR)/tools
 
 imaging: kernel bootloader tools initrd
 	# initial tree
