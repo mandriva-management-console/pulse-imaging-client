@@ -262,12 +262,14 @@ grub_sprintf (char *buffer, const char *format, ...)
 }
 
 
-void
-init_page (void)
-{
-  cls ();
+void init_page (void) {
+    cls ();
+    if (isLRSEnvironment) {
+        grub_printf ("\n様様様様様様様様様様様様裕    Linbox Rescue Server    突様様様様様様様様様様様様");
+    } else {
+        grub_printf ("\n様様様様様様様様様様様様裕   Pulse 2 Imaging Server   突様様様様様様様様様様様様");
+    }
 
-  grub_printf ("\n様様様様様様様様様様様様裕   Pulse 2 Imaging Server   突様様様様様様様様様様様様");
 }
 
 

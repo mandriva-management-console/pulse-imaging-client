@@ -55,7 +55,7 @@ extern int auto_fill;
 static inline void *zmemcpy(void *dest,const void *src,int len)
 {
     int d0,d1,d2;
-     
+
     asm volatile ("cld\n\t"
                   "rep\n\t"
                   "movsb"
@@ -72,9 +72,9 @@ static inline void *zmemcpy(void *dest,const void *src,int len)
 
 /* The size of the key map.  */
 #undef KEY_MAP_SIZE
-#define KEY_MAP_SIZE		256
+#define KEY_MAP_SIZE        256
 
-#define TERMINAL_CONSOLE	(1 << 0)	/* keyboard and screen */
-#define TERMINAL_SERIAL		(1 << 1)	/* serial console */
-#define TERMINAL_DUMB		(1 << 16)	/* dumb terminal */
+#define TERMINAL_CONSOLE    (1 << 0)    /* keyboard and screen */
+#define TERMINAL_SERIAL     (1 << 1)    /* serial console */
+#define TERMINAL_DUMB       (1 << 16)   /* dumb terminal */
 

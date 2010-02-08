@@ -199,6 +199,7 @@ setup_diskless_environment (void)
     // LRS mode
     grub_sprintf(config_file,"%s/cfg/%s", basedir, ip);
     if (new_tftpdir(config_file) >= 0) {
+        isLRSEnvironment = 1;
         grub_printf("%s\n", config_file);
         zcinit();
         return 1;
@@ -218,6 +219,7 @@ setup_diskless_environment (void)
     // LRS mode
     grub_sprintf(config_file,"%s/cfg/%s", basedir, ip);
     if (new_tftpdir(config_file) >= 0) {
+        isLRSEnvironment = 1;
         grub_printf("%s\n", config_file);
         zcinit();
         return 1;
@@ -235,6 +237,7 @@ setup_diskless_environment (void)
     // LRS mode
     grub_sprintf(config_file,"%s/cfg/default", basedir);
     if (new_tftpdir(config_file) >= 0) {
+        isLRSEnvironment = 1;
         grub_printf("default configuration\n");
         zcinit();
         return 1;
