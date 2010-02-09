@@ -1,0 +1,157 @@
+diff -Nru pump-0.8.24.dist/dhcp.c pump-0.8.24/dhcp.c
+--- pump-0.8.24.dist/dhcp.c	2009-07-12 16:24:58.000000000 +0200
++++ pump-0.8.24/dhcp.c	2010-02-09 09:22:23.929185846 +0100
+@@ -83,6 +83,9 @@
+ #define DHCP_OPTION_T1			58
+ #define DHCP_OPTION_CLASS_IDENTIFIER    60
+ #define DHCP_OPTION_CLIENT_IDENTIFIER	61
++#define DHCP_OPTION_177	177
++#define DHCP_OPTION_178	178
++#define DHCP_OPTION_179	179
+ 
+ #define BOOTP_OPCODE_REQUEST	1
+ #define BOOTP_OPCODE_REPLY	2
+@@ -633,6 +636,36 @@
+ 		}
+ 		intf->set |= PUMP_NETINFO_HAS_XDMSRVS;
+ 		syslog (LOG_DEBUG, "intf: numXdm: %i", intf->numXdm);
++                break;
++
++            case DHCP_OPTION_177:
++                if ((intf->option177 = malloc(length + 1))) {
++                    memcpy(intf->option177, chptr, length);
++                    intf->option177[length] = '\0';
++                    intf->set |= PUMP_NETINFO_HAS_OPTION177;
++                    syslog (LOG_DEBUG, "intf: option-177: %s",
++                            intf->option177);
++                }
++                break;
++
++            case DHCP_OPTION_178:
++                if ((intf->option178 = malloc(length + 1))) {
++                    memcpy(intf->option178, chptr, length);
++                    intf->option178[length] = '\0';
++                    intf->set |= PUMP_NETINFO_HAS_OPTION178;
++                    syslog (LOG_DEBUG, "intf: option-178: %s",
++                            intf->option178);
++                }
++                break;
++
++            case DHCP_OPTION_179:
++                if ((intf->option179 = malloc(length + 1))) {
++                    memcpy(intf->option179, chptr, length);
++                    intf->option179[length] = '\0';
++                    intf->set |= PUMP_NETINFO_HAS_OPTION179;
++                    syslog (LOG_DEBUG, "intf: option-179: %s",
++                            intf->option179);
++                }
+ 		break;
+ 
+ 	    case DHCP_OPTION_OVERLOAD:
+@@ -1279,6 +1312,9 @@
+     optionsRequested[numOptions++] = DHCP_OPTION_XFNTSRVS;
+     optionsRequested[numOptions++] = DHCP_OPTION_XDMSRVS;
+     optionsRequested[numOptions++] = DHCP_OPTION_MTU;
++    optionsRequested[numOptions++] = DHCP_OPTION_177;
++    optionsRequested[numOptions++] = DHCP_OPTION_178;
++    optionsRequested[numOptions++] = DHCP_OPTION_179;
+     addVendorCode(req, DHCP_OPTION_OPTIONREQ, numOptions, 
+ 		  optionsRequested);
+ 
+diff -Nru pump-0.8.24.dist/pump.c pump-0.8.24/pump.c
+--- pump-0.8.24.dist/pump.c	2010-02-09 08:58:59.212689567 +0100
++++ pump-0.8.24/pump.c	2010-02-09 09:25:48.464685274 +0100
+@@ -95,6 +95,9 @@
+ 	    char domain[1024];
+ 	    char bootFile[1024];
+ 	    char nisDomain[1024];
++        char option177[1024];
++        char option178[1024];
++        char option179[1024];
+ 	} status;
+     } u;
+ };
+@@ -648,6 +651,24 @@
+ 			    intf->nisDomain, sizeof(cmd.u.status.nisDomain));
+ 		    cmd.u.status.nisDomain[sizeof(cmd.u.status.nisDomain)-1] = 
+ 		    							'\0';
++
++		    if (intf[i].set & PUMP_NETINFO_HAS_OPTION177)
++			strncpy(cmd.u.status.option177,
++			    intf->option177, sizeof(cmd.u.status.option177));
++		    cmd.u.status.option177[sizeof(cmd.u.status.option177)-1] =
++                                                                        '\0';
++
++		    if (intf[i].set & PUMP_NETINFO_HAS_OPTION178)
++			strncpy(cmd.u.status.option178,
++			    intf->option178, sizeof(cmd.u.status.option178));
++		    cmd.u.status.option178[sizeof(cmd.u.status.option178)-1] =
++                                                                        '\0';
++
++		    if (intf[i].set & PUMP_NETINFO_HAS_OPTION179)
++			strncpy(cmd.u.status.option179,
++			    intf->option179, sizeof(cmd.u.status.option179));
++		    cmd.u.status.option179[sizeof(cmd.u.status.option179)-1] =
++                                                                        '\0';
+ 		}
+ 
+ 	      case CMD_STATUS:
+@@ -812,7 +833,7 @@
+ }
+ 
+ void printStatus(struct pumpNetIntf i, char * hostname, char * domain,
+-		 char * bootFile, char * nisDomain) {
++		 char * bootFile, char * nisDomain, char * option177, char * option178, char * option179) {
+     int j;
+     time_t now,upnow,localAt,localExpiration;
+ 
+@@ -885,6 +906,15 @@
+ 	printf("\n");
+     }
+ 
++    if (i.set & PUMP_NETINFO_HAS_OPTION177)
++	printf("\tOption 177: %s\n", option177);
++
++    if (i.set & PUMP_NETINFO_HAS_OPTION178)
++	printf("\tOption 178: %s\n", option178);
++
++    if (i.set & PUMP_NETINFO_HAS_OPTION179)
++	printf("\tOption 179: %s\n", option179);
++
+     if (i.set & PUMP_INTFINFO_HAS_LEASE) {
+ 	upnow = pumpUptime();
+ 	tzset();
+@@ -1113,7 +1143,8 @@
+     } else if (response.type == CMD_STATUS) {
+ 	printStatus(response.u.status.intf, response.u.status.hostname, 
+ 		    response.u.status.domain, response.u.status.bootFile,
+-		    response.u.status.nisDomain);
++		    response.u.status.nisDomain, response.u.status.option177,
++		    response.u.status.option178, response.u.status.option179);
+     }
+ 
+     return 0;
+diff -Nru pump-0.8.24.dist/pump.h pump-0.8.24/pump.h
+--- pump-0.8.24.dist/pump.h	2009-07-12 16:24:58.000000000 +0200
++++ pump-0.8.24/pump.h	2010-02-09 09:26:06.684685436 +0100
+@@ -39,6 +39,10 @@
+ #define PUMP_NETINFO_HAS_DNS		(1 << 23)
+ #define PUMP_NETINFO_HAS_NISDOMAIN	(1 << 24)
+ 
++#define PUMP_NETINFO_HAS_OPTION177  (1 << 29)
++#define PUMP_NETINFO_HAS_OPTION178  (1 << 30)
++#define PUMP_NETINFO_HAS_OPTION179  (1 << 31)
++
+ #define PUMP_FLAG_NODAEMON	(1 << 0)
+ #define PUMP_FLAG_NOCONFIG	(1 << 1)
+ #define PUMP_FLAG_FORCEHNLOOKUP	(1 << 2)
+@@ -95,6 +99,9 @@
+     int numXdm;
+     int numDns;
+     int flags;
++    char * option177;
++    char * option178;
++    char * option179;
+     struct pumpOverrideInfo override;
+ 
+     /* these don't really belong here, but anaconda's about the only thing 

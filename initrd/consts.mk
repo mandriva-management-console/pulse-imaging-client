@@ -26,7 +26,8 @@ PUMP_VERSION	= 0.8.24
 PUMP_URI		= http://www.linuxfocus.org/~guido
 PUMP_FOLDER		= pump-$(PUMP_VERSION)
 PUMP_TARBALL	= pump-$(PUMP_VERSION)-patched-2009.tar.gz
-PUMP_PATCH		= pump-$(PUMP_VERSION)-patched-2009.diff
+PUMP_PATCH_01	= pump-$(PUMP_VERSION)-fix_typo_in_status.diff
+PUMP_PATCH_02	= pump-$(PUMP_VERSION)-add_option_177_178_179.diff
 
 # POPT
 POPT_VERSION	= 1.15

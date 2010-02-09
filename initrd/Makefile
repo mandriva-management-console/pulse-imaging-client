@@ -65,7 +65,8 @@ dm:
 pump: popt
 	[ -e $(3RDPARTY_FOLDER)/$(PUMP_TARBALL) ] || wget $(PUMP_URI)/$(PUMP_TARBALL) -P $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(PUMP_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(PUMP_TARBALL) -C $(BUILD_FOLDER)
-	-cat $(3RDPARTY_FOLDER)/$(PUMP_PATCH) | patch -N -p1 -d $(BUILD_FOLDER)/$(PUMP_FOLDER)
+	-cat $(3RDPARTY_FOLDER)/$(PUMP_PATCH_01) | patch -N -p1 -d $(BUILD_FOLDER)/$(PUMP_FOLDER)
+	-cat $(3RDPARTY_FOLDER)/$(PUMP_PATCH_02) | patch -N -p1 -d $(BUILD_FOLDER)/$(PUMP_FOLDER)
 	$(MAKE) -C $(BUILD_FOLDER)/$(PUMP_FOLDER) CC=$(CC) LDFLAGS='-L../$(POPT_FOLDER)/.libs' DEB_CFLAGS='-I../$(POPT_FOLDER)'
 	cp -a $(BUILD_FOLDER)/$(PUMP_FOLDER)/pump tree/bin
 	strip tree/bin/pump
