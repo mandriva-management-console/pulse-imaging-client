@@ -20,8 +20,8 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 
-CFLAGS	= -DLBLIMAGEVER=\"2.0\" -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wall -I$(LRS_DIR) -I$(NEWT_DIR) -I$(SLANG_DIR)
-LIBS	= -s -lnewt -lslang -llrs -L$(LRS_DIR) -L$(NEWT_DIR) -L$(SLANG_DIR)
+CFLAGS	= -DLBLIMAGEVER=\"2.0\" -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wall -I$(LRS_DIR) -I$(NEWT_DIR)
+LIBS	= -s -lnewt -llrs -L$(LRS_DIR) -L$(NEWT_DIR)
 OBJS	= ui_newt.o server.o
 
 all: ui_newt

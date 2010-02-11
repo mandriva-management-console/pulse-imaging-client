@@ -113,7 +113,7 @@ reiserfs:
 	[ -d $(BUILD_FOLDER)/$(REISER_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(REISER_TARBALL) -C $(BUILD_FOLDER)
 
 ui_newt: save newt
-	$(MAKE) -C ui_newt CC=$(CC) LRS_DIR=../revosave SLANG_DIR=../$(SLANG_FOLDER) NEWT_DIR=../$(NEWT_FOLDER)
+	$(MAKE) -C ui_newt CC=$(CC) LRS_DIR=../revosave NEWT_DIR=$(BUILD_FOLDER)/$(NEWT_FOLDER)
 	cp -a ui_newt/ui_newt $(BUILD_FOLDER)/bin/uinewt # changes name
 
 ntblfix:
