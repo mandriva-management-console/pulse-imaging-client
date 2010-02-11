@@ -103,7 +103,7 @@ popt:
 e2fs:
 	[ -e $(3RDPARTY_FOLDER)/$(E2FS_TARBALL) ] || wget $(E2FS_URI)/$(E2FS_TARBALL) -P $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(E2FS_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(E2FS_TARBALL) -C $(BUILD_FOLDER)
-	[ -f $(BUILD_FOLDER)/$(E2FS_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(E2FS_FOLDER); ./configure)
+	[ -f $(BUILD_FOLDER)/$(E2FS_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(E2FS_FOLDER); CC=$(CC) ./configure)
 	$(MAKE) -C $(BUILD_FOLDER)/$(E2FS_FOLDER) CC=$(CC) libs
 
 # please see README.rebuild to learn :
