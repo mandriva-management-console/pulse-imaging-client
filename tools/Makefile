@@ -85,8 +85,8 @@ slang:
 newt: slang popt
 	[ -e $(3RDPARTY_FOLDER)/$(NEWT_TARBALL) ] || wget --no-check-certificate $(NEWT_URI)/$(NEWT_TARBALL) -P $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(NEWT_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(NEWT_TARBALL) -C $(BUILD_FOLDER)
-	[ -f $(BUILD_FOLDER)/$(NEWT_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(NEWT_FOLDER); CC="$(CC)" CPPFLAGS='-I../$(POPT_FOLDER) -I../$(SLANG_FOLDER)' LIBS='-L../$(POPT_FOLDER)/.libs -L../$(SLANG_FOLDER)' ./configure)
-	$(MAKE) -C $(BUILD_FOLDER)/$(NEWT_FOLDER) CC="$(CC) -L../$(POPT_FOLDER)/.libs -L../$(SLANG_FOLDER)" sharedlib whiptail
+	[ -f $(BUILD_FOLDER)/$(NEWT_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(NEWT_FOLDER); CC="$(CC)" CPPFLAGS='-I../$(POPT_FOLDER) -I../$(SLANG_FOLDER)/src' LIBS='-L../$(POPT_FOLDER)/.libs -L../$(SLANG_FOLDER)' ./configure)
+	$(MAKE) -C $(BUILD_FOLDER)/$(NEWT_FOLDER) CC="$(CC) -L../$(POPT_FOLDER)/.libs -L../$(SLANG_FOLDER)/src/elfobjs" sharedlib whiptail
 	cp -a $(BUILD_FOLDER)/$(NEWT_FOLDER)/libnewt.so* $(BUILD_FOLDER)/lib
 	strip $(BUILD_FOLDER)/lib/libnewt.so*
 	cp -a $(BUILD_FOLDER)/$(NEWT_FOLDER)/whiptail $(BUILD_FOLDER)/usr/bin
