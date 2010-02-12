@@ -1329,7 +1329,23 @@ int
 identify_func (char *arg, int flags)
 {
   unsigned char buffer[52];
+  char *title_prompt;
+  char *login_prompt;
+  char *password_prompt;
   int i;
+
+  if (!strcmp(arg, "fr_FR")) {
+      title_prompt    = "Interface de déclaration d'un poste client au serveur Pulse 2 Imaging";
+      login_prompt    = "Identifiant de ce poste ¯ ";
+      password_prompt = "Clé Pulse 2             ¯ ";
+  } else {
+      title_prompt    = NULL;
+      login_prompt    = "CLIENT NAME ¯ ";
+      password_prompt = "PASSWORD    ¯ ";
+  }
+
+  if (title_prompt)
+    printf("%s\n\n", title_prompt);
 
   buffer[0] = 0xAD;
   buffer[1] = 'I';
@@ -1337,7 +1353,7 @@ identify_func (char *arg, int flags)
   for (i = 3; i < 52; i++)
     buffer[i] = 0;
 
-  get_cmdline ("CLIENT NAME : ", buffer + 03, 40, 0, 1);
+  get_cmdline (login_prompt, buffer + 03, 40, 0, 1);
   i = 3;
   while (buffer[i]) {
     if (buffer[i] == ' ') buffer[i] = '_';
@@ -1345,7 +1361,7 @@ identify_func (char *arg, int flags)
   }
   buffer[i] = ':';
   i++;
-  get_cmdline ("PASSWORD    : ", buffer + i, 10, '*', 1);
+  get_cmdline (password_prompt, buffer + i, 10, '*', 1);
   while (buffer[i])
     i++;
 
