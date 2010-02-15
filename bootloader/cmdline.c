@@ -35,12 +35,12 @@ skip_to (int after_equal, char *cmdline)
 {
   /* Skip until we hit whitespace, or maybe an equal sign. */
   while (*cmdline && *cmdline != ' ' && *cmdline != '\t' &&
-	 ! (after_equal && *cmdline == '='))
+         ! (after_equal && *cmdline == '='))
     cmdline ++;
 
   /* Skip whitespace, and maybe equal signs. */
   while (*cmdline == ' ' || *cmdline == '\t' ||
-	 (after_equal && *cmdline == '='))
+         (after_equal && *cmdline == '='))
     cmdline ++;
 
   return cmdline;
@@ -51,7 +51,7 @@ void
 print_cmdline_message (int forever)
 {
   printf ("\[ Minimal BASH-like line editing is supported.  For the first word, TAB lists possible command completions.  Anywhere else TAB lists the possible completions of a device/filename.%s ]\n",
-	  (forever ? "" : "  ESC at any time exits.")
+          (forever ? "" : "  ESC at any time exits.")
   );
 }
 
@@ -78,13 +78,13 @@ find_command (char *command)
       int ret = grub_strcmp (command, (*builtin)->name);
 
       if (ret == 0)
-	{
-	  /* Find the builtin for COMMAND.  */
-	  *ptr = c;
-	  return *builtin;
-	}
+        {
+          /* Find the builtin for COMMAND.  */
+          *ptr = c;
+          return *builtin;
+        }
       else if (ret < 0)
-	break;
+        break;
     }
 
   /* Cannot find COMMAND.  */
@@ -139,26 +139,26 @@ enter_cmdline (char *heap, int forever)
 
       /* Get the command-line with the minimal BASH-like interface.  */
       if (get_cmdline (PACKAGE "> ", heap, 2048, 0, 1))
-	return;
+        return;
 
       /* If there was no command, grab a new one. */
       if (! heap[0])
-	continue;
+        continue;
 
       /* Find a builtin.  */
       builtin = find_command (heap);
       if (! builtin)
-	continue;
+        continue;
 
       /* If BUILTIN cannot be run in the command-line, skip it.  */
       if (! (builtin->flags & BUILTIN_CMDLINE))
-	{
-	  errnum = ERR_UNRECOGNIZED;
-	  continue;
-	}
+        {
+          errnum = ERR_UNRECOGNIZED;
+          continue;
+        }
 
       /* Invalidate the cache, because the user may exchange removable
-	 disks.  */
+         disks.  */
       buf_drive = -1;
 
       /* Run BUILTIN->FUNC.  */
@@ -187,47 +187,48 @@ run_script (char *script, char *heap)
       print_error ();
 
       if (errnum)
-	{
-	  errnum = ERR_NONE;
-	  grub_printf ("\nPress any key to continue...");
-	  (void) getkey ();
-	  return 1;
-	}
+        {
+          errnum = ERR_NONE;
+          grub_printf ("\nPress any key to continue...");
+          (void) getkey ();
+          return 1;
+        }
 
       /* Copy the first string in CUR_ENTRY to HEAP.  */
       old_entry = cur_entry;
       while (*cur_entry++)
-	;
+        ;
 
       grub_memmove (heap, old_entry, (int) cur_entry - (int) old_entry);
+#ifdef DEBUG
       grub_printf ("%s\n", old_entry);
-
+#endif //DEBUG
       if (! *heap)
-	{
-	  /* If there is no more command in SCRIPT...  */
+        {
+          /* If there is no more command in SCRIPT...  */
 
-	  /* If any kernel is not loaded, just exit successfully.  */
-	  if (kernel_type == KERNEL_TYPE_NONE)
-	    return 0;
+          /* If any kernel is not loaded, just exit successfully.  */
+          if (kernel_type == KERNEL_TYPE_NONE)
+            return 0;
 
-	  /* Otherwise, the command boot is run implicitly.  */
-	  grub_memmove (heap, "boot", 5);
-	}
+          /* Otherwise, the command boot is run implicitly.  */
+          grub_memmove (heap, "boot", 5);
+        }
 
       /* Find a builtin.  */
       builtin = find_command (heap);
       if (! builtin)
-	continue;
+        continue;
 
       /* If BUILTIN cannot be run in the command-line, skip it.  */
       if (! (builtin->flags & BUILTIN_CMDLINE))
-	{
-	  errnum = ERR_UNRECOGNIZED;
-	  continue;
-	}
+        {
+          errnum = ERR_UNRECOGNIZED;
+          continue;
+        }
 
       /* Invalidate the cache, because the user may exchange removable
-	 disks.  */
+         disks.  */
       buf_drive = -1;
 
       /* Run BUILTIN->FUNC.  */
