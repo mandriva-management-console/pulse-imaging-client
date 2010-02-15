@@ -267,9 +267,9 @@ grub_sprintf (char *buffer, const char *format, ...)
 void init_page (void) {
     cls ();
     if (isLRSEnvironment) {
-        grub_printf ("\nอออออออออออออออออออออออออต    Linbox Rescue Server    ฦอออออออออออออออออออออออออ");
+        grub_printf ("\nอออออออออออออออออออออออออออต  Linbox Rescue Server  ฦอออออออออออออออออออออออออออ");
     } else {
-        grub_printf ("\nอออออออออออออออออออออออออต   Pulse 2 Imaging Server   ฦอออออออออออออออออออออออออ");
+        grub_printf ("\nออออออออออออออออออออออออออต  Pulse 2 Imaging Server  ฦออออออออออออออออออออออออออ");
     }
 
 }
