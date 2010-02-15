@@ -661,12 +661,13 @@ restart:
     {
       //cls ();
 
+#ifdef DEBUG
       if (config_entries)
         printf ("\n  Executing \'%s\'\n\n",
                 get_entry (menu_entries, first_entry + entryno, 0));
       else
         printf ("  Executing command-list\n\n");
-
+#endif //DEBUG
       if (! cur_entry)
         cur_entry = get_entry (config_entries, first_entry + entryno, 1);
 
