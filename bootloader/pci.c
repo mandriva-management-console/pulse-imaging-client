@@ -437,8 +437,36 @@ static void scan_bus(unsigned char *store)
                         grub_printf("bus %x, function %x, vendor %x, device %x\n",
                                 bus, devfn, vendor, device);
 #endif
-                        if (store) {grub_sprintf(store,"B:%x,f:%x,v:%x,d:%x,c:%x,s:%x\n",bus,devfn,vendor,device,class,subclass);
-                                    while (*store) store++;}
+                        /*
+                         * PCI class codes :
+                         *
+                         * 0x00     Devices built before class codes (i.e. pre PCI 2.0)
+                         * 0x01     Mass storage controller
+                         * 0x02     Network controller
+                         * 0x03     Display controller
+                         * 0x04     Multimedia device
+                         * 0x05     Memory Controller
+                         * 0x06     Bridge Device
+                         * 0x07     Simple communications controllers
+                         * 0x08     Base system peripherals
+                         * 0x09     Inupt devices
+                         * 0x0A     Docking Stations
+                         * 0x0B     Processorts
+                         * 0x0C     Serial bus controllers
+                         * 0x0D-0xFE    Reserved
+                         * 0xFF     Misc
+                         *
+                         * as we are short ins space,
+                         * we ignore useless Pci devices (for now :
+                         *  - bridges (0x06)
+                         *  - serial stuff (0x0C)
+                         */
+
+                        if ( (store) && (class != 0x06) && (class != 0x0C) )  {
+                            grub_sprintf(store,"B:%x,f:%x,v:%x,d:%x,c:%x,s:%x\n",bus,devfn,vendor,device,class,subclass);
+                            while (*store)
+                                store++;
+                        }
                 }
         }
 }
