@@ -817,7 +817,7 @@ int new_get(char *file, int sect, int *endsect, int table) {
 #if 0
                 int val;
  asm("movl %1, %%eax;" "movl %%ebp, %0;":"=&r"(val)
-                                /* y is output operand, note the  & constraint modifier. */
+                    /* y is output operand, note the  & constraint modifier. */
  :                 "r"(val)    /* x is input operand */
  :                 "%eax");    /* %eax is clobbered register */
                 grub_printf("%x ", val);
@@ -1220,8 +1220,7 @@ int identify_func(char *arg, int flags) {
     int i;
 
     if (strstr(arg, "L=fr_FR")) {
-        title_prompt =
-            "\n\
+        title_prompt = "\n\
 ออออออออต  Dclaration d'un poste client au serveur Pulse 2 Imaging  ฦอออออออออ\n\
 \n\
     Lors de la dclaration du poste, si l'identifiant respecte le format\n\
@@ -1238,8 +1237,7 @@ int identify_func(char *arg, int flags) {
         login_prompt = "  Identifiant de ce poste ฏ ";
         password_prompt = "  Cl Pulse 2             ฏ ";
     } else if (strstr(arg, "L=C")) {
-        title_prompt =
-            "\n\
+        title_prompt = "\n\
 ออออออออออออต  Register a computer with a Pulse 2 Imaging Server  ฦอออออออออออออ\n\
 \n\
     When registrering the client computer, if the ID respects the\n\
