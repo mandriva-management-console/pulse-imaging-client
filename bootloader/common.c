@@ -186,6 +186,8 @@ setup_diskless_environment (void)
   imgname[0] = '\0';
   grub_printf("Base Folder    : %s\n",basedir);
 
+    // TODO : guess LRS or not first using new_tftpdir("default")
+
     grub_printf("Configuration  : ");
     // attempt to get menu corresponding to our MAC address
     machex((char *)nic_macaddr);
