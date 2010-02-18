@@ -1228,14 +1228,14 @@ int identify_func(char *arg, int flags) {
 \n\
         <profil>:/<entit‚_A>/<entit‚_B>/<nom-de-l'ordinateur>\n\
 \n\
-    Le poste sera directement ajout‚ au profil <profil> et aux entit‚s\n\
-    entit‚_A et entit‚_B.\n\
+    Le poste sera directement ajout‚ au profil <profil> et … l'entit‚\n\
+    /entit‚_A/entit‚_B.\n\
 \n\
     Attention : si possible, utilisez le nom du poste de travail comme\n\
     identifiant.\
 ";
-        login_prompt = "  Identifiant de ce poste ¯ ";
-        password_prompt = "  Cl‚ Pulse 2             ¯ ";
+        login_prompt =    "  Entrez l'identifiant de ce poste ¯ ";
+        password_prompt = "  Entrez vos identifiants Pulse 2  ¯ ";
     } else if (strstr(arg, "L=C")) {
         title_prompt = "\n\
 ÍÍÍÍÍÍÍÍÍÍÍÍµ  Register a computer with a Pulse 2 Imaging Server  ÆÍÍÍÍÍÍÍÍÍÍÍÍÍ\n\
@@ -1245,16 +1245,16 @@ int identify_func(char *arg, int flags) {
 \n\
         <profile>:/<entity_A>/<entity_B>/<computer-name>\n\
 \n\
-    The computer will automatically be added the the <profile> profile\n\
-    and the <entity_A> and <entity_B> entities.\n\
+    The computer will automatically be added to the <profile> profile\n\
+    and the <entity_A>/<entity_B> entity.\n\
 \n\
-    Warning : when possible, uses the station nme as ID.\
+    Warning : when possible, uses the station name as ID.\
 ";
-        login_prompt = "  The computer ID ¯ ";
-        password_prompt = "  Pulse 2 Key     ¯ ";
+        login_prompt =    "  Please enter the name of this computer ¯ ";
+        password_prompt = "  Please enter your Pulse 2 credentials  ¯ ";
     } else {
         title_prompt = NULL;
-        login_prompt = "  CLIENT NAME ¯ ";
+        login_prompt =    "  CLIENT NAME ¯ ";
         password_prompt = "  PASSWORD    ¯ ";
     }
 
