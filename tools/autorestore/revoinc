@@ -22,7 +22,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 #
-# Tell the server to create the image directory
+# Tell the server to create the image directory; store UUID in /etc/UUID
 #
 ETH=`cat /etc/eth`
 MAC=`cat /etc/mac`
@@ -39,9 +39,14 @@ echo "*** Creating backup directory ***"
 TYPE="COPY"
 grep /imgbase/Base /etc/cmdline && TYPE="BASE"
 
-while ! echo -en "\354$TYPE\00Mc:$MAC" | nc -p 1001 -w 1 $SRV 1001
+
+while ! UUID=`echo -en "\354$TYPE\00Mc:$MAC" | nc -p 1001 -w 1 $SRV 1001`
 do
     echo "*** Retrying"
     sleep 5
 done
+
+# backup my UUID
+echo "$UUID" > /etc/UUID
+
 sleep 1
