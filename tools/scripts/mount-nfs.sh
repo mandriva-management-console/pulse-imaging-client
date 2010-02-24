@@ -94,12 +94,23 @@ fi
 
 echo "*** Using the following NFS options : $NFSOPT"
 
-# shared backup ?
-if echo $SUBDIR | grep -q /imgbase
-then
-    getmac
+UUID=`cat /etc/UUID`
+
+# specific folder ?
+if [ ! -z "$UUID" ]; then
+    # adjust the remote /revosave directory
+    DIR="$DIR/$UUID"
     # adjust the remote /revoinfo directory
-    SUBDIR=/images/$MAC
+    getmac
+    SUBDIR="$SUBDIR/$MAC"
+else
+    # shared backup ?
+    if echo $SUBDIR | grep -q /imgbase
+    then
+        getmac
+        # adjust the remote /revoinfo directory
+        SUBDIR=/images/$MAC
+    fi
 fi
 
 if [ -z "$Option_177" ]
