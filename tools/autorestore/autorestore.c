@@ -22,7 +22,8 @@
  * MA 02110-1301, USA.
  */
 
-/* How it works:
+/*
+ * How it works:
  * - opens and interprets /revosave/conf.txt
  * - logs and info are taken from /revoinfo
  */
