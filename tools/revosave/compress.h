@@ -26,6 +26,7 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/vfs.h> // for statfs
 
 #include <zlib.h>
 
@@ -69,6 +70,8 @@ void compress_data(COMPRESS * c, unsigned char *data, int lg, FILE * out,
                    char end);
 unsigned long long compress_end(COMPRESS * c, FILE * out);
 void compress_write_error(void);
+void not_enough_space_error(long needed, long available);
+long free_blocks_on_target(char* target);
 //void setblocksize(FILE *f);
 void setblocksize(int f);
 void print_sect_info(long long unsigned tot_sec, long long unsigned used_sec);

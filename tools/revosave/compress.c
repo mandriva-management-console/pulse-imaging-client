@@ -280,6 +280,31 @@ void compress_write_error(void) {
     exit(EXIT_FAILURE);
 }
 
+/* Not enought space error */
+void not_enough_space_error(long needed, long available) {
+    char tmp1[32], tmp2[32];
+
+    fatal();
+    fprintf(stderr, "ERROR: Space Availability Error ! Not enough space on the server to safely create the image : need at most %lu blocks, got %lu blocks.\n", needed, available);
+
+    sprintf(tmp1, "%llu", needed);
+    sprintf(tmp2, "%llu", available);
+
+    ui_send("backup_not_enough_space_error", 2, tmp1, tmp2);
+    exit(EXIT_FAILURE);
+}
+
+long free_blocks_on_target(char* target) {
+    struct statfs st;
+
+    if (statfs(target, &st)) {
+        fprintf(stderr, "ERROR: can't guess free blocks on %s, assuming 0\n", target);
+        return 0;
+    }
+
+    return st.f_bavail; // do not return f_bfree as we do not write as super user
+}
+
 /*
  * main compression loop
  */
