@@ -40,13 +40,13 @@ TYPE="COPY"
 grep /imgbase/Base /etc/cmdline && TYPE="BASE"
 
 
-while ! UUID=`echo -en "\354$TYPE\00Mc:$MAC" | nc -p 1001 -w 1 $SRV 1001`
+while ! IMAGE_UUID=`echo -en "\354$TYPE\00Mc:$MAC" | nc -p 1001 -w 1 $SRV 1001`
 do
     echo "*** Retrying"
     sleep 5
 done
 
 # backup my UUID
-echo "$UUID" > /etc/UUID
+echo "$IMAGE_UUID" > /etc/IMAGE_UUID
 
 sleep 1
