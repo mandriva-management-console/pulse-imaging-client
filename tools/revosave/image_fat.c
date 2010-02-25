@@ -320,6 +320,11 @@ int main(int argc, char *argv[]) {
     //
 
     ui_send("init_backup", 5, argv[1], argv[2], info1, info2, argv[0]);
+
+    //MDV/NR if (free_blocks_on_target(argv[2]) < atol(info2)) {
+        //MDV/NR not_enough_space_error(atol(info2), free_blocks_on_target(argv[2]));
+    //MDV/NR }
+
     fd = open(argv[1], O_RDONLY);
     compress_volume(fd, argv[2], &params, cp.fat32 ? "FAT32=1" : "FAT32=0");
     close(fd);
