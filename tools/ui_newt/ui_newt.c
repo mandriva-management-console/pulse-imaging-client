@@ -321,6 +321,28 @@ char *backup_write_error(int argc, char **argv) {
 }
 
 /*
+* fatal space error
+*
+* no arguments
+*/
+char *backup_not_enough_space_error(int argc, char **argv) {
+    newtComponent myForm, l;
+    char message[256];
+
+    newtCenteredWindow(60, 3, "Space Availability Error");
+
+    snprintf(message, 256, "Not enough space on the server to safely create the image.");
+    myForm = newtForm(NULL, NULL, 0);
+    l = newtLabel(1, 1, message);
+
+    newtFormAddComponents(myForm, l, NULL);
+    newtDrawForm(myForm);
+    newtRefresh();
+
+    return "OK";
+}
+
+/*
 * update the scale and bitrate calcs
  *
  * arguments: number of sectors read
@@ -483,6 +505,7 @@ int main(void) {
         {"refresh_backup_progress", 1, update_progress},
         {"refresh_file", 5, update_file_restore},
         {"backup_write_error", 0, backup_write_error},
+        {"backup_not_enough_space_error", 0, backup_not_enough_space_error},
         {"zlib_error", 1, zlib_error},
         {"misc_error", 2, misc_error},
         {NULL, 0, NULL}
