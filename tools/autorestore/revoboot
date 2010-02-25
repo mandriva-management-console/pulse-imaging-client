@@ -338,6 +338,9 @@ echo -n "*** Getting current time from \"$SRV\"..."
 # try to get the name
 revogetname >/etc/lbxname
 
+# try to get the UUID
+revogetuuid > /etc/COMPUTER_UUID
+
 # get the warning message
 get_warn_message
 
