@@ -37,31 +37,31 @@ all: $(OBJ) $(LIBOBJ) liblrs.so.1 liblrs.a $(IMGFILES)
 depend:
 	$(CC) -M $(CFLAGS) *.c >.depend
 
-image_fat: image_fat.o
+image_fat: image_fat.o  compress.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
 
-image_swap: image_swap.o
+image_swap: image_swap.o compress.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
 
-image_raw: image_raw.o
+image_raw: image_raw.o compress.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
 
-image_ntfs: image_ntfs.o
+image_ntfs: image_ntfs.o compress.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
 
-image_e2fs: image_e2fs.o
+image_e2fs: image_e2fs.o compress.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS) $(LIBE2FS)
 
-image_xfs: image_xfs.o
+image_xfs: image_xfs.o compress.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
 
-image_jfs: image_jfs.o
+image_jfs: image_jfs.o compress.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
 
-image_lvm: image_lvm.o lvm.o
+image_lvm: image_lvm.o lvm.o compress.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
 
-image_lvmreiserfs: lvm.o image_lvmreiserfs.o
+image_lvmreiserfs: lvm.o image_lvmreiserfs.o compress.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS) $(RFSLIBS)
 
 decompress: decompress.o $(OBJ)
