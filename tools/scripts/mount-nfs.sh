@@ -26,15 +26,8 @@
 
 SIP=$1
 PREFIX=$2
-DIR=$3
-
-SUBDIR=`dirname $3`
-
-# get the mac address
-getmac() {
-    MAC=`cat /etc/shortmac`
-}
-
+SAVEDIR=$3
+INFODIR=$4
 
 # Get DHCP options
 . /etc/netinfo.sh
@@ -94,34 +87,15 @@ fi
 
 echo "*** Using the following NFS options : $NFSOPT"
 
-UUID=`cat /etc/UUID`
-
-# specific folder ?
-if [ ! -z "$UUID" ]; then
-    # adjust the remote /revosave directory
-    DIR="$DIR/$UUID"
-    # adjust the remote /revoinfo directory
-    getmac
-    SUBDIR="$SUBDIR/$MAC"
-else
-    # shared backup ?
-    if echo $SUBDIR | grep -q /imgbase
-    then
-        getmac
-        # adjust the remote /revoinfo directory
-        SUBDIR=/images/$MAC
-    fi
-fi
-
 if [ -z "$Option_177" ]
 then
     echo "*** Using $SIP:$PREFIX as backup dir"
-    mount -t nfs $SIP:$PREFIX$SUBDIR /revoinfo -o hard,intr,nolock,sync,$NFSOPT
-    mount -t nfs $SIP:$PREFIX$DIR /revosave -o hard,intr,nolock,sync,$NFSOPT
+    mount -t nfs $SIP:$PREFIX$INFODIR /revoinfo -o hard,intr,nolock,sync,$NFSOPT
+    mount -t nfs $SIP:$PREFIX$SAVEDIR /revosave -o hard,intr,nolock,sync,$NFSOPT
 else
     echo "*** Using Option 177: $Option_177 as backup dir"
-    mount -t nfs $Option_177$SUBDIR /revoinfo -o hard,intr,nolock,sync,$NFSOPT
-    mount -t nfs $Option_177$DIR /revosave -o hard,intr,nolock,sync,$NFSOPT
+    mount -t nfs $Option_177$INFODIR /revoinfo -o hard,intr,nolock,sync,$NFSOPT
+    mount -t nfs $Option_177$SAVEDIR /revosave -o hard,intr,nolock,sync,$NFSOPT
 fi
 
 EXITCODE=$?

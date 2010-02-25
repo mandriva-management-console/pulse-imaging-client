@@ -33,16 +33,59 @@ TYPE=nfs
 # CDROM restoration: already mounted
 grep -q revosavedir=/cdrom /etc/cmdline && exit 0
 
+# get the mac address
+MAC=`cat /etc/shortmac`
+
 # Other restoration types
 SRV=$Next_server
-PREFIX=`echo $Boot_file | sed 's|/revoboot.pxe$||' | sed 's|/bin$||'`
-DIR=`cat /etc/cmdline | cut -f 1 -d " "|cut -f 2 -d =`
-ROOT=`grep revoroot /etc/cmdline | sed 's|.* revoroot=\([^ ]*\).*|\1|'`
 
-# revoroot= override prefix from PXE phase
-[ -z "$ROOT" ] || PREFIX="$ROOT"
-echo "Mounting Storage directory... mount-$TYPE.sh $SRV $PREFIX $DIR"
-while ! mount-$TYPE.sh $SRV $PREFIX $DIR
+PREFIX=`grep revobase /etc/cmdline | sed 's|.*revobase=\([^ ]*\).*|\1|'`
+if [ ! -z "$PREFIX" ]; then
+    # get the image UUID
+    IMAGE_UUID=`cat /etc/IMAGE_UUID`
+    # get the computer UUID
+    COMPUTER_UUID=`cat /etc/COMPUTER_UUID`
+
+    if [ -z "$IMAGE_UUID" ]; then
+        echo "No image UUID received; giving up !"
+        exit 1
+    fi
+
+    if [ -z "$COMPUTER_UUID" ]; then
+        echo "No computer UUID received; giving up !"
+        exit 1
+    fi
+
+    SAVEDIR=`grep revosavedir /etc/cmdline | sed 's|.*revosavedir=\([^ ]*\).*|\1|'`
+    if [ -z "$SAVEDIR" ]; then
+        echo "No SAVEDIR received; giving up !"
+        exit 1
+    fi
+    SAVEDIR="/$SAVEDIR/$IMAGE_UUID"
+
+    INFODIR=`grep revoinfodir /etc/cmdline | sed 's|.*revoinfodir=\([^ ]*\).*|\1|'`
+    if [ -z "$INFODIR" ]; then
+        echo "No INFODIR received; giving up !"
+        exit 1
+    fi
+    INFODIR="/$INFODIR/$COMPUTER_UUID"
+
+else
+    # uses the original boot file name to guess the NFS prefix ("LRS mode")
+    PREFIX=`echo $Boot_file | sed 's|/revoboot.pxe$||' | sed 's|/bin$||'`
+
+    # directories below the NFS prefix
+    SAVEDIR=`grep revosavedir /etc/cmdline | sed 's|.*revosavedir=\([^ ]*\).*|\1|'`
+    INFODIR="$SAVEDIR"
+
+    # shared backup ?
+    if echo $SAVEDIR | grep -q /imgbase; then
+        INFODIR="/images/$MAC"
+    fi
+
+fi
+echo "Mounting Storage directory... mount-$TYPE.sh $SRV $PREFIX $SAVEDIR $INFODIR"
+while ! mount-$TYPE.sh $SRV $PREFIX $SAVEDIR $INFODIR
 do
     sleep 1
 done
