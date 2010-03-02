@@ -1708,7 +1708,7 @@ static int splashimage_func(char *arg, int flags) {
        }
         grub_close();
      }
-     // TODO : reverse check ordzer when LRS environment is set
+     // TODO : reverse check order when LRS environment is set
 #ifdef SUPPORT_NETBOOT
      if (new_tftpdir(arg) < 0) { // check against arg
        if (new_tftpdir(arg + 4) < 0) { // also check against arg + 4 (LRS compatibility)
