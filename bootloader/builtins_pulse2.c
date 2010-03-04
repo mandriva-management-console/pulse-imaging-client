@@ -81,7 +81,6 @@ void sendERR(unsigned char *str, int from, int port) {
     udp_send(buffer, 4 + strlen(str) + 1, from, port);
 }
 
-//#define TFTPBLOCK 1432
 #define TFTPBLOCK 1456
 #define BLKSIZE "1456"
 //#define TFTPBLOCK 2000
@@ -298,7 +297,7 @@ int partcopy_func(char *arg, int flags) {
     /* Convert a LBA address to a CHS address in the INT 13 format.  */
     auto void lba_to_chs(int lba, int *cl, int *ch, int *dh);
     static void lba_to_chs(int lba, int *cl, int *ch, int *dh) {
-        int cylinder, head, sector;
+	int cylinder, head, sector;
 
         sector = lba % buf_geom.sectors + 1;
         head = (lba / buf_geom.sectors) % buf_geom.heads;
@@ -1284,7 +1283,10 @@ int identify_func(char *arg, int flags) {
 
     udp_init();
     udp_send_withmac(buffer, i + 1, 1001, 1001);
+
+    i = currticks();
     udp_close();
+    while (i+15 > currticks()) {} // wait one second
 
     done_inventory = 0;
     init_bios_info();
