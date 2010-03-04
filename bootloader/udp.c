@@ -147,11 +147,21 @@ int udp_send_withmac(char *buf,int size,int s_port,int d_port)
 }
 
 /* send a control packet to Pulse 2 */
-int udp_send_to_pulse2(char *buf,int size)
-{
+int udp_send_to_pulse2(char *buf, int size) {
     return (udp_send_withmac(buf, size, 1001, 1001));
 }
 
+/* receive a control packet to Pulse 2 */
+int udp_get_ack_from_pulse2() {
+    char buffer[2000];
+    int sz;
+    int s_port;
+
+    udp_get(buffer, &sz, 1001, &s_port);
+    if (s_port != 1001)
+        return 0;
+    return (grub_strcmp(buffer, "OK") != 0);
+}
 
 int udp_get(char *buf,int *size,int d_port,int *s_port)
 {
