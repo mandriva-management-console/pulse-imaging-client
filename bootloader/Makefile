@@ -22,8 +22,11 @@
 #
 
 SVNREV:=$(shell echo $Rev: 4491 $ | tr -cd [[:digit:]])
+CC	:= gcc-3.4
 
-OBJ 		= asm.o bios.o boot.o pci.o char_io.o builtins.o common.o stage2.o cmdline.o disk_io.o graphics.o console.o fsys_fat.o fsys_ext2fs.o builtins_pulse2.o pxe.o udp.o
+SRC 	= bios.c boot.c pci.c char_io.c builtins.c common.c stage2.c cmdline.c disk_io.c graphics.c console.c fsys_fat.c fsys_ext2fs.c builtins_pulse2.c pxe.c udp.c
+OBJ		= asm.o $(subst .c,.o, $(SRC))
+
 # add -DDEBUG to add debug strings
 # remove -DQUIET to recover the original Grub behavior
 DEFINES 	= -DHELP_ON -DNO_DECOMPRESSION -DSUPPORT_NETBOOT -DSUPPORT_DISKLESS -DFSYS_TFTP -DFSYS_EXT2FS -DFSYS_FAT -DNO_INT13_FALLBACK -DSUPPORT_GRAPHICS=1 -DQUIET
@@ -32,12 +35,13 @@ ARCH		= i386
 # note : -Os perfectly works under gcc 3.3.x and earlier
 # TODO : FIND OUT WHY !
 CFLAGS		= -I. -O2 -Wall $(DEFINES) -nostdinc -falign-jumps -falign-loops -falign-functions -march=$(ARCH) -m32
-CC			= gcc-3.4
-
 OBJZLIB		= adler32.o inflate.o infblock.o infcodes.o inftrees.o inffast.o infutil.o zfunc.o
 
 all: revoboot.pxe
 	mv revoboot.pxe revoboot.pxe-$(SVNREV)
+
+check-syntax:
+	$(CC) $(CFLAGS) -pedantic -fsyntax-only $(SRC)
 
 revoboot.pxe: $(OBJ) adjust_length
 	rm -f revoboot.pxe
@@ -58,4 +62,4 @@ clean:
 	$(MAKE) -f Makefile.zlib clean
 	rm -r -f $(OBJ) revoboot.pxe revoboot.pxe-* adjust_length
 
-.PHONY: revoboot.pxe
+.PHONY: revoboot.pxe check-syntax
