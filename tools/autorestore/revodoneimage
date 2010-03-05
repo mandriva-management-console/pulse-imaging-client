@@ -34,4 +34,4 @@ UUID=`cat /etc/IMAGE_UUID`
 SRV=$Next_server
 [ -z "$SRV" ] && exit 1
 
-echo -en "\315$UUIDMc:$MAC" | nc -p 1001 -w 1 $SRV 1001
+echo -en "\355$UUIDMc:$MAC" | nc -p 1001 -w 1 $SRV 1001
