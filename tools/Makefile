@@ -56,13 +56,14 @@ restore: image
 	$(MAKE) -C autorestore CC=$(CC) 	ZLIB_DIR=$(BUILD_FOLDER)/$(ZLIB_FOLDER) LRS_DIR=../revosave
 	cp -a autorestore/autorestore 		$(BUILD_FOLDER)/bin
 	cp -a autorestore/revosendlog 		$(BUILD_FOLDER)/bin
-	cp -a autorestore/revowait 			$(BUILD_FOLDER)/bin
+	cp -a autorestore/revowait 		$(BUILD_FOLDER)/bin
+	cp -a autorestore/revodoneimage 	$(BUILD_FOLDER)/bin
 	cp -a autorestore/revogetname 		$(BUILD_FOLDER)/bin
 	cp -a autorestore/revogetuuid 		$(BUILD_FOLDER)/bin
 	cp -a autorestore/revosetdefault	$(BUILD_FOLDER)/bin
-	cp -a autorestore/revoinc 			$(BUILD_FOLDER)/bin
-	cp -a autorestore/revoinv 			$(BUILD_FOLDER)/bin
-	cp -a autorestore/revoboot 			$(BUILD_FOLDER)/etc/init.d
+	cp -a autorestore/revoinc 		$(BUILD_FOLDER)/bin
+	cp -a autorestore/revoinv 		$(BUILD_FOLDER)/bin
+	cp -a autorestore/revoboot 		$(BUILD_FOLDER)/etc/init.d
 
 bench: image
 	$(MAKE) -C bench CC=$(CC) LRS_DIR=../revosave ZLIB_DIR=$(BUILD_FOLDER)/$(ZLIB_FOLDER)

@@ -23,6 +23,9 @@
 #
 # Bug: limited to numbers 0-9 (decimal to octal conversion needs to be added)
 #
+
+[ -f "/etc/IMAGE_UUID" ] || exit 0
+
 ETH=`cat /etc/eth`
 MAC=`cat /etc/mac`
 UUID=`cat /etc/IMAGE_UUID`
