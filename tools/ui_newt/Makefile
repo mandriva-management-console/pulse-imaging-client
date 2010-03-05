@@ -22,12 +22,18 @@
 
 CFLAGS	= -DLBLIMAGEVER=\"2.0\" -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wall -I$(LRS_DIR) -I$(NEWT_DIR)
 LIBS	= -s -lnewt -llrs -L$(LRS_DIR) -L$(NEWT_DIR)
+SRC	= ui_newt.c server.c
 OBJS	= ui_newt.o server.o
 
 all: ui_newt
+
+check-syntax:
+	$(CC) $(CFLAGS) -pedantic -fsyntax-only $(SRC)
 
 ui_newt: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
 clean:
 	rm -f ui_newt $(OBJS)
+
+.PHONY:	check-syntax
