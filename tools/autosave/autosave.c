@@ -929,6 +929,7 @@ int main(int argc, char *argv[])
         mysystem1("cat /var/log/messages");
         system("revosendlog 5");
         system("revosetdefault 0");
+        system("revodoneimage");
     }
     return 0;
 }
