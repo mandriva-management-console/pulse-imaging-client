@@ -1,7 +1,7 @@
 #
-# (c) 2009 Mandriva, http://www.mandriva.com
+# (c) 2009-2010 Nicolas Rueff / Mandriva, http://www.mandriva.com
 #
-# $Id$(MAKE)file 4598 2009-10-05 14:00:24Z nrueff $
+# $Id$
 #
 # This file is part of Pulse 2, http://pulse2.mandriva.org
 #
@@ -16,9 +16,7 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with Pulse 2; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-# MA 02110-1301, USA.
+# along with Pulse 2. If not, see <http://www.gnu.org/licenses/>.
 #
 
 VARDIR 			:= /var/lib/pulse2/imaging
@@ -58,9 +56,8 @@ install:
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/initrd $(VARDIR)/diskless
 
 	# additionnal tools (memtest)
-	$(INSTALL) -m 550 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/tools -d
-	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/memtest-$(SVNREV) $(VARDIR)/tools
-	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/memtest $(VARDIR)/tools
+	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/memtest-$(SVNREV) $(VARDIR)/diskless
+	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/memtest $(VARDIR)/diskless
 
 imaging: kernel bootloader tools initrd
 	# initial tree
