@@ -148,8 +148,7 @@ do_restore()
     grep -q revontblfix /etc/cmdline && OPTS="--ntblfix $OPTS"
     grep -q revonospc /etc/cmdline && OPTS="--nospc $OPTS"
 
-    /bin/mount.sh
-    /bin/autorestore $OPTS
+    /bin/mount.sh && /bin/autorestore $OPTS
 }
 
 # Backup
@@ -158,8 +157,7 @@ do_backup()
     grep -q revoraw /etc/cmdline && OPTS=--raw
 
     /bin/revoinc
-    /bin/mount.sh
-    /bin/autosave $OPTS
+    /bin/mount.sh && /bin/autosave $OPTS
 }
 
 # Post-install
