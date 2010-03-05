@@ -48,17 +48,26 @@ if [ ! -z "$PREFIX" ]; then
 
     if [ -z "$IMAGE_UUID" ]; then
         echo "No image UUID received; giving up !"
+        echo "Something weird happened; please contact your system administrator"
+        echo "Press any key to reboot"
+        read answer
         exit 1
     fi
 
     if [ -z "$COMPUTER_UUID" ]; then
         echo "No computer UUID received; giving up !"
+        echo "Something weird happened; please contact your system administrator"
+        echo "Press any key to reboot"
+        read answer
         exit 1
     fi
 
     SAVEDIR=`grep revosavedir /etc/cmdline | sed 's|.*revosavedir=\([^ ]*\).*|\1|'`
     if [ -z "$SAVEDIR" ]; then
         echo "No SAVEDIR received; giving up !"
+        echo "Something weird happened; please contact your system administrator"
+        echo "Press any key to reboot"
+        read answer
         exit 1
     fi
     SAVEDIR="/$SAVEDIR/$IMAGE_UUID"
@@ -66,6 +75,9 @@ if [ ! -z "$PREFIX" ]; then
     INFODIR=`grep revoinfodir /etc/cmdline | sed 's|.*revoinfodir=\([^ ]*\).*|\1|'`
     if [ -z "$INFODIR" ]; then
         echo "No INFODIR received; giving up !"
+        echo "Something weird happened; please contact your system administrator"
+        echo "Press any key to reboot"
+        read answer
         exit 1
     fi
     INFODIR="/$INFODIR/$COMPUTER_UUID"
