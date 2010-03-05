@@ -63,7 +63,7 @@ char *humanReadable(float num, char* unit, int base, int padded ) {
     if (unit == NULL)
         unit = defaultUnit;
 
-    if (num < defaultBase) {
+    if (num < base) {
         if (padded)
             snprintf(output, 256, "%5.0f   %s", num, unit);
         else
@@ -71,7 +71,7 @@ char *humanReadable(float num, char* unit, int base, int padded ) {
     } else {
         for (i = 0; i < 8; i++) {
             num /=  base;
-            if (num < defaultBase) {
+            if (num < base) {
                 if (padded)
                     snprintf(output, 256, "%5.1f %s%s", num, units[i], unit);
                 else
