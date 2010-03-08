@@ -130,8 +130,13 @@ do_pre_inst()
     if grep -q revopost /etc/cmdline ; then
         /bin/postmount
         MAC=`cat /etc/shortmac`
-        echo -e "\n=== `date` ===" >> /revoinfo/$MAC/postinst.log
-        /bin/doinitinst 2>&1 | tee -a /revoinfo/$MAC/postinst.log
+	if [ -z "$COMPUTER_UUID" ]; then # LRS mode
+	    echo -e "\n=== `date` ===" >> /revoinfo/$MAC/postinst.log
+            /bin/doinitinst 2>&1 | tee -a /revoinfo/$MAC/postinst.log
+	else # Pulse 2 mode
+	    echo -e "\n=== `date` ===" >> /revoinfo/postinst.log
+            /bin/doinitinst 2>&1 | tee -a /revoinfo/postinst.log
+	fi
         umount /mnt 2>/dev/null
         sleep 5
         umount /opt
@@ -157,6 +162,7 @@ do_backup()
     grep -q revoraw /etc/cmdline && OPTS=--raw
 
     /bin/revoinc
+
     /bin/mount.sh && /bin/autosave $OPTS
 }
 
@@ -168,8 +174,14 @@ do_postinst()
         umount /revosave
     fi
     /bin/postmount
-    echo -e "\n=== `date` ===" >> /revoinfo/$MAC/postinst.log
-    /bin/dopostinst 2>&1 | tee -a /revoinfo/$MAC/postinst.log
+    MAC=`cat /etc/shortmac`
+    if [ -z "$COMPUTER_UUID" ]; then # LRS mode
+	echo -e "\n=== `date` ===" >> /revoinfo/$MAC/postinst.log
+	/bin/dopostinst 2>&1 | tee -a /revoinfo/$MAC/postinst.log
+    else # Pulse 2 mode
+	echo -e "\n=== `date` ===" >> /revoinfo/postinst.log
+	/bin/dopostinst 2>&1 | tee -a /revoinfo/postinst.log
+    fi
     grep -q revodebug /etc/cmdline || umount /mnt 2>/dev/null
     sleep 5
 }
@@ -338,6 +350,7 @@ revogetname >/etc/lbxname
 
 # try to get the UUID
 revogetuuid > /etc/COMPUTER_UUID
+COMPUTER_UUID=`cat /etc/COMPUTER_UUID`
 
 # get the warning message
 get_warn_message
