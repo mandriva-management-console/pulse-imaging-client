@@ -37,9 +37,11 @@ sed -e "s/Device/#/" -e "s/: */=/" -e "s/   //" -e "s/ /_/g" </etc/netinfo.log >
 SIP=$Next_server
 PREFIX=`dirname $Boot_file`
 PREFIX=`dirname $PREFIX`
-DIR=/lib/util/
+SAVEDIR=/lib/util/
+INFODIR=/images
+
 if grep -q revosavedir /proc/cmdline ;then
-    REVOSAVEDIR=`sed -e "s/.*revosavedir=\([^ ]*\).*/\1/" < /proc/cmdline`
+    SAVEDIR=`sed -e "s/.*revosavedir=\([^ ]*\).*/\1/" < /proc/cmdline`
 fi
 
 RPCINFO=`rpcinfo -p $SIP`
@@ -50,41 +52,58 @@ logger "$RPCINFO"
 # check nfs
 echo
 sleep 1
-if echo "$RPCINFO"|grep -q nfs
+if echo "$RPCINFO" | grep -q nfs
 then
     echo "*** NFS seems to be ok on $SIP"
 else
-    echo "*** Warning : the NFS service does not seem to work on the LBS !"
+    echo "*** Warning : the NFS service does not seem to work on $SIP !"
 fi
 
 # get the short mac address
 getmac
 
-# Get NFS options
-if grep -q slownfs /proc/cmdline
-then
-    NFSOPT=rsize=1024,wsize=1024,udp
+# NFS base options
+NFSOPT="hard,intr,ac,nfsvers=3,async"
+
+# Get NFS proto
+if grep -q 'revoproto=nfsudp' /etc/cmdline; then
+    NFSOPT="$NFSOPT,proto=udp"
+    echo "*** Using NFS over UDP"
 else
-    if echo "$RPCINFO"|grep nfs|grep -q tcp
-    then
-    NFSOPT=rsize=8192,wsize=8192,tcp
+    if echo "$RPCINFO" | grep nfs | grep -q tcp; then
+        NFSOPT="$NFSOPT,proto=tcp"
+        echo "*** Using NFS over TCP"
     else
-    echo "*** No TCP on NFS server switching to UDP"
-    NFSOPT=rsize=8192,wsize=8192,udp
-    sleep 2
+        NFSOPT="$NFSOPT,proto=udp"
+        echo "*** Using NFS over UDP"
     fi
+fi
+
+# Get NFS block size
+if grep -q 'revonfsbsize' /etc/cmdline; then
+    NFSBSIZE=`sed -e 's/.*revonfsbsize=\([^ ]*\).*/\1/' < /etc/cmdline`
+    NFSOPT="$NFSOPT,rsize=$NFSBSIZE,wsize=$NFSBSIZE"
+    echo "*** Using blocks of $NFSBSIZE bytes"
+else
+    echo "*** Autonegociating block size"
+fi
+
+# Full NFS bypass, if needed
+if grep -q 'revonfsopts' /etc/cmdline; then
+    NFSOPT=`sed -e 's/.*revonfsopts=\([^ ]*\).*/\1/' < /etc/cmdline`
+    echo "*** Bypassing NFS options : $NFSOPT"
 fi
 
 if [ -z "$Option_177" ]
 then
     echo "Using $SIP:$PREFIX as binaries dir"
-    mount -t nfs $SIP:$PREFIX$DIR /opt -o hard,intr,nolock,$NFSOPT
-    mount -t nfs $SIP:$PREFIX/images /revoinfo -o hard,intr,nolock,$NFSOPT
-    [ -z $REVOSAVEDIR ] || mount -t nfs $SIP:$PREFIX$REVOSAVEDIR /revosave -o hard,intr,nolock,$NFSOPT
+    mount -t nfs $SIP:$PREFIX$OPTDIR /opt -o hard,intr,nolock,$NFSOPT
+    mount -t nfs $SIP:$PREFIX$INFODIR /revoinfo -o hard,intr,nolock,$NFSOPT
+    [ -z $SAVEDIR ] || mount -t nfs $SIP:$PREFIX$SAVEDIR /revosave -o hard,intr,nolock,$NFSOPT
 else
     echo "Using Option 177: $Option_177 as binaries dir"
-    mount -t nfs $Option_177$DIR /opt -o hard,intr,nolock,$NFSOPT
-    mount -t nfs $Option_177/images /revoinfo -o hard,intr,nolock,$NFSOPT
-    [ -z $REVOSAVEDIR ] || mount -t nfs $Option_177$REVOSAVEDIR /revosave -o hard,intr,nolock,$NFSOPT
+    mount -t nfs $Option_177$OPTDIR /opt -o hard,intr,nolock,$NFSOPT
+    mount -t nfs $Option_177$INFODIR /revoinfo -o hard,intr,nolock,$NFSOPT
+    [ -z $SAVEDIR ] || mount -t nfs $Option_177$SAVEDIR /revosave -o hard,intr,nolock,$NFSOPT
 fi
 # IMPORTANT !!! NO OTHER INSTRUCTIONS AFTER MOUNTS !!!
