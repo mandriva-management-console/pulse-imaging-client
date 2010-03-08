@@ -76,8 +76,7 @@ if [ ! -z "$PREFIX" ]; then
     fi
     INFODIR="/$INFODIR/$COMPUTER_UUID"
 
-    # get the image UUID, if we are saving
-    if [ -z "$I_M_RESTORING" ]; then
+    if [ -z "$I_M_RESTORING" ]; then # get the image UUID, if we are saving
 	IMAGE_UUID=`cat /etc/IMAGE_UUID`
 	if [ -z "$IMAGE_UUID" ]; then
             echo "No image UUID received; giving up !"
@@ -88,7 +87,15 @@ if [ ! -z "$PREFIX" ]; then
 	fi
 	SAVEDIR="/$SAVEDIR/$IMAGE_UUID"
     else # image uuid given on the command line
-	SAVEDIR="/$SAVEDIR"
+	IMAGE_UUID=`grep revoimage /etc/cmdline | sed 's|.*revoimage=\([^ ]*\).*|\1|'`
+	if [ -z "$IMAGE_UUID" ]; then
+            echo "No image UUID received; giving up !"
+            echo "Something weird happened; please contact your system administrator"
+            echo "Press any key to reboot"
+            read answer
+            exit 1
+	fi
+	SAVEDIR="/$SAVEDIR/$IMAGE_UUID"
     fi
 
 else
