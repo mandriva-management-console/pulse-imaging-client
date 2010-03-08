@@ -33,6 +33,9 @@ TYPE=nfs
 # CDROM restoration: already mounted
 grep -q revosavedir=/cdrom /etc/cmdline && exit 0
 
+# Check if we are saving or restoring
+grep -q revorestore /etc/cmdline && I_M_RESTORING=1
+
 # get the mac address
 MAC=`cat /etc/shortmac`
 
@@ -41,27 +44,8 @@ SRV=$Next_server
 
 PREFIX=`grep revobase /etc/cmdline | sed 's|.*revobase=\([^ ]*\).*|\1|'`
 if [ ! -z "$PREFIX" ]; then
-    # get the image UUID
-    IMAGE_UUID=`cat /etc/IMAGE_UUID`
-    # get the computer UUID
-    COMPUTER_UUID=`cat /etc/COMPUTER_UUID`
 
-    if [ -z "$IMAGE_UUID" ]; then
-        echo "No image UUID received; giving up !"
-        echo "Something weird happened; please contact your system administrator"
-        echo "Press any key to reboot"
-        read answer
-        exit 1
-    fi
-
-    if [ -z "$COMPUTER_UUID" ]; then
-        echo "No computer UUID received; giving up !"
-        echo "Something weird happened; please contact your system administrator"
-        echo "Press any key to reboot"
-        read answer
-        exit 1
-    fi
-
+    # get the base image dir
     SAVEDIR=`grep revosavedir /etc/cmdline | sed 's|.*revosavedir=\([^ ]*\).*|\1|'`
     if [ -z "$SAVEDIR" ]; then
         echo "No SAVEDIR received; giving up !"
@@ -70,8 +54,8 @@ if [ ! -z "$PREFIX" ]; then
         read answer
         exit 1
     fi
-    SAVEDIR="/$SAVEDIR/$IMAGE_UUID"
 
+    # get the base info dir
     INFODIR=`grep revoinfodir /etc/cmdline | sed 's|.*revoinfodir=\([^ ]*\).*|\1|'`
     if [ -z "$INFODIR" ]; then
         echo "No INFODIR received; giving up !"
@@ -80,7 +64,32 @@ if [ ! -z "$PREFIX" ]; then
         read answer
         exit 1
     fi
+
+    # get the computer UUID
+    COMPUTER_UUID=`cat /etc/COMPUTER_UUID`
+    if [ -z "$COMPUTER_UUID" ]; then
+        echo "No computer UUID received; giving up !"
+        echo "Something weird happened; please contact your system administrator"
+        echo "Press any key to reboot"
+        read answer
+        exit 1
+    fi
     INFODIR="/$INFODIR/$COMPUTER_UUID"
+
+    # get the image UUID, if we are saving
+    if [ -z "$I_M_RESTORING" ]; then
+	IMAGE_UUID=`cat /etc/IMAGE_UUID`
+	if [ -z "$IMAGE_UUID" ]; then
+            echo "No image UUID received; giving up !"
+            echo "Something weird happened; please contact your system administrator"
+            echo "Press any key to reboot"
+            read answer
+            exit 1
+	fi
+	SAVEDIR="/$SAVEDIR/$IMAGE_UUID"
+    else # image uuid given on the command line
+	SAVEDIR="/$SAVEDIR"
+    fi
 
 else
     # uses the original boot file name to guess the NFS prefix ("LRS mode")
