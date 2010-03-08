@@ -158,7 +158,6 @@ do_backup()
 
     /bin/revoinc
     /bin/mount.sh && /bin/autosave $OPTS
-    [ -f /etc/IMAGE_UUID ] && /bin/revodoneimage
 }
 
 # Post-install
