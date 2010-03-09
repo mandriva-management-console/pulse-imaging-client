@@ -48,30 +48,21 @@ if [ ! -z "$PREFIX" ]; then
     # get the base image dir
     SAVEDIR=`grep revosavedir /etc/cmdline | sed 's|.*revosavedir=\([^ ]*\).*|\1|'`
     if [ -z "$SAVEDIR" ]; then
-        echo "No SAVEDIR received; giving up !"
-        echo "Something weird happened; please contact your system administrator"
-        echo "Press any key to reboot"
-        read answer
+	whiptail --title 'Error' --msgbox '   It seems that something weird happened : \n\n\n        I did not received SAVEDIR\n\n\n  Please contact your system administrator.\n\n          Press any key to reboot.' 15 50
         exit 1
     fi
 
     # get the base info dir
     INFODIR=`grep revoinfodir /etc/cmdline | sed 's|.*revoinfodir=\([^ ]*\).*|\1|'`
     if [ -z "$INFODIR" ]; then
-        echo "No INFODIR received; giving up !"
-        echo "Something weird happened; please contact your system administrator"
-        echo "Press any key to reboot"
-        read answer
+	whiptail --title 'Error' --msgbox '   It seems that something weird happened : \n\n\n        I did not received INFODIR\n\n\n  Please contact your system administrator.\n\n          Press any key to reboot.' 15 50
         exit 1
     fi
 
     # get the computer UUID
     COMPUTER_UUID=`cat /etc/COMPUTER_UUID`
     if [ -z "$COMPUTER_UUID" ]; then
-        echo "No computer UUID received; giving up !"
-        echo "Something weird happened; please contact your system administrator"
-        echo "Press any key to reboot"
-        read answer
+	whiptail --title 'Error' --msgbox '   It seems that something weird happened : \n\n\n     I did not received a Computer UUID\n\n\n  Please contact your system administrator.\n\n          Press any key to reboot.' 15 50
         exit 1
     fi
     INFODIR="/$INFODIR/$COMPUTER_UUID"
@@ -79,20 +70,14 @@ if [ ! -z "$PREFIX" ]; then
     if [ -z "$I_M_RESTORING" ]; then # get the image UUID, if we are saving
 	IMAGE_UUID=`cat /etc/IMAGE_UUID`
 	if [ -z "$IMAGE_UUID" ]; then
-            echo "No image UUID received; giving up !"
-            echo "Something weird happened; please contact your system administrator"
-            echo "Press any key to reboot"
-            read answer
+	    whiptail --title 'Error' --msgbox '   It seems that something weird happened : \n\n\n     I did not received an Image UUID\n\n\n  Please contact your system administrator.\n\n          Press any key to reboot.' 15 50
             exit 1
 	fi
 	SAVEDIR="/$SAVEDIR/$IMAGE_UUID"
     else # image uuid given on the command line
 	IMAGE_UUID=`grep revoimage /etc/cmdline | sed 's|.*revoimage=\([^ ]*\).*|\1|'`
 	if [ -z "$IMAGE_UUID" ]; then
-            echo "No image UUID received; giving up !"
-            echo "Something weird happened; please contact your system administrator"
-            echo "Press any key to reboot"
-            read answer
+	    whiptail --title 'Error' --msgbox '   It seems that something weird happened : \n\n\n      I did not received an Image UUID\n\n\n  Please contact your system administrator.\n\n          Press any key to reboot.' 15 50
             exit 1
 	fi
 	SAVEDIR="/$SAVEDIR/$IMAGE_UUID"
