@@ -2,7 +2,7 @@
  *  $Id$
  */
 /*
- *  GRUB Pulse 2 functions
+ *  GRUB LBS functions
  *  Copyright (C) 2002  Free & Alter Soft
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -25,7 +25,7 @@
 #include <term.h>
 
 #include "zlib/zlib.h"
-#include "shared-lbl.h"
+#include "shared-pulse2.h"
 
 #define INBUFF 8192
 #define OUTBUFF 24064

@@ -1,0 +1,517 @@
+diff -Nru grub-0.95.dist/stage2/builtins.c grub-0.95/stage2/builtins.c
+--- grub-0.95.dist/stage2/builtins.c	2004-05-14 21:30:52.000000000 +0200
++++ grub-0.95/stage2/builtins.c	2010-03-09 18:07:39.193841366 +0100
+@@ -27,6 +27,7 @@
+ #include <shared.h>
+ #include <filesys.h>
+ #include <term.h>
++#include <builtins_pulse2.h>
+ 
+ #ifdef SUPPORT_NETBOOT
+ # define GRUB	1
+@@ -81,6 +82,10 @@
+    inside other functions.  */
+ static int configfile_func (char *arg, int flags);
+ 
++
++#include "builtins_pulse2.c"
++
++
+ /* Initialize the data for builtins.  */
+ void
+ init_builtins (void)
+@@ -4717,10 +4722,12 @@
+   &builtin_module,
+   &builtin_modulenounzip,
+   &builtin_pager,
++  &builtin_partcopy,		/* Pulse 2 */
+   &builtin_partnew,
+   &builtin_parttype,
+   &builtin_password,
+   &builtin_pause,
++  &builtin_ptabs,		/* Pulse 2 */
+ #ifdef GRUB_UTIL
+   &builtin_quit,
+ #endif /* GRUB_UTIL */
+diff -Nru grub-0.95.dist/stage2/char_io.c grub-0.95/stage2/char_io.c
+--- grub-0.95.dist/stage2/char_io.c	2004-05-23 18:45:43.000000000 +0200
++++ grub-0.95/stage2/char_io.c	2010-03-09 18:05:59.421841533 +0100
+@@ -238,7 +238,7 @@
+ {
+   cls ();
+ 
+-  grub_printf ("\n    GNU GRUB  version %s  (%dK lower / %dK upper memory)\n\n",
++  grub_printf ("\n Pulse 2 Imaging Client v.%s (%dK lower / %dK upper memory)\n\n",
+ 	  version_string, mbi.mem_lower, mbi.mem_upper);
+ }
+ 
+diff -Nru grub-0.95.dist/stage2/cmdline.c grub-0.95/stage2/cmdline.c
+--- grub-0.95.dist/stage2/cmdline.c	2004-03-18 00:08:48.000000000 +0100
++++ grub-0.95/stage2/cmdline.c	2007-07-09 15:48:30.373254000 +0200
+@@ -77,7 +77,7 @@
+   for (builtin = builtin_table; *builtin != 0; builtin++)
+     {
+       int ret = grub_strcmp (command, (*builtin)->name);
+-
++      
+       if (ret == 0)
+ 	{
+ 	  /* Find the builtin for COMMAND.  */
+diff -Nru grub-0.95.dist/stage2/fsys_iso9660.c grub-0.95/stage2/fsys_iso9660.c
+--- grub-0.95.dist/stage2/fsys_iso9660.c	2004-05-11 14:11:19.000000000 +0200
++++ grub-0.95/stage2/fsys_iso9660.c	2010-03-09 18:09:17.013842912 +0100
+@@ -68,34 +68,55 @@
+ static int
+ iso9660_devread (int sector, int byte_offset, int byte_len, char *buf)
+ {
++  char buf2[2048];
++
++  int err;
++
++  struct disk_address_packet
++  {
++    unsigned char length;
++    unsigned char reserved;
++    unsigned short blocks;
++    unsigned long buffer;
++    unsigned long long block;
++  }
++  dap;
++
+   unsigned short sector_size_lg2 = log2(buf_geom.sector_size);
+ 
+-  /*
+-   * We have to use own devread() function since BIOS return wrong geometry
+-   */
+-  if (sector < 0)
+-    {
+-      errnum = ERR_OUTSIDE_PART;
+-      return 0;
+-    }
+-  if (byte_len <= 0)
+-    return 1;
++#if !defined(STAGE1_5)
++  if (debug)
++    grub_printf("s:%d o:%d l:%d\n", sector, byte_offset, byte_len);
++#endif
+ 
+   sector += (byte_offset >> sector_size_lg2);
+   byte_offset &= (buf_geom.sector_size - 1);
+-  asm volatile ("shl%L0 %1,%0"
+-		: "=r"(sector)
+-		: "Ic"((int8_t)(ISO_SECTOR_BITS - sector_size_lg2)),
+-		"0"(sector));
+ 
+-#if !defined(STAGE1_5)
+-  if (disk_read_hook && debug)
+-    printf ("<%d, %d, %d>", sector, byte_offset, byte_len);
+-#endif /* !STAGE1_5 */
++rd_again:
++  dap.length = sizeof (dap);
++  dap.block = sector;
++  dap.blocks = 1;
++  dap.reserved = 0;
++  /* This is undocumented part. The address is formated in
++   *          SEGMENT:ADDRESS.  */
++  dap.buffer =
++    (((unsigned long) buf2 & 0xFFFF0) << (16 - 4)) | ((unsigned long) buf2 &
++						     0x0000F);
++  err = biosdisk_int13_extensions (0x42<<8, current_drive, &dap);	// Funct 0x42
++  grub_memmove(buf, buf2+byte_offset, byte_len);
+ 
+-  return rawread(current_drive, part_start + sector, byte_offset, byte_len, buf);
++  if (err)
++    {
++      grub_printf ("Error reading CD : LBA %x\nPress any key to retry\n", sector);
++#if !defined(STAGE1_5)
++      getkey();
++#endif
++      goto rd_again;
++    }
++  return (!err);
+ }
+ 
++
+ int
+ iso9660_mount (void)
+ {
+diff -Nru grub-0.95.dist/stage2/Makefile.am grub-0.95/stage2/Makefile.am
+--- grub-0.95.dist/stage2/Makefile.am	2004-06-13 19:57:27.000000000 +0200
++++ grub-0.95/stage2/Makefile.am	2010-03-09 18:26:42.589842212 +0100
+@@ -91,8 +91,9 @@
+ 	cmdline.c common.c console.c disk_io.c fsys_ext2fs.c \
+ 	fsys_fat.c fsys_ffs.c fsys_iso9660.c fsys_jfs.c fsys_minix.c \
+ 	fsys_reiserfs.c fsys_ufs2.c fsys_vstafs.c fsys_xfs.c gunzip.c \
+-	hercules.c md5.c serial.c smp-imps.c stage2.c terminfo.c tparm.c
+-pre_stage2_exec_CFLAGS = $(STAGE2_COMPILE) $(FSYS_CFLAGS)
++	hercules.c md5.c serial.c smp-imps.c stage2.c terminfo.c tparm.c \
++	zlib/adler32.c zlib/inflate.c zlib/infblock.c zlib/infcodes.c zlib/inftrees.c zlib/inffast.c zlib/infutil.c zlib/zfunc.c
++pre_stage2_exec_CFLAGS = $(STAGE2_COMPILE) $(FSYS_CFLAGS)  -DMAX_WBITS=14 -DMAX_MEM_LEVEL=7 -DMY_ZCALLOC 
+ pre_stage2_exec_CCASFLAGS = $(STAGE2_COMPILE) $(FSYS_CFLAGS)
+ pre_stage2_exec_LDFLAGS = $(PRE_STAGE2_LINK)
+ 
+diff -Nru grub-0.95.dist/stage2/Makefile.in grub-0.95/stage2/Makefile.in
+--- grub-0.95.dist/stage2/Makefile.in	2004-06-13 19:57:37.000000000 +0200
++++ grub-0.95/stage2/Makefile.in	2010-03-09 18:29:28.357840828 +0100
+@@ -124,7 +124,14 @@
+ 	diskless_exec-serial.$(OBJEXT) \
+ 	diskless_exec-smp-imps.$(OBJEXT) \
+ 	diskless_exec-stage2.$(OBJEXT) \
+-	diskless_exec-terminfo.$(OBJEXT) diskless_exec-tparm.$(OBJEXT)
++	diskless_exec-terminfo.$(OBJEXT) diskless_exec-tparm.$(OBJEXT) \
++	diskless_exec-adler32.$(OBJEXT) \
++	diskless_exec-inflate.$(OBJEXT) \
++	diskless_exec-infblock.$(OBJEXT) \
++	diskless_exec-infcodes.$(OBJEXT) \
++	diskless_exec-inftrees.$(OBJEXT) \
++	diskless_exec-inffast.$(OBJEXT) \
++	diskless_exec-infutil.$(OBJEXT) diskless_exec-zfunc.$(OBJEXT)
+ am_diskless_exec_OBJECTS = $(am__objects_1)
+ diskless_exec_OBJECTS = $(am_diskless_exec_OBJECTS)
+ diskless_exec_DEPENDENCIES = ../netboot/libdrivers.a
+@@ -216,7 +223,15 @@
+ 	pre_stage2_exec-smp-imps.$(OBJEXT) \
+ 	pre_stage2_exec-stage2.$(OBJEXT) \
+ 	pre_stage2_exec-terminfo.$(OBJEXT) \
+-	pre_stage2_exec-tparm.$(OBJEXT)
++	pre_stage2_exec-tparm.$(OBJEXT) \
++	pre_stage2_exec-adler32.$(OBJEXT) \
++	pre_stage2_exec-inflate.$(OBJEXT) \
++	pre_stage2_exec-infblock.$(OBJEXT) \
++	pre_stage2_exec-infcodes.$(OBJEXT) \
++	pre_stage2_exec-inftrees.$(OBJEXT) \
++	pre_stage2_exec-inffast.$(OBJEXT) \
++	pre_stage2_exec-infutil.$(OBJEXT) \
++	pre_stage2_exec-zfunc.$(OBJEXT)
+ pre_stage2_exec_OBJECTS = $(am_pre_stage2_exec_OBJECTS)
+ @NETBOOT_SUPPORT_TRUE@pre_stage2_exec_DEPENDENCIES =  \
+ @NETBOOT_SUPPORT_TRUE@	../netboot/libdrivers.a
+@@ -277,6 +292,22 @@
+ depcomp = $(SHELL) $(top_srcdir)/depcomp
+ am__depfiles_maybe = depfiles
+ @AMDEP_TRUE@DEP_FILES = ./$(DEPDIR)/diskless_exec-bios.Po \
++@AMDEP_TRUE@	./$(DEPDIR)/diskless_exec-adler32.Po \
++@AMDEP_TRUE@	./$(DEPDIR)/diskless_exec-infblock.Po \
++@AMDEP_TRUE@	./$(DEPDIR)/diskless_exec-infcodes.Po \
++@AMDEP_TRUE@	./$(DEPDIR)/diskless_exec-inffast.Po \
++@AMDEP_TRUE@	./$(DEPDIR)/diskless_exec-inflate.Po \
++@AMDEP_TRUE@	./$(DEPDIR)/diskless_exec-inftrees.Po \
++@AMDEP_TRUE@	./$(DEPDIR)/diskless_exec-infutil.Po \
++@AMDEP_TRUE@	./$(DEPDIR)/diskless_exec-zfunc.Po \
++@AMDEP_TRUE@	./$(DEPDIR)/pre_stage2_exec-adler32.Po \
++@AMDEP_TRUE@	./$(DEPDIR)/pre_stage2_exec-infblock.Po \
++@AMDEP_TRUE@	./$(DEPDIR)/pre_stage2_exec-infcodes.Po \
++@AMDEP_TRUE@	./$(DEPDIR)/pre_stage2_exec-inffast.Po \
++@AMDEP_TRUE@	./$(DEPDIR)/pre_stage2_exec-inflate.Po \
++@AMDEP_TRUE@	./$(DEPDIR)/pre_stage2_exec-inftrees.Po \
++@AMDEP_TRUE@	./$(DEPDIR)/pre_stage2_exec-infutil.Po \
++@AMDEP_TRUE@	./$(DEPDIR)/pre_stage2_exec-zfunc.Po \
+ @AMDEP_TRUE@	./$(DEPDIR)/diskless_exec-boot.Po \
+ @AMDEP_TRUE@	./$(DEPDIR)/diskless_exec-builtins.Po \
+ @AMDEP_TRUE@	./$(DEPDIR)/diskless_exec-char_io.Po \
+@@ -616,9 +647,9 @@
+ 	cmdline.c common.c console.c disk_io.c fsys_ext2fs.c \
+ 	fsys_fat.c fsys_ffs.c fsys_iso9660.c fsys_jfs.c fsys_minix.c \
+ 	fsys_reiserfs.c fsys_ufs2.c fsys_vstafs.c fsys_xfs.c gunzip.c \
+-	hercules.c md5.c serial.c smp-imps.c stage2.c terminfo.c tparm.c
+-
+-pre_stage2_exec_CFLAGS = $(STAGE2_COMPILE) $(FSYS_CFLAGS)
++	hercules.c md5.c serial.c smp-imps.c stage2.c terminfo.c tparm.c \
++	zlib/adler32.c zlib/inflate.c zlib/infblock.c zlib/infcodes.c zlib/inftrees.c zlib/inffast.c zlib/infutil.c zlib/zfunc.c
++pre_stage2_exec_CFLAGS = $(STAGE2_COMPILE) $(FSYS_CFLAGS)  -DMAX_WBITS=14 -DMAX_MEM_LEVEL=7 -DMY_ZCALLOC
+ pre_stage2_exec_CCASFLAGS = $(STAGE2_COMPILE) $(FSYS_CFLAGS)
+ pre_stage2_exec_LDFLAGS = $(PRE_STAGE2_LINK)
+ @NETBOOT_SUPPORT_TRUE@pre_stage2_exec_LDADD = ../netboot/libdrivers.a
+@@ -874,6 +905,22 @@
+ distclean-compile:
+ 	-rm -f *.tab.c
+ 
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/diskless_exec-adler32.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/diskless_exec-infblock.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/diskless_exec-infcodes.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/diskless_exec-inffast.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/diskless_exec-inflate.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/diskless_exec-inftrees.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/diskless_exec-infutil.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/diskless_exec-zfunc.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pre_stage2_exec-adler32.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pre_stage2_exec-infblock.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pre_stage2_exec-infcodes.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pre_stage2_exec-inffast.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pre_stage2_exec-inflate.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pre_stage2_exec-inftrees.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pre_stage2_exec-infutil.Po@am__quote@
++@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pre_stage2_exec-zfunc.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/diskless_exec-bios.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/diskless_exec-boot.Po@am__quote@
+ @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/diskless_exec-builtins.Po@am__quote@
+@@ -1955,6 +2002,134 @@
+ @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+ @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -c -o diskless_exec-tparm.obj `if test -f 'tparm.c'; then $(CYGPATH_W) 'tparm.c'; else $(CYGPATH_W) '$(srcdir)/tparm.c'; fi`
+ 
++diskless_exec-adler32.o: zlib/adler32.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -MT diskless_exec-adler32.o -MD -MP -MF "$(DEPDIR)/diskless_exec-adler32.Tpo" -c -o diskless_exec-adler32.o `test -f 'zlib/adler32.c' || echo '$(srcdir)/'`zlib/adler32.c; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/diskless_exec-adler32.Tpo" "$(DEPDIR)/diskless_exec-adler32.Po"; else rm -f "$(DEPDIR)/diskless_exec-adler32.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/adler32.c' object='diskless_exec-adler32.o' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/diskless_exec-adler32.Po' tmpdepfile='$(DEPDIR)/diskless_exec-adler32.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -c -o diskless_exec-adler32.o `test -f 'zlib/adler32.c' || echo '$(srcdir)/'`zlib/adler32.c
++
++diskless_exec-adler32.obj: zlib/adler32.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -MT diskless_exec-adler32.obj -MD -MP -MF "$(DEPDIR)/diskless_exec-adler32.Tpo" -c -o diskless_exec-adler32.obj `if test -f 'zlib/adler32.c'; then $(CYGPATH_W) 'zlib/adler32.c'; else $(CYGPATH_W) '$(srcdir)/zlib/adler32.c'; fi`; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/diskless_exec-adler32.Tpo" "$(DEPDIR)/diskless_exec-adler32.Po"; else rm -f "$(DEPDIR)/diskless_exec-adler32.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/adler32.c' object='diskless_exec-adler32.obj' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/diskless_exec-adler32.Po' tmpdepfile='$(DEPDIR)/diskless_exec-adler32.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -c -o diskless_exec-adler32.obj `if test -f 'zlib/adler32.c'; then $(CYGPATH_W) 'zlib/adler32.c'; else $(CYGPATH_W) '$(srcdir)/zlib/adler32.c'; fi`
++
++diskless_exec-inflate.o: zlib/inflate.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -MT diskless_exec-inflate.o -MD -MP -MF "$(DEPDIR)/diskless_exec-inflate.Tpo" -c -o diskless_exec-inflate.o `test -f 'zlib/inflate.c' || echo '$(srcdir)/'`zlib/inflate.c; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/diskless_exec-inflate.Tpo" "$(DEPDIR)/diskless_exec-inflate.Po"; else rm -f "$(DEPDIR)/diskless_exec-inflate.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/inflate.c' object='diskless_exec-inflate.o' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/diskless_exec-inflate.Po' tmpdepfile='$(DEPDIR)/diskless_exec-inflate.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -c -o diskless_exec-inflate.o `test -f 'zlib/inflate.c' || echo '$(srcdir)/'`zlib/inflate.c
++
++diskless_exec-inflate.obj: zlib/inflate.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -MT diskless_exec-inflate.obj -MD -MP -MF "$(DEPDIR)/diskless_exec-inflate.Tpo" -c -o diskless_exec-inflate.obj `if test -f 'zlib/inflate.c'; then $(CYGPATH_W) 'zlib/inflate.c'; else $(CYGPATH_W) '$(srcdir)/zlib/inflate.c'; fi`; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/diskless_exec-inflate.Tpo" "$(DEPDIR)/diskless_exec-inflate.Po"; else rm -f "$(DEPDIR)/diskless_exec-inflate.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/inflate.c' object='diskless_exec-inflate.obj' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/diskless_exec-inflate.Po' tmpdepfile='$(DEPDIR)/diskless_exec-inflate.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -c -o diskless_exec-inflate.obj `if test -f 'zlib/inflate.c'; then $(CYGPATH_W) 'zlib/inflate.c'; else $(CYGPATH_W) '$(srcdir)/zlib/inflate.c'; fi`
++
++diskless_exec-infblock.o: zlib/infblock.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -MT diskless_exec-infblock.o -MD -MP -MF "$(DEPDIR)/diskless_exec-infblock.Tpo" -c -o diskless_exec-infblock.o `test -f 'zlib/infblock.c' || echo '$(srcdir)/'`zlib/infblock.c; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/diskless_exec-infblock.Tpo" "$(DEPDIR)/diskless_exec-infblock.Po"; else rm -f "$(DEPDIR)/diskless_exec-infblock.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/infblock.c' object='diskless_exec-infblock.o' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/diskless_exec-infblock.Po' tmpdepfile='$(DEPDIR)/diskless_exec-infblock.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -c -o diskless_exec-infblock.o `test -f 'zlib/infblock.c' || echo '$(srcdir)/'`zlib/infblock.c
++
++diskless_exec-infblock.obj: zlib/infblock.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -MT diskless_exec-infblock.obj -MD -MP -MF "$(DEPDIR)/diskless_exec-infblock.Tpo" -c -o diskless_exec-infblock.obj `if test -f 'zlib/infblock.c'; then $(CYGPATH_W) 'zlib/infblock.c'; else $(CYGPATH_W) '$(srcdir)/zlib/infblock.c'; fi`; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/diskless_exec-infblock.Tpo" "$(DEPDIR)/diskless_exec-infblock.Po"; else rm -f "$(DEPDIR)/diskless_exec-infblock.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/infblock.c' object='diskless_exec-infblock.obj' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/diskless_exec-infblock.Po' tmpdepfile='$(DEPDIR)/diskless_exec-infblock.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -c -o diskless_exec-infblock.obj `if test -f 'zlib/infblock.c'; then $(CYGPATH_W) 'zlib/infblock.c'; else $(CYGPATH_W) '$(srcdir)/zlib/infblock.c'; fi`
++
++diskless_exec-infcodes.o: zlib/infcodes.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -MT diskless_exec-infcodes.o -MD -MP -MF "$(DEPDIR)/diskless_exec-infcodes.Tpo" -c -o diskless_exec-infcodes.o `test -f 'zlib/infcodes.c' || echo '$(srcdir)/'`zlib/infcodes.c; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/diskless_exec-infcodes.Tpo" "$(DEPDIR)/diskless_exec-infcodes.Po"; else rm -f "$(DEPDIR)/diskless_exec-infcodes.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/infcodes.c' object='diskless_exec-infcodes.o' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/diskless_exec-infcodes.Po' tmpdepfile='$(DEPDIR)/diskless_exec-infcodes.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -c -o diskless_exec-infcodes.o `test -f 'zlib/infcodes.c' || echo '$(srcdir)/'`zlib/infcodes.c
++
++diskless_exec-infcodes.obj: zlib/infcodes.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -MT diskless_exec-infcodes.obj -MD -MP -MF "$(DEPDIR)/diskless_exec-infcodes.Tpo" -c -o diskless_exec-infcodes.obj `if test -f 'zlib/infcodes.c'; then $(CYGPATH_W) 'zlib/infcodes.c'; else $(CYGPATH_W) '$(srcdir)/zlib/infcodes.c'; fi`; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/diskless_exec-infcodes.Tpo" "$(DEPDIR)/diskless_exec-infcodes.Po"; else rm -f "$(DEPDIR)/diskless_exec-infcodes.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/infcodes.c' object='diskless_exec-infcodes.obj' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/diskless_exec-infcodes.Po' tmpdepfile='$(DEPDIR)/diskless_exec-infcodes.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -c -o diskless_exec-infcodes.obj `if test -f 'zlib/infcodes.c'; then $(CYGPATH_W) 'zlib/infcodes.c'; else $(CYGPATH_W) '$(srcdir)/zlib/infcodes.c'; fi`
++
++diskless_exec-inftrees.o: zlib/inftrees.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -MT diskless_exec-inftrees.o -MD -MP -MF "$(DEPDIR)/diskless_exec-inftrees.Tpo" -c -o diskless_exec-inftrees.o `test -f 'zlib/inftrees.c' || echo '$(srcdir)/'`zlib/inftrees.c; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/diskless_exec-inftrees.Tpo" "$(DEPDIR)/diskless_exec-inftrees.Po"; else rm -f "$(DEPDIR)/diskless_exec-inftrees.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/inftrees.c' object='diskless_exec-inftrees.o' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/diskless_exec-inftrees.Po' tmpdepfile='$(DEPDIR)/diskless_exec-inftrees.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -c -o diskless_exec-inftrees.o `test -f 'zlib/inftrees.c' || echo '$(srcdir)/'`zlib/inftrees.c
++
++diskless_exec-inftrees.obj: zlib/inftrees.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -MT diskless_exec-inftrees.obj -MD -MP -MF "$(DEPDIR)/diskless_exec-inftrees.Tpo" -c -o diskless_exec-inftrees.obj `if test -f 'zlib/inftrees.c'; then $(CYGPATH_W) 'zlib/inftrees.c'; else $(CYGPATH_W) '$(srcdir)/zlib/inftrees.c'; fi`; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/diskless_exec-inftrees.Tpo" "$(DEPDIR)/diskless_exec-inftrees.Po"; else rm -f "$(DEPDIR)/diskless_exec-inftrees.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/inftrees.c' object='diskless_exec-inftrees.obj' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/diskless_exec-inftrees.Po' tmpdepfile='$(DEPDIR)/diskless_exec-inftrees.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -c -o diskless_exec-inftrees.obj `if test -f 'zlib/inftrees.c'; then $(CYGPATH_W) 'zlib/inftrees.c'; else $(CYGPATH_W) '$(srcdir)/zlib/inftrees.c'; fi`
++
++diskless_exec-inffast.o: zlib/inffast.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -MT diskless_exec-inffast.o -MD -MP -MF "$(DEPDIR)/diskless_exec-inffast.Tpo" -c -o diskless_exec-inffast.o `test -f 'zlib/inffast.c' || echo '$(srcdir)/'`zlib/inffast.c; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/diskless_exec-inffast.Tpo" "$(DEPDIR)/diskless_exec-inffast.Po"; else rm -f "$(DEPDIR)/diskless_exec-inffast.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/inffast.c' object='diskless_exec-inffast.o' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/diskless_exec-inffast.Po' tmpdepfile='$(DEPDIR)/diskless_exec-inffast.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -c -o diskless_exec-inffast.o `test -f 'zlib/inffast.c' || echo '$(srcdir)/'`zlib/inffast.c
++
++diskless_exec-inffast.obj: zlib/inffast.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -MT diskless_exec-inffast.obj -MD -MP -MF "$(DEPDIR)/diskless_exec-inffast.Tpo" -c -o diskless_exec-inffast.obj `if test -f 'zlib/inffast.c'; then $(CYGPATH_W) 'zlib/inffast.c'; else $(CYGPATH_W) '$(srcdir)/zlib/inffast.c'; fi`; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/diskless_exec-inffast.Tpo" "$(DEPDIR)/diskless_exec-inffast.Po"; else rm -f "$(DEPDIR)/diskless_exec-inffast.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/inffast.c' object='diskless_exec-inffast.obj' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/diskless_exec-inffast.Po' tmpdepfile='$(DEPDIR)/diskless_exec-inffast.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -c -o diskless_exec-inffast.obj `if test -f 'zlib/inffast.c'; then $(CYGPATH_W) 'zlib/inffast.c'; else $(CYGPATH_W) '$(srcdir)/zlib/inffast.c'; fi`
++
++diskless_exec-infutil.o: zlib/infutil.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -MT diskless_exec-infutil.o -MD -MP -MF "$(DEPDIR)/diskless_exec-infutil.Tpo" -c -o diskless_exec-infutil.o `test -f 'zlib/infutil.c' || echo '$(srcdir)/'`zlib/infutil.c; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/diskless_exec-infutil.Tpo" "$(DEPDIR)/diskless_exec-infutil.Po"; else rm -f "$(DEPDIR)/diskless_exec-infutil.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/infutil.c' object='diskless_exec-infutil.o' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/diskless_exec-infutil.Po' tmpdepfile='$(DEPDIR)/diskless_exec-infutil.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -c -o diskless_exec-infutil.o `test -f 'zlib/infutil.c' || echo '$(srcdir)/'`zlib/infutil.c
++
++diskless_exec-infutil.obj: zlib/infutil.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -MT diskless_exec-infutil.obj -MD -MP -MF "$(DEPDIR)/diskless_exec-infutil.Tpo" -c -o diskless_exec-infutil.obj `if test -f 'zlib/infutil.c'; then $(CYGPATH_W) 'zlib/infutil.c'; else $(CYGPATH_W) '$(srcdir)/zlib/infutil.c'; fi`; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/diskless_exec-infutil.Tpo" "$(DEPDIR)/diskless_exec-infutil.Po"; else rm -f "$(DEPDIR)/diskless_exec-infutil.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/infutil.c' object='diskless_exec-infutil.obj' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/diskless_exec-infutil.Po' tmpdepfile='$(DEPDIR)/diskless_exec-infutil.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -c -o diskless_exec-infutil.obj `if test -f 'zlib/infutil.c'; then $(CYGPATH_W) 'zlib/infutil.c'; else $(CYGPATH_W) '$(srcdir)/zlib/infutil.c'; fi`
++
++diskless_exec-zfunc.o: zlib/zfunc.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -MT diskless_exec-zfunc.o -MD -MP -MF "$(DEPDIR)/diskless_exec-zfunc.Tpo" -c -o diskless_exec-zfunc.o `test -f 'zlib/zfunc.c' || echo '$(srcdir)/'`zlib/zfunc.c; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/diskless_exec-zfunc.Tpo" "$(DEPDIR)/diskless_exec-zfunc.Po"; else rm -f "$(DEPDIR)/diskless_exec-zfunc.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/zfunc.c' object='diskless_exec-zfunc.o' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/diskless_exec-zfunc.Po' tmpdepfile='$(DEPDIR)/diskless_exec-zfunc.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -c -o diskless_exec-zfunc.o `test -f 'zlib/zfunc.c' || echo '$(srcdir)/'`zlib/zfunc.c
++
++diskless_exec-zfunc.obj: zlib/zfunc.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -MT diskless_exec-zfunc.obj -MD -MP -MF "$(DEPDIR)/diskless_exec-zfunc.Tpo" -c -o diskless_exec-zfunc.obj `if test -f 'zlib/zfunc.c'; then $(CYGPATH_W) 'zlib/zfunc.c'; else $(CYGPATH_W) '$(srcdir)/zlib/zfunc.c'; fi`; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/diskless_exec-zfunc.Tpo" "$(DEPDIR)/diskless_exec-zfunc.Po"; else rm -f "$(DEPDIR)/diskless_exec-zfunc.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/zfunc.c' object='diskless_exec-zfunc.obj' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/diskless_exec-zfunc.Po' tmpdepfile='$(DEPDIR)/diskless_exec-zfunc.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(diskless_exec_CFLAGS) $(CFLAGS) -c -o diskless_exec-zfunc.obj `if test -f 'zlib/zfunc.c'; then $(CYGPATH_W) 'zlib/zfunc.c'; else $(CYGPATH_W) '$(srcdir)/zlib/zfunc.c'; fi`
++
+ e2fs_stage1_5_exec-common.o: common.c
+ @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(e2fs_stage1_5_exec_CFLAGS) $(CFLAGS) -MT e2fs_stage1_5_exec-common.o -MD -MP -MF "$(DEPDIR)/e2fs_stage1_5_exec-common.Tpo" -c -o e2fs_stage1_5_exec-common.o `test -f 'common.c' || echo '$(srcdir)/'`common.c; \
+ @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/e2fs_stage1_5_exec-common.Tpo" "$(DEPDIR)/e2fs_stage1_5_exec-common.Po"; else rm -f "$(DEPDIR)/e2fs_stage1_5_exec-common.Tpo"; exit 1; fi
+@@ -2947,6 +3122,134 @@
+ @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+ @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -c -o pre_stage2_exec-tparm.obj `if test -f 'tparm.c'; then $(CYGPATH_W) 'tparm.c'; else $(CYGPATH_W) '$(srcdir)/tparm.c'; fi`
+ 
++pre_stage2_exec-adler32.o: zlib/adler32.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -MT pre_stage2_exec-adler32.o -MD -MP -MF "$(DEPDIR)/pre_stage2_exec-adler32.Tpo" -c -o pre_stage2_exec-adler32.o `test -f 'zlib/adler32.c' || echo '$(srcdir)/'`zlib/adler32.c; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pre_stage2_exec-adler32.Tpo" "$(DEPDIR)/pre_stage2_exec-adler32.Po"; else rm -f "$(DEPDIR)/pre_stage2_exec-adler32.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/adler32.c' object='pre_stage2_exec-adler32.o' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/pre_stage2_exec-adler32.Po' tmpdepfile='$(DEPDIR)/pre_stage2_exec-adler32.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -c -o pre_stage2_exec-adler32.o `test -f 'zlib/adler32.c' || echo '$(srcdir)/'`zlib/adler32.c
++
++pre_stage2_exec-adler32.obj: zlib/adler32.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -MT pre_stage2_exec-adler32.obj -MD -MP -MF "$(DEPDIR)/pre_stage2_exec-adler32.Tpo" -c -o pre_stage2_exec-adler32.obj `if test -f 'zlib/adler32.c'; then $(CYGPATH_W) 'zlib/adler32.c'; else $(CYGPATH_W) '$(srcdir)/zlib/adler32.c'; fi`; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pre_stage2_exec-adler32.Tpo" "$(DEPDIR)/pre_stage2_exec-adler32.Po"; else rm -f "$(DEPDIR)/pre_stage2_exec-adler32.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/adler32.c' object='pre_stage2_exec-adler32.obj' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/pre_stage2_exec-adler32.Po' tmpdepfile='$(DEPDIR)/pre_stage2_exec-adler32.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -c -o pre_stage2_exec-adler32.obj `if test -f 'zlib/adler32.c'; then $(CYGPATH_W) 'zlib/adler32.c'; else $(CYGPATH_W) '$(srcdir)/zlib/adler32.c'; fi`
++
++pre_stage2_exec-inflate.o: zlib/inflate.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -MT pre_stage2_exec-inflate.o -MD -MP -MF "$(DEPDIR)/pre_stage2_exec-inflate.Tpo" -c -o pre_stage2_exec-inflate.o `test -f 'zlib/inflate.c' || echo '$(srcdir)/'`zlib/inflate.c; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pre_stage2_exec-inflate.Tpo" "$(DEPDIR)/pre_stage2_exec-inflate.Po"; else rm -f "$(DEPDIR)/pre_stage2_exec-inflate.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/inflate.c' object='pre_stage2_exec-inflate.o' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/pre_stage2_exec-inflate.Po' tmpdepfile='$(DEPDIR)/pre_stage2_exec-inflate.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -c -o pre_stage2_exec-inflate.o `test -f 'zlib/inflate.c' || echo '$(srcdir)/'`zlib/inflate.c
++
++pre_stage2_exec-inflate.obj: zlib/inflate.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -MT pre_stage2_exec-inflate.obj -MD -MP -MF "$(DEPDIR)/pre_stage2_exec-inflate.Tpo" -c -o pre_stage2_exec-inflate.obj `if test -f 'zlib/inflate.c'; then $(CYGPATH_W) 'zlib/inflate.c'; else $(CYGPATH_W) '$(srcdir)/zlib/inflate.c'; fi`; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pre_stage2_exec-inflate.Tpo" "$(DEPDIR)/pre_stage2_exec-inflate.Po"; else rm -f "$(DEPDIR)/pre_stage2_exec-inflate.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/inflate.c' object='pre_stage2_exec-inflate.obj' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/pre_stage2_exec-inflate.Po' tmpdepfile='$(DEPDIR)/pre_stage2_exec-inflate.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -c -o pre_stage2_exec-inflate.obj `if test -f 'zlib/inflate.c'; then $(CYGPATH_W) 'zlib/inflate.c'; else $(CYGPATH_W) '$(srcdir)/zlib/inflate.c'; fi`
++
++pre_stage2_exec-infblock.o: zlib/infblock.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -MT pre_stage2_exec-infblock.o -MD -MP -MF "$(DEPDIR)/pre_stage2_exec-infblock.Tpo" -c -o pre_stage2_exec-infblock.o `test -f 'zlib/infblock.c' || echo '$(srcdir)/'`zlib/infblock.c; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pre_stage2_exec-infblock.Tpo" "$(DEPDIR)/pre_stage2_exec-infblock.Po"; else rm -f "$(DEPDIR)/pre_stage2_exec-infblock.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/infblock.c' object='pre_stage2_exec-infblock.o' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/pre_stage2_exec-infblock.Po' tmpdepfile='$(DEPDIR)/pre_stage2_exec-infblock.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -c -o pre_stage2_exec-infblock.o `test -f 'zlib/infblock.c' || echo '$(srcdir)/'`zlib/infblock.c
++
++pre_stage2_exec-infblock.obj: zlib/infblock.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -MT pre_stage2_exec-infblock.obj -MD -MP -MF "$(DEPDIR)/pre_stage2_exec-infblock.Tpo" -c -o pre_stage2_exec-infblock.obj `if test -f 'zlib/infblock.c'; then $(CYGPATH_W) 'zlib/infblock.c'; else $(CYGPATH_W) '$(srcdir)/zlib/infblock.c'; fi`; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pre_stage2_exec-infblock.Tpo" "$(DEPDIR)/pre_stage2_exec-infblock.Po"; else rm -f "$(DEPDIR)/pre_stage2_exec-infblock.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/infblock.c' object='pre_stage2_exec-infblock.obj' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/pre_stage2_exec-infblock.Po' tmpdepfile='$(DEPDIR)/pre_stage2_exec-infblock.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -c -o pre_stage2_exec-infblock.obj `if test -f 'zlib/infblock.c'; then $(CYGPATH_W) 'zlib/infblock.c'; else $(CYGPATH_W) '$(srcdir)/zlib/infblock.c'; fi`
++
++pre_stage2_exec-infcodes.o: zlib/infcodes.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -MT pre_stage2_exec-infcodes.o -MD -MP -MF "$(DEPDIR)/pre_stage2_exec-infcodes.Tpo" -c -o pre_stage2_exec-infcodes.o `test -f 'zlib/infcodes.c' || echo '$(srcdir)/'`zlib/infcodes.c; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pre_stage2_exec-infcodes.Tpo" "$(DEPDIR)/pre_stage2_exec-infcodes.Po"; else rm -f "$(DEPDIR)/pre_stage2_exec-infcodes.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/infcodes.c' object='pre_stage2_exec-infcodes.o' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/pre_stage2_exec-infcodes.Po' tmpdepfile='$(DEPDIR)/pre_stage2_exec-infcodes.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -c -o pre_stage2_exec-infcodes.o `test -f 'zlib/infcodes.c' || echo '$(srcdir)/'`zlib/infcodes.c
++
++pre_stage2_exec-infcodes.obj: zlib/infcodes.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -MT pre_stage2_exec-infcodes.obj -MD -MP -MF "$(DEPDIR)/pre_stage2_exec-infcodes.Tpo" -c -o pre_stage2_exec-infcodes.obj `if test -f 'zlib/infcodes.c'; then $(CYGPATH_W) 'zlib/infcodes.c'; else $(CYGPATH_W) '$(srcdir)/zlib/infcodes.c'; fi`; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pre_stage2_exec-infcodes.Tpo" "$(DEPDIR)/pre_stage2_exec-infcodes.Po"; else rm -f "$(DEPDIR)/pre_stage2_exec-infcodes.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/infcodes.c' object='pre_stage2_exec-infcodes.obj' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/pre_stage2_exec-infcodes.Po' tmpdepfile='$(DEPDIR)/pre_stage2_exec-infcodes.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -c -o pre_stage2_exec-infcodes.obj `if test -f 'zlib/infcodes.c'; then $(CYGPATH_W) 'zlib/infcodes.c'; else $(CYGPATH_W) '$(srcdir)/zlib/infcodes.c'; fi`
++
++pre_stage2_exec-inftrees.o: zlib/inftrees.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -MT pre_stage2_exec-inftrees.o -MD -MP -MF "$(DEPDIR)/pre_stage2_exec-inftrees.Tpo" -c -o pre_stage2_exec-inftrees.o `test -f 'zlib/inftrees.c' || echo '$(srcdir)/'`zlib/inftrees.c; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pre_stage2_exec-inftrees.Tpo" "$(DEPDIR)/pre_stage2_exec-inftrees.Po"; else rm -f "$(DEPDIR)/pre_stage2_exec-inftrees.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/inftrees.c' object='pre_stage2_exec-inftrees.o' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/pre_stage2_exec-inftrees.Po' tmpdepfile='$(DEPDIR)/pre_stage2_exec-inftrees.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -c -o pre_stage2_exec-inftrees.o `test -f 'zlib/inftrees.c' || echo '$(srcdir)/'`zlib/inftrees.c
++
++pre_stage2_exec-inftrees.obj: zlib/inftrees.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -MT pre_stage2_exec-inftrees.obj -MD -MP -MF "$(DEPDIR)/pre_stage2_exec-inftrees.Tpo" -c -o pre_stage2_exec-inftrees.obj `if test -f 'zlib/inftrees.c'; then $(CYGPATH_W) 'zlib/inftrees.c'; else $(CYGPATH_W) '$(srcdir)/zlib/inftrees.c'; fi`; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pre_stage2_exec-inftrees.Tpo" "$(DEPDIR)/pre_stage2_exec-inftrees.Po"; else rm -f "$(DEPDIR)/pre_stage2_exec-inftrees.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/inftrees.c' object='pre_stage2_exec-inftrees.obj' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/pre_stage2_exec-inftrees.Po' tmpdepfile='$(DEPDIR)/pre_stage2_exec-inftrees.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -c -o pre_stage2_exec-inftrees.obj `if test -f 'zlib/inftrees.c'; then $(CYGPATH_W) 'zlib/inftrees.c'; else $(CYGPATH_W) '$(srcdir)/zlib/inftrees.c'; fi`
++
++pre_stage2_exec-inffast.o: zlib/inffast.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -MT pre_stage2_exec-inffast.o -MD -MP -MF "$(DEPDIR)/pre_stage2_exec-inffast.Tpo" -c -o pre_stage2_exec-inffast.o `test -f 'zlib/inffast.c' || echo '$(srcdir)/'`zlib/inffast.c; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pre_stage2_exec-inffast.Tpo" "$(DEPDIR)/pre_stage2_exec-inffast.Po"; else rm -f "$(DEPDIR)/pre_stage2_exec-inffast.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/inffast.c' object='pre_stage2_exec-inffast.o' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/pre_stage2_exec-inffast.Po' tmpdepfile='$(DEPDIR)/pre_stage2_exec-inffast.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -c -o pre_stage2_exec-inffast.o `test -f 'zlib/inffast.c' || echo '$(srcdir)/'`zlib/inffast.c
++
++pre_stage2_exec-inffast.obj: zlib/inffast.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -MT pre_stage2_exec-inffast.obj -MD -MP -MF "$(DEPDIR)/pre_stage2_exec-inffast.Tpo" -c -o pre_stage2_exec-inffast.obj `if test -f 'zlib/inffast.c'; then $(CYGPATH_W) 'zlib/inffast.c'; else $(CYGPATH_W) '$(srcdir)/zlib/inffast.c'; fi`; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pre_stage2_exec-inffast.Tpo" "$(DEPDIR)/pre_stage2_exec-inffast.Po"; else rm -f "$(DEPDIR)/pre_stage2_exec-inffast.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/inffast.c' object='pre_stage2_exec-inffast.obj' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/pre_stage2_exec-inffast.Po' tmpdepfile='$(DEPDIR)/pre_stage2_exec-inffast.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -c -o pre_stage2_exec-inffast.obj `if test -f 'zlib/inffast.c'; then $(CYGPATH_W) 'zlib/inffast.c'; else $(CYGPATH_W) '$(srcdir)/zlib/inffast.c'; fi`
++
++pre_stage2_exec-infutil.o: zlib/infutil.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -MT pre_stage2_exec-infutil.o -MD -MP -MF "$(DEPDIR)/pre_stage2_exec-infutil.Tpo" -c -o pre_stage2_exec-infutil.o `test -f 'zlib/infutil.c' || echo '$(srcdir)/'`zlib/infutil.c; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pre_stage2_exec-infutil.Tpo" "$(DEPDIR)/pre_stage2_exec-infutil.Po"; else rm -f "$(DEPDIR)/pre_stage2_exec-infutil.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/infutil.c' object='pre_stage2_exec-infutil.o' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/pre_stage2_exec-infutil.Po' tmpdepfile='$(DEPDIR)/pre_stage2_exec-infutil.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -c -o pre_stage2_exec-infutil.o `test -f 'zlib/infutil.c' || echo '$(srcdir)/'`zlib/infutil.c
++
++pre_stage2_exec-infutil.obj: zlib/infutil.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -MT pre_stage2_exec-infutil.obj -MD -MP -MF "$(DEPDIR)/pre_stage2_exec-infutil.Tpo" -c -o pre_stage2_exec-infutil.obj `if test -f 'zlib/infutil.c'; then $(CYGPATH_W) 'zlib/infutil.c'; else $(CYGPATH_W) '$(srcdir)/zlib/infutil.c'; fi`; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pre_stage2_exec-infutil.Tpo" "$(DEPDIR)/pre_stage2_exec-infutil.Po"; else rm -f "$(DEPDIR)/pre_stage2_exec-infutil.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/infutil.c' object='pre_stage2_exec-infutil.obj' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/pre_stage2_exec-infutil.Po' tmpdepfile='$(DEPDIR)/pre_stage2_exec-infutil.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -c -o pre_stage2_exec-infutil.obj `if test -f 'zlib/infutil.c'; then $(CYGPATH_W) 'zlib/infutil.c'; else $(CYGPATH_W) '$(srcdir)/zlib/infutil.c'; fi`
++
++pre_stage2_exec-zfunc.o: zlib/zfunc.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -MT pre_stage2_exec-zfunc.o -MD -MP -MF "$(DEPDIR)/pre_stage2_exec-zfunc.Tpo" -c -o pre_stage2_exec-zfunc.o `test -f 'zlib/zfunc.c' || echo '$(srcdir)/'`zlib/zfunc.c; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pre_stage2_exec-zfunc.Tpo" "$(DEPDIR)/pre_stage2_exec-zfunc.Po"; else rm -f "$(DEPDIR)/pre_stage2_exec-zfunc.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/zfunc.c' object='pre_stage2_exec-zfunc.o' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/pre_stage2_exec-zfunc.Po' tmpdepfile='$(DEPDIR)/pre_stage2_exec-zfunc.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -c -o pre_stage2_exec-zfunc.o `test -f 'zlib/zfunc.c' || echo '$(srcdir)/'`zlib/zfunc.c
++
++pre_stage2_exec-zfunc.obj: zlib/zfunc.c
++@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -MT pre_stage2_exec-zfunc.obj -MD -MP -MF "$(DEPDIR)/pre_stage2_exec-zfunc.Tpo" -c -o pre_stage2_exec-zfunc.obj `if test -f 'zlib/zfunc.c'; then $(CYGPATH_W) 'zlib/zfunc.c'; else $(CYGPATH_W) '$(srcdir)/zlib/zfunc.c'; fi`; \
++@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/pre_stage2_exec-zfunc.Tpo" "$(DEPDIR)/pre_stage2_exec-zfunc.Po"; else rm -f "$(DEPDIR)/pre_stage2_exec-zfunc.Tpo"; exit 1; fi
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='zlib/zfunc.c' object='pre_stage2_exec-zfunc.obj' libtool=no @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	depfile='$(DEPDIR)/pre_stage2_exec-zfunc.Po' tmpdepfile='$(DEPDIR)/pre_stage2_exec-zfunc.TPo' @AMDEPBACKSLASH@
++@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
++@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(pre_stage2_exec_CFLAGS) $(CFLAGS) -c -o pre_stage2_exec-zfunc.obj `if test -f 'zlib/zfunc.c'; then $(CYGPATH_W) 'zlib/zfunc.c'; else $(CYGPATH_W) '$(srcdir)/zlib/zfunc.c'; fi`
++
+ reiserfs_stage1_5_exec-common.o: common.c
+ @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(reiserfs_stage1_5_exec_CFLAGS) $(CFLAGS) -MT reiserfs_stage1_5_exec-common.o -MD -MP -MF "$(DEPDIR)/reiserfs_stage1_5_exec-common.Tpo" -c -o reiserfs_stage1_5_exec-common.o `test -f 'common.c' || echo '$(srcdir)/'`common.c; \
+ @am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/reiserfs_stage1_5_exec-common.Tpo" "$(DEPDIR)/reiserfs_stage1_5_exec-common.Po"; else rm -f "$(DEPDIR)/reiserfs_stage1_5_exec-common.Tpo"; exit 1; fi
