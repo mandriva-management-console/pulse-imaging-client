@@ -1,5 +1,5 @@
 #
-# (c) 2009 Mandriva, http://www.mandriva.com
+# (c) 2010 Mandriva, http://www.mandriva.com
 #
 # $Id$
 #
@@ -21,9 +21,10 @@
 # MA 02110-1301, USA.
 #
 
-CC				= gcc-3.4
+CC				:= gcc-3.4
+SVNREV			:=$(shell echo $Rev: 4491 $ | tr -cd [[:digit:]])
 
-BUILD_FOLDER	=  $(shell pwd)/build
+BUILD_FOLDER	= $(shell pwd)/build
 3RDPARTY_FOLDER	= $(shell pwd)/3rd_party
 
 GRUB_VERSION	= 0.95
@@ -42,7 +43,7 @@ all:
 	-cat pulse2.diff | patch -N -p1 -d $(GRUB_FOLDER)
 	[ -f  $(GRUB_FOLDER)/Makefile ] || (cd $(GRUB_FOLDER); CC=$(CC) ./configure)
 	$(MAKE) -C $(GRUB_FOLDER)/stage2/ CC=$(CC) stage2_size.h stage2_eltorito
-	cp -a $(GRUB_FOLDER)/stage2/stage2_eltorito eltorito
+	cp -a $(GRUB_FOLDER)/stage2/stage2_eltorito eltorito-$(SVNREV)
 
 clean:
 	$(MAKE) clean -C $(GRUB_FOLDER)
