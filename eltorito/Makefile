@@ -43,12 +43,11 @@ all:
 	-cat pulse2.diff | patch -N -p1 -d $(GRUB_FOLDER)
 	[ -f  $(GRUB_FOLDER)/Makefile ] || (cd $(GRUB_FOLDER); CC=$(CC) ./configure)
 	$(MAKE) -C $(GRUB_FOLDER)/stage2/ CC=$(CC) stage2_size.h stage2_eltorito
-	cp -a $(GRUB_FOLDER)/stage2/stage2_eltorito eltorito-$(SVNREV)
+	cp -a $(GRUB_FOLDER)/stage2/stage2_eltorito stage2_eltorito-$(SVNREV)
 
 clean:
 	$(MAKE) clean -C $(GRUB_FOLDER)
-	rm -f eltorito
+	rm -f stage2_eltorito-$(SVNREV)
 
 distclean:
 	$(MAKE) distclean -C $(GRUB_FOLDER)
-
