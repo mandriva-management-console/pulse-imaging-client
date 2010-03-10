@@ -42,6 +42,11 @@ URI_ATL2			= http://partner.atheros.com/Drivers.aspx
 FOLDER_ATL2			= atl2-$(VERSION_ATL2)
 TARBALL_ATL2			= atl2-$(VERSION_ATL2).tar.bz2
 
+VERSION_ATL1E			= 1.0.1.6
+URI_ATL1E			= http://partner.atheros.com/Drivers.aspx
+FOLDER_ATL1E			= AR81Family-linux-v$(VERSION_ATL1E)/src
+TARBALL_ATL1E			= AR81Family-linux-v$(VERSION_ATL1E).tar.gz
+
 VERSION_570X			= 3.99k
 URI_570X			= http://www.broadcom.com/docs/driver_download/570x
 FOLDER_570X			= tg3-$(VERSION_570X)
