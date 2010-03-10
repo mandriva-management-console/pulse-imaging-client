@@ -37,11 +37,15 @@ include $(FOLDER_KERNEL)/consts.mk
 include $(FOLDER_TOOLS)/consts.mk
 include $(FOLDER_INITRD)/consts.mk
 
-BUILD_FOLDER		= build
+BUILD_FOLDER		:= build
+PREBUILD_FOLDER		= prebuild-binaries
+PREBUILD_BINARIES	= revoboot.pxe-$(SVNREV) pxe_boot stage2_eltorito-$(SVNREV) cdrom_boot bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) kernel initrd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz initrd memtest-$(SVNREV) memtest
 INITRAMFS_FOLDER	= $(BUILD_FOLDER)/initramfs
 
 all : imaging
 
+install-prebuild:
+	$(MAKE) install BUILD_FOLDER=$(PREBUILD_FOLDER)
 install:
 	# bootloader stuff (revoboot + grub/eltorito)
 	# everything is set RO
@@ -61,6 +65,15 @@ install:
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/initrd $(VARDIR)/diskless
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/memtest-$(SVNREV) $(VARDIR)/diskless
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/memtest $(VARDIR)/diskless
+
+prebuild:
+	@echo This will updated binaries in $(PREBUILD_FOLDER), based on binaries in $(BUILD_FOLDER)
+	[ -d $(PREBUILD_FOLDER) ] || mkdir $(PREBUILD_FOLDER)
+	(for i in $(PREBUILD_BINARIES); \
+		do \
+		cp -a "$(BUILD_FOLDER)/$$i" $(PREBUILD_FOLDER); \
+		done \
+	)
 
 imaging: kernel bootloader tools initrd eltorito
 	# initial tree
@@ -126,4 +139,4 @@ dist-clean:
 	$(MAKE) dist-clean -C $(FOLDER_TOOLS)
 	$(MAKE) dist-clean -C $(FOLDER_INITRD)
 
-.PHONY: kernel bootloader tools initrd eltorito
+.PHONY: kernel bootloader tools initrd eltorito prebuild
