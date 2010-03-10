@@ -31,6 +31,7 @@ FOLDER_BOOTLOADER	= bootloader
 FOLDER_KERNEL		= kernel
 FOLDER_TOOLS		= tools
 FOLDER_INITRD		= initrd
+FOLDER_ELTORITO		= eltorito
 
 include $(FOLDER_KERNEL)/consts.mk
 include $(FOLDER_TOOLS)/consts.mk
@@ -59,7 +60,7 @@ install:
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/memtest-$(SVNREV) $(VARDIR)/diskless
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/memtest $(VARDIR)/diskless
 
-imaging: kernel bootloader tools initrd
+imaging: kernel bootloader tools initrd eltorito
 	# initial tree
 	rm -fr $(INITRAMFS_FOLDER) && mkdir -p $(INITRAMFS_FOLDER)
 	tar c --exclude=\.svn -C initrd/tree . | tar x -C build/initramfs
@@ -101,6 +102,11 @@ tools:
 
 initrd:
 	$(MAKE) -C $(FOLDER_INITRD) SVNREV=$(SVNREV)
+
+eltorito:
+	$(MAKE) -C $(FOLDER_ELTORITO) SVNREV=$(SVNREV)
+	cp -a $(FOLDER_ELTORITO)/eltorito-$(SVNREV) $(BUILD_FOLDER)/eltorito-$(SVNREV)
+	ln -sf eltorito-$(SVNREV) $(BUILD_FOLDER)/eltorito
 
 target-clean:
 	rm -fr $(INITRAMFS_FOLDER)
