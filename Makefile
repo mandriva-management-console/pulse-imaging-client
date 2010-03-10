@@ -43,20 +43,22 @@ INITRAMFS_FOLDER	= $(BUILD_FOLDER)/initramfs
 all : imaging
 
 install:
-	# bootloader stuff (revoboot)
+	# bootloader stuff (revoboot + grub/eltorito)
+	# everything is set RO
 	$(INSTALL) -m 550 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/bootloader -d
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/revoboot.pxe-$(SVNREV) $(VARDIR)/bootloader
-	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/bootloader $(VARDIR)/bootloader
+	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/pxe_boot $(VARDIR)/bootloader
+	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/stage2_eltorito-$(SVNREV) $(VARDIR)/bootloader
+	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/cdrom_boot $(VARDIR)/bootloader
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) contrib/bootsplash/bootsplash.xpm $(VARDIR)/bootloader
 
-	# diskless stuff (kernel and initramfs)
+	# diskless stuff (kernel, initramfs, memtest)
+	# everything is set RO
 	$(INSTALL) -m 550 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/diskless -d
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) $(VARDIR)/diskless
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/kernel $(VARDIR)/diskless
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/initrd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz $(VARDIR)/diskless
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/initrd $(VARDIR)/diskless
-
-	# additionnal tools (memtest)
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/memtest-$(SVNREV) $(VARDIR)/diskless
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/memtest $(VARDIR)/diskless
 
@@ -92,7 +94,7 @@ kernel:
 bootloader:
 	$(MAKE) -C $(FOLDER_BOOTLOADER) SVNREV=$(SVNREV)
 	cp -a $(FOLDER_BOOTLOADER)/revoboot.pxe-$(SVNREV) $(BUILD_FOLDER)/revoboot.pxe-$(SVNREV)
-	ln -sf revoboot.pxe-$(SVNREV) $(BUILD_FOLDER)/bootloader
+	ln -sf revoboot.pxe-$(SVNREV) $(BUILD_FOLDER)/pxe_boot
 
 tools:
 	$(MAKE) -C $(FOLDER_TOOLS) SVNREV=$(SVNREV)
@@ -105,8 +107,8 @@ initrd:
 
 eltorito:
 	$(MAKE) -C $(FOLDER_ELTORITO) SVNREV=$(SVNREV)
-	cp -a $(FOLDER_ELTORITO)/eltorito-$(SVNREV) $(BUILD_FOLDER)/eltorito-$(SVNREV)
-	ln -sf eltorito-$(SVNREV) $(BUILD_FOLDER)/eltorito
+	cp -a $(FOLDER_ELTORITO)/stage2_eltorito-$(SVNREV) $(BUILD_FOLDER)/stage2_eltorito-$(SVNREV)
+	ln -sf stage2_eltorito-$(SVNREV) $(BUILD_FOLDER)/cdrom_boot
 
 target-clean:
 	rm -fr $(INITRAMFS_FOLDER)
