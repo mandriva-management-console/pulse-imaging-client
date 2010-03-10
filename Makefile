@@ -74,6 +74,9 @@ prebuild:
 		cp -a "$(BUILD_FOLDER)/$$i" $(PREBUILD_FOLDER); \
 		done \
 	)
+	rm -f $(PREBUILD_FOLDER)/BUILDENV
+	echo '$$Rev$$' >> $(PREBUILD_FOLDER)/BUILDENV
+	uname -a      >> $(PREBUILD_FOLDER)/BUILDENV
 
 imaging: kernel bootloader tools initrd eltorito
 	# initial tree
