@@ -124,4 +124,4 @@ dist-clean:
 	$(MAKE) dist-clean -C $(FOLDER_TOOLS)
 	$(MAKE) dist-clean -C $(FOLDER_INITRD)
 
-.PHONY: kernel bootloader tools initrd
+.PHONY: kernel bootloader tools initrd eltorito
