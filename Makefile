@@ -92,9 +92,9 @@ imaging: kernel bootloader tools initrd eltorito
 	cp -a $(FOLDER_TOOLS)/build/etc/init.d/* $(INITRAMFS_FOLDER)/etc/init.d
 
 	# additionnal stuff under /bin
-	cp -a postinst/postmount $(INITRAMFS_FOLDER)/bin
-	cp -a postinst/dopostinst $(INITRAMFS_FOLDER)/bin
-	cp -a postinst/doinitinst $(INITRAMFS_FOLDER)/bin
+	cp -a postinstall/bin/postmount $(INITRAMFS_FOLDER)/bin
+	cp -a postinstall/bin/dopostinst $(INITRAMFS_FOLDER)/bin
+	cp -a postinstall/bin/doinitinst $(INITRAMFS_FOLDER)/bin
 
 	# add modules
 	cp -a $(FOLDER_KERNEL)/build/modules/*.ko $(INITRAMFS_FOLDER)/lib/modules
