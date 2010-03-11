@@ -20,8 +20,9 @@
 #
 
 VARDIR 			:= /var/lib/pulse2/imaging
-PULSE2_OWNER	:= root
-PULSE2_GROUP	:= root
+SHAREDIR		:= /usr/local/share/pulse2/imaging
+PULSE2_OWNER		:= root
+PULSE2_GROUP		:= root
 
 INSTALL = $(shell which install)
 
