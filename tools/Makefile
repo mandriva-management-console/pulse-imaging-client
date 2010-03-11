@@ -21,11 +21,12 @@
 # MA 02110-1301, USA.
 #
 
-CC=gcc-3.4
-SVNREV:=$(shell echo $Rev: 4505 $ | tr -cd [[:digit:]])
-
-BUILD_FOLDER = $(shell pwd)/build
-3RDPARTY_FOLDER = $(shell pwd)/3rd_party
+CC			:= gcc-3.4
+SVNREV			:= $(shell echo $Rev: 4505 $ | tr -cd [[:digit:]])
+BUILD_FOLDER		= $(shell pwd)/build
+3RDPARTY_FOLDER		= $(shell pwd)/3rd_party
+REVOBIN_BINARIES	= image_e2fs image_fat image_jfs image_lvm image_lvmreiserfs image_ntfs image_raw image_swap image_ufs image_xfs
+REVORESTORE_BINARIES	= autorestore revosendlog revowait revodoneimage revogetname revogetuuid revosetdefault revoinc revoinv
 
 include consts.mk
 
@@ -35,16 +36,11 @@ all: image save restore ui_newt bench ntblfix memtest
 
 image: zlib e2fs reiserfs
 	$(MAKE) -C revosave CC=$(CC) ZLIB_DIR=$(BUILD_FOLDER)/$(ZLIB_FOLDER) RFS_DIR=$(BUILD_FOLDER)/$(REISER_FOLDER) E2FS_DIR=$(BUILD_FOLDER)/$(E2FS_FOLDER)
-	cp -a revosave/image_raw 		$(BUILD_FOLDER)/revobin
-	cp -a revosave/image_swap 		$(BUILD_FOLDER)/revobin
-	cp -a revosave/image_e2fs 		$(BUILD_FOLDER)/revobin
-	cp -a revosave/image_fat 		$(BUILD_FOLDER)/revobin
-	cp -a revosave/image_ntfs 		$(BUILD_FOLDER)/revobin
-	cp -a revosave/image_jfs 		$(BUILD_FOLDER)/revobin
-	cp -a revosave/image_ufs 		$(BUILD_FOLDER)/revobin
-	cp -a revosave/image_lvm 		$(BUILD_FOLDER)/revobin
-	cp -a revosave/image_lvmreiserfs	$(BUILD_FOLDER)/revobin
-	cp -a revosave/image_xfs 		$(BUILD_FOLDER)/revobin
+	(for i in $(REVOBIN_BINARIES); \
+		do \
+		cp -a "revosave/$$i" $(BUILD_FOLDER)/revobin; \
+		done \
+	)
 	cp -a revosave/liblrs.so*		$(BUILD_FOLDER)/lib
 
 save: image
@@ -54,15 +50,11 @@ save: image
 
 restore: image
 	$(MAKE) -C autorestore CC=$(CC) 	ZLIB_DIR=$(BUILD_FOLDER)/$(ZLIB_FOLDER) LRS_DIR=../revosave
-	cp -a autorestore/autorestore 		$(BUILD_FOLDER)/bin
-	cp -a autorestore/revosendlog 		$(BUILD_FOLDER)/bin
-	cp -a autorestore/revowait 		$(BUILD_FOLDER)/bin
-	cp -a autorestore/revodoneimage 	$(BUILD_FOLDER)/bin
-	cp -a autorestore/revogetname 		$(BUILD_FOLDER)/bin
-	cp -a autorestore/revogetuuid 		$(BUILD_FOLDER)/bin
-	cp -a autorestore/revosetdefault	$(BUILD_FOLDER)/bin
-	cp -a autorestore/revoinc 		$(BUILD_FOLDER)/bin
-	cp -a autorestore/revoinv 		$(BUILD_FOLDER)/bin
+	(for i in $(REVORESTORE_BINARIES); \
+		do \
+		cp -a "autorestore/$$i" $(BUILD_FOLDER)/bin; \
+		done \
+	)
 	cp -a autorestore/revoboot 		$(BUILD_FOLDER)/etc/init.d
 
 bench: image
@@ -121,7 +113,6 @@ ui_newt: save newt
 ntblfix:
 	$(MAKE) -C ntblfix CC=$(CC)
 	cp -a ntblfix/ntblfix $(BUILD_FOLDER)/bin
-
 
 memtest:
 	[ -e $(3RDPARTY_FOLDER)/$(MEMTEST_TARBALL) ] || wget $(MEMTEST_URI)/$(MEMTEST_TARBALL) -P $(3RDPARTY_FOLDER)
