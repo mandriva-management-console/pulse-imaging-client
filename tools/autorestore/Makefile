@@ -24,9 +24,15 @@
 
 CFLAGS	= -DLBLIMAGEVER='1.4' -Os -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wall -I$(LRS_DIR) -I$(ZLIB_DIR)
 LIBS	= -s -L$(LRS_DIR) -llrs -L$(ZLIB_DIR) -lz
+SRC	= autorestore.c
 
-autorestore: autorestore.c
+autorestore: $(SRC)
 	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
+
+check-syntax:
+	$(CC) $(CFLAGS) -pedantic -fsyntax-only $(SRC)
 
 clean:
 	rm -f autorestore
+
+.PHONY: syntax
