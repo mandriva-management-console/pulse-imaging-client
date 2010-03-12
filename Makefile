@@ -26,7 +26,7 @@ PULSE2_GROUP		:= root
 
 INSTALL = $(shell which install)
 
-SVNREV:=$(shell echo $Rev$ | tr -cd [[:digit:]])
+SVNREV			:=$(shell echo $Rev$ | tr -cd [[:digit:]])
 
 FOLDER_BOOTLOADER	= bootloader
 FOLDER_KERNEL		= kernel
@@ -46,10 +46,15 @@ INITRAMFS_FOLDER	= $(BUILD_FOLDER)/initramfs
 all : imaging
 
 install-prebuild:
-	$(MAKE) install BUILD_FOLDER=$(PREBUILD_FOLDER)
+	# calls "install" target, with the following vars set:
+	# BUILD_FOLDER set to PREBUILD_FOLDER
+	# and SVNREV set to $(PREBUILD_FOLDER)/REVISION
+	$(MAKE) install BUILD_FOLDER=$(PREBUILD_FOLDER) SVNREV=`cat $(PREBUILD_FOLDER)/REVISION`
+
 install:
 	# bootloader stuff (revoboot + grub/eltorito)
 	# everything is set RO
+
 	$(INSTALL) -m 550 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/bootloader -d
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/revoboot.pxe-$(SVNREV) $(VARDIR)/bootloader
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/pxe_boot $(VARDIR)/bootloader
@@ -68,7 +73,7 @@ install:
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/memtest $(VARDIR)/diskless
 
 prebuild:
-	@echo This will updated binaries in $(PREBUILD_FOLDER), based on binaries in $(BUILD_FOLDER)
+	@echo This will updated binaries in $(PREBUILD_FOLDER), based on binaries in $(BUILD_FOLDER), at revision $(SVNREV)
 	[ -d $(PREBUILD_FOLDER) ] || mkdir $(PREBUILD_FOLDER)
 	(for i in $(PREBUILD_BINARIES); \
 		do \
@@ -76,6 +81,7 @@ prebuild:
 		done \
 	)
 	rm -f $(PREBUILD_FOLDER)/BUILDENV
+	echo $(SVNREV) > $(PREBUILD_FOLDER)/REVISION
 	echo '$$Rev$$' >> $(PREBUILD_FOLDER)/BUILDENV
 	uname -a      >> $(PREBUILD_FOLDER)/BUILDENV
 
