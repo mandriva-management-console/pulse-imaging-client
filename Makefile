@@ -41,7 +41,7 @@ include $(FOLDER_INITRD)/consts.mk
 
 BUILD_FOLDER		:= build
 PREBUILD_FOLDER		= prebuild-binaries
-PREBUILD_BINARIES	= revoboot.pxe-$(SVNREV) pxe_boot stage2_eltorito-$(SVNREV) cdrom_boot bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) kernel initrd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz initrd memtest-$(SVNREV) memtest
+PREBUILD_BINARIES	= revoboot.pxe-$(SVNREV) pxe_boot stage2_eltorito-$(SVNREV) cdrom_boot bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) kernel initrd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz initrd  initrdcd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz initrdcd memtest-$(SVNREV) memtest
 INITRAMFS_FOLDER	= $(BUILD_FOLDER)/initramfs
 INITCDFS_FOLDER		= $(BUILD_FOLDER)/initcdfs
 
@@ -71,6 +71,8 @@ install:
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/kernel $(VARDIR)/diskless
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/initrd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz $(VARDIR)/diskless
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/initrd $(VARDIR)/diskless
+	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/initrdcd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz $(VARDIR)/diskless
+	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/initrdcd $(VARDIR)/diskless
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/memtest-$(SVNREV) $(VARDIR)/diskless
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/memtest $(VARDIR)/diskless
 
