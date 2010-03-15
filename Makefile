@@ -24,7 +24,7 @@ SHAREDIR		:= /usr/local/share/pulse2/imaging
 PULSE2_OWNER		:= root
 PULSE2_GROUP		:= root
 
-INSTALL = $(shell which install)
+INSTALL 		= $(shell which install)
 
 SVNREV			:=$(shell echo $Rev$ | tr -cd [[:digit:]])
 
@@ -43,6 +43,7 @@ BUILD_FOLDER		:= build
 PREBUILD_FOLDER		= prebuild-binaries
 PREBUILD_BINARIES	= revoboot.pxe-$(SVNREV) pxe_boot stage2_eltorito-$(SVNREV) cdrom_boot bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) kernel initrd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz initrd memtest-$(SVNREV) memtest
 INITRAMFS_FOLDER	= $(BUILD_FOLDER)/initramfs
+INITCDFS_FOLDER		= $(BUILD_FOLDER)/initcdfs
 
 all : imaging
 
@@ -115,10 +116,16 @@ imaging: kernel bootloader tools initrd eltorito
 
 	# add modules
 	cp -a $(FOLDER_KERNEL)/build/modules/*.ko $(INITRAMFS_FOLDER)/lib/modules
-	cp -a $(FOLDER_KERNEL)/build/modules/cd $(INITRAMFS_FOLDER)/lib/modules
+
+	# initial CD tree
+	rm -fr $(INITCDFS_FOLDER) && mkdir -p $(INITCDFS_FOLDER)
+	mkdir -p $(INITCDFS_FOLDER)/lib/modules
+	cp -a $(FOLDER_KERNEL)/build/modules/cd $(INITCDFS_FOLDER)/lib/modules
 
 	(cd $(INITRAMFS_FOLDER); find . | cpio -o -H newc ) | gzip -c -9 > $(BUILD_FOLDER)/initrd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz
 	ln -sf initrd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz $(BUILD_FOLDER)/initrd
+	(cd $(INITCDFS_FOLDER); find . | cpio -o -H newc ) | gzip -c -9 > $(BUILD_FOLDER)/initrdcd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz
+	ln -sf initrdcd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz $(BUILD_FOLDER)/initrdcd
 
 kernel:
 	$(MAKE) -C $(FOLDER_KERNEL) SVNREV=$(SVNREV)
