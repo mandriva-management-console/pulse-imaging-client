@@ -29,6 +29,7 @@ PREFIX=$2
 SAVEDIR=$3
 INFODIR=$4
 
+. /usr/lib/revolib.sh
 # Get DHCP options
 . /etc/netinfo.sh
 

@@ -24,7 +24,11 @@
 ETH=`cat /etc/eth`
 MAC=`cat /etc/mac`
 
+. /usr/lib/revolib.sh
 . /etc/netinfo.sh
+
 SRV=$Next_server
 
-echo -en "\032Mc:$MAC" | nc  -p 1001 -w 1 $SRV 1001
+get_computer_hostname $MAC $SRV
+HOSTNAME=$ANSWER
+echo "$HOSTNAME" > /etc/lbxname

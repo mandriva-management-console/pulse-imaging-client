@@ -25,6 +25,8 @@
 # First script that's launched. Takes all the main decisions
 #
 
+. /usr/lib/revolib.sh
+
 # Wait for the interface to be configured
 checkip()
 {
@@ -342,30 +344,49 @@ if [ "$SRV" = "0.0.0.0" ]; then
 fi
 
 # date
-echo -n "*** Getting current time from \"$SRV\"..."
-[ -n "$SRV" ] && rdate $SRV
+get_rdate $SRV
 
 # try to get the name
-revogetname >/etc/lbxname
+revogetname
 
 # try to get the UUID
-revogetuuid > /etc/COMPUTER_UUID
+revogetuuid
 COMPUTER_UUID=`cat /etc/COMPUTER_UUID`
 
 # get the warning message
 get_warn_message
 
 # Restore => mount a tmpfs
-grep -q revorestore /etc/cmdline && mount -t tmpfs -o size=96M tmpfs /tmpfs
+grep -q revorestore /etc/cmdline
+if [ "$?" -eq "0" ]
+then
+    pretty_info "Mounting a 96 MB tmpfs"
+    mount -t tmpfs -o size=96M tmpfs /tmpfs
+fi
 
 # compression level
-grep -q revonocomp /etc/cmdline && echo 0 >/etc/complevel
+grep -q revonocomp /etc/cmdline
+if [ "$?" -eq "0" ]
+then
+    pretty_info "Disabling compression"
+    echo 0 >/etc/complevel
+fi
 
 # Restore from CDROM ?
-grep -q revosavedir=/cdrom /etc/cmdline && mount_cdrom
+grep -q revosavedir=/cdrom /etc/cmdline 
+if [ "$?" -eq "0" ]
+then
+    pretty_info "Mounting CDROM"
+    mount_cdrom
+fi
 
 # Debug ?
-grep -q revodebug /etc/cmdline && exit 0
+grep -q revodebug /etc/cmdline
+if [ "$?" -eq "0" ]
+then
+    pretty_info "Entering debug mode"
+    exit 0
+fi
 
 # Launch the UI
 [ -x /bin/uinewt ] && /bin/uinewt &

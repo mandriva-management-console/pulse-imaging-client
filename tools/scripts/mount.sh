@@ -28,6 +28,7 @@
 #
 
 TYPE=nfs
+. /usr/lib/revolib.sh
 . /etc/netinfo.sh
 
 # CDROM restoration: already mounted
