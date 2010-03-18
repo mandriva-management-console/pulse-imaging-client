@@ -105,11 +105,12 @@ imaging: kernel bootloader tools initrd eltorito
 	tar c --exclude=\.svn -C initrd/tree . | tar x -C build/initramfs
 
 	# gather tools arb
-	cp -a $(FOLDER_TOOLS)/build/bin/* $(INITRAMFS_FOLDER)/bin
-	cp -a $(FOLDER_TOOLS)/build/revobin/* $(INITRAMFS_FOLDER)/revobin
-	cp -a $(FOLDER_TOOLS)/build/lib/* $(INITRAMFS_FOLDER)/lib
-	cp -a $(FOLDER_TOOLS)/build/usr/bin/* $(INITRAMFS_FOLDER)/usr/bin
-	cp -a $(FOLDER_TOOLS)/build/etc/init.d/* $(INITRAMFS_FOLDER)/etc/init.d
+	cp -a $(FOLDER_TOOLS)/build/bin/* $(INITRAMFS_FOLDER)/bin/
+	cp -a $(FOLDER_TOOLS)/build/revobin/* $(INITRAMFS_FOLDER)/revobin/
+	cp -a $(FOLDER_TOOLS)/build/lib/* $(INITRAMFS_FOLDER)/lib/
+	cp -a $(FOLDER_TOOLS)/build/usr/bin/* $(INITRAMFS_FOLDER)/usr/bin/
+	cp -a $(FOLDER_TOOLS)/build/etc/init.d/* $(INITRAMFS_FOLDER)/etc/init.d/
+	cp -a $(FOLDER_TOOLS)/build/usr/lib/* $(INITRAMFS_FOLDER)/usr/lib/
 
 	# additionnal stuff under /bin
 	cp -a postinstall/bin/postmount $(INITRAMFS_FOLDER)/bin

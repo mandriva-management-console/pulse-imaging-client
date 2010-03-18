@@ -27,13 +27,16 @@
 ETH=`cat /etc/eth`
 MAC=`cat /etc/mac`
 
+. /usr/lib/revolib.sh
 . /etc/netinfo.sh
+
 SRV=$Next_server
 [ -z "$SRV" ] && exit 1
 
-echo "*** Checking that the server is reachable (4 pings) ***"
+pretty_print "Checking that the server is reachable"
 ping -c 4 $SRV
-echo "*** Creating backup directory ***"
+
+pretty_print "Creating backup directory"
 
 # shared or not ?
 TYPE="COPY"

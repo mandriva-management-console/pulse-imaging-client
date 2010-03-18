@@ -34,8 +34,11 @@ then
     # Also log the image name
 
     # try to get the image UUID (Pulse 2 mode)
-    N=`cat /etc/IMAGE_UUID`
-
+    if [ -f "/etc/IMAGE_UUID" ]; then
+	N=`cat /etc/IMAGE_UUID`
+    else
+	N=`grep revoimage /etc/cmdline | sed 's|.*revoimage=\([^ ]*\).*|\1|'`
+    fi
     if [ -z "$N" ]; then # failed => LRS mode
 	N=`sed -e 's/.*revosavedir=\([^ ]*\).*/\1/' </etc/cmdline`
 	N=`basename $N`

@@ -28,6 +28,7 @@
 
 ETH=`cat /etc/eth`
 MAC=`cat /etc/mac`
+
 UUID=`cat /etc/IMAGE_UUID`
 
 . /etc/netinfo.sh

@@ -56,6 +56,7 @@ restore: image
 		done \
 	)
 	cp -a autorestore/revoboot 		$(BUILD_FOLDER)/etc/init.d
+	cp -a autorestore/revolib.sh 		$(BUILD_FOLDER)/usr/lib/revolib.sh
 
 bench: image
 	$(MAKE) -C bench CC=$(CC) LRS_DIR=../revosave ZLIB_DIR=$(BUILD_FOLDER)/$(ZLIB_FOLDER)
