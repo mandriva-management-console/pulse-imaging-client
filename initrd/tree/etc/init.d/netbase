@@ -1,13 +1,19 @@
 #!/bin/sh
 
+. /usr/lib/revolib.sh
+
 test -f /sbin/portmap || exit 0
 
 case "$1" in
     start)
     #This really should not be done here.
-echo -n "Starting base networking daemons:"
-echo -n " portmap" ; start-stop-daemon --start --quiet --exec /sbin/portmap
-echo "."
+	pretty_try "Starting base networking daemons"
+	if start-stop-daemon --start --quiet --exec /sbin/portmap
+	then
+	    pretty_success
+	else
+	    pretty_failure
+	fi
 	;;
     stop)
 	start-stop-daemon --stop --quiet --oknodo --exec /sbin/portmap

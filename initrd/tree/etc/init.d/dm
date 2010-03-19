@@ -1,6 +1,8 @@
 #!/bin/sh
 # device mapper
 
+. /usr/lib/revolib.sh
+
 mkdir /dev/mapper
 MINOR=`grep device-mapper /proc/misc|tr -dc 0-9`
 mknod /dev/mapper/control c 10 $MINOR
@@ -12,7 +14,7 @@ done
 
 grep -q revorestore /proc/cmdline && exit 0
 
-echo "*** Scanning for LVM volumes ***"
+pretty_info "Scanning for LVM volumes"
 lvm vgscan 2>/dev/null | logger
-echo "**** Activating LVM volumes ****"
+pretty_info "Activating LVM volumes"
 lvm vgchange -ay 2>/dev/null | logger

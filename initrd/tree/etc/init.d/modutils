@@ -3,6 +3,7 @@
 # Modules loading
 #
 
+. /usr/lib/revolib.sh
 PATH="/sbin:/bin:/usr/sbin:/usr/bin"
 
 F=/etc/modules
@@ -12,19 +13,32 @@ then
 fi
 
 # Loop over every line in /etc/modules.
-echo "[1mLoading $F: [0m"
+pretty_try "Loading $F"
 # make sure there is a LF at the end
-cat $F | 
+cat $F |
 while read module args
 do
 	case "$module" in
 		\#*|"") continue ;;
 	esac
-		
-	echo -n " - $module $args"
-	insmod /lib/modules/"$module".ko $args 2>/dev/null 1>/dev/null && echo -n "*"
+
+	insmod /lib/modules/"$module".ko $args 2>/dev/null 1>/dev/null
 done
-echo
 
 # let the time for card init
 sleep 2
+
+cat $F |
+while read module args
+do
+	case "$module" in
+		\#*|"") continue ;;
+	esac
+
+	if grep "^$module [0-9]\+ [0-9]*[1-9]\+ " /proc/modules -q
+	then
+	    pretty_print "$module "
+	fi
+
+done
+pretty_print "\n"

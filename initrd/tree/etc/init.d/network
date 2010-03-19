@@ -1,9 +1,11 @@
 #!/bin/sh
 
-echo -n "Configuring and Starting Network..."
+. /usr/lib/revolib.sh
+
+pretty_try "Configuring and Starting Network"
 
 # Localhost
-ifconfig lo 127.0.0.1 && echo -n "lo "                                       
+ifconfig lo 127.0.0.1 && pretty_print "lo "
 
 # CDROM restore ?
 grep -q revosavedir=/cdrom /proc/cmdline && NOPUMP=1
@@ -42,7 +44,7 @@ esac
 # save it
 echo $ETH >/etc/eth
 # dhcp
-ifconfig $ETH up && echo "$ETH"
+ifconfig $ETH up && pretty_print "$ETH\n"
 [ -z $NOPUMP ] && pump -i $ETH -h lrsclient --win-client-ident
 # multicast
 [ -z $NOPUMP ] && route add -net 224.0.0.0 netmask 240.0.0.0 dev $ETH

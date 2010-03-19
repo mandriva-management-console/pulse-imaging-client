@@ -1,4 +1,7 @@
 #!/bin/sh
+
+. /usr/lib/revolib.sh
+
 test -f /sbin/klogd || exit 0
 test -f /sbin/syslogd || exit 0
 
@@ -14,18 +17,27 @@ KLOGD=""
 sleep 1
 case "$1" in
   start)
-    echo -n "Starting system log daemon: syslogd"
-    /sbin/syslogd $SYSLOGD
-    echo -n " klogd"
-    /sbin/klogd $KLOGD
-    echo "."
+    pretty_try "Starting system log daemon"
+    if /sbin/syslogd $SYSLOGD
+    then
+	pretty_success
+    else
+	pretty_failure
+    fi
+    pretty_try "Starting kernel log daemon"
+    if /sbin/klogd $KLOGD
+    then
+	pretty_success
+    else
+	pretty_failure
+    fi
     ;;
   stop)
-    echo -n "Stopping system log daemon: klogd"
+#    echo -n "Stopping system log daemon: klogd"
 #    start-stop-daemon --stop --quiet --pidfile /var/run/klogd.pid
-    echo -n " syslogd"
+#    echo -n " syslogd"
 #    start-stop-daemon --stop --quiet --pidfile /var/run/syslogd.pid
-    echo "."
+#    echo "."
     ;;
   *)
     echo "Usage: /etc/init.d/sysklogd {start|stop}"
