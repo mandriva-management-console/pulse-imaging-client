@@ -47,7 +47,7 @@ do
     if ifconfig $ETH|grep RUNNING >/dev/null ;then
         break
     else
-        echo "*** $ETH: not yet configured ($SEC) ***"
+        pretty_warn "$ETH: not yet configured after $SEC seconds"
         SEC=$(($SEC+1))
         if [ $SEC -gt $MAXSEC ]; then
             whiptail --title "Fatal Error" --backtitle "Pulse 2" --menu "I cannot configure the NIC
@@ -69,7 +69,7 @@ What should I do ?" 20 70 4 1 "Retry to configure the NIC via DHCP" 2 "Manualy s
                 wechow "Insert a blank MSDOS formatted floppy and press Enter"
                 floppysave
                 sleep 3
-                wechow "Now you can send the 'messages' file to customercare@support.mandriva.com"
+                wechow "Now you can send the 'messages' file to support@customercare.mandriva.com"
                 ;;
             esac
             SEC=0
@@ -77,11 +77,11 @@ What should I do ?" 20 70 4 1 "Retry to configure the NIC via DHCP" 2 "Manualy s
         continue
     fi
     if ifconfig $ETH|grep inet.addr >/dev/null ;then
-        echo "*** IP configuration ***"
+        pretty_info "IP configuration :"
         cat /etc/netinfo.log
         break
     else
-        echo "*** $ETH: no IP received !!! ***"
+        pretty_warn "$ETH: no IP received"
     fi
 done
 sleep 1
@@ -357,8 +357,7 @@ COMPUTER_UUID=`cat /etc/COMPUTER_UUID`
 get_warn_message
 
 # Restore => mount a tmpfs
-grep -q revorestore /etc/cmdline
-if [ "$?" -eq "0" ]
+if grep -q revorestore /etc/cmdline
 then
     pretty_info "Mounting a 96 MB tmpfs"
     mount -t tmpfs -o size=96M tmpfs /tmpfs
@@ -368,24 +367,22 @@ fi
 grep -q revonocomp /etc/cmdline
 if [ "$?" -eq "0" ]
 then
-    pretty_info "Disabling compression"
+    pretty_warn "Disabling compression"
     echo 0 >/etc/complevel
 fi
 
 # Restore from CDROM ?
-grep -q revosavedir=/cdrom /etc/cmdline 
-if [ "$?" -eq "0" ]
+if grep -q revosavedir=/cdrom /etc/cmdline
 then
     pretty_info "Mounting CDROM"
     mount_cdrom
 fi
 
 # Debug ?
-grep -q revodebug /etc/cmdline
-if [ "$?" -eq "0" ]
+if grep -q revodebug /etc/cmdline
 then
-    pretty_info "Entering debug mode"
-    exit 0
+    pretty_warn "Entering debug mode"
+    /bin/sh
 fi
 
 # Launch the UI

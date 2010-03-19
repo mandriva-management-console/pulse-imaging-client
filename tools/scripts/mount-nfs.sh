@@ -35,24 +35,9 @@ INFODIR=$4
 
 [ -n "$Option_177" ] && SIP=`echo $Option_177|cut -d : -f 1`
 
-RPCINFO=`rpcinfo -p $SIP`
-
-logger "rpcinfo:"
-logger "$RPCINFO"
-
-# check nfs
-echo
-echo
 sleep 1
-if echo "$RPCINFO"|grep -q nfs
-then
-    echo "*** NFS service seems to be ok on $SIP"
-else
-    echo "*** Warning : the NFS service does not seem to work on the LRS !"
-    echo "*** IP configuration :"
-    cat /etc/netinfo.log
-    sleep 10
-fi
+check_nfs $SIP
+# TODO : check return code, then reboot if necessary
 
 # NFS base options
 NFSOPT="hard,intr,ac,nfsvers=3,async"
@@ -60,14 +45,14 @@ NFSOPT="hard,intr,ac,nfsvers=3,async"
 # Get NFS proto
 if grep -q 'revoproto=nfsudp' /etc/cmdline; then
     NFSOPT="$NFSOPT,proto=udp"
-    echo "*** Using NFS over UDP"
+    pretty_info "Using NFS over UDP"
 else
     if echo "$RPCINFO" | grep nfs | grep -q tcp; then
         NFSOPT="$NFSOPT,proto=tcp"
-        echo "*** Using NFS over TCP"
+	pretty_info "Using NFS over TCP"
     else
         NFSOPT="$NFSOPT,proto=udp"
-        echo "*** Using NFS over UDP"
+	pretty_info "Using NFS over UDP"
     fi
 fi
 
@@ -75,30 +60,41 @@ fi
 if grep -q 'revonfsbsize' /etc/cmdline; then
     NFSBSIZE=`sed -e 's/.*revonfsbsize=\([^ ]*\).*/\1/' < /etc/cmdline`
     NFSOPT="$NFSOPT,rsize=$NFSBSIZE,wsize=$NFSBSIZE"
-    echo "*** Using blocks of $NFSBSIZE bytes"
+    pretty_warn "Using blocks of $NFSBSIZE bytes"
 else
-    echo "*** Autonegociating block size"
+    pretty_info "Autonegociating block size"
 fi
 
 # Full NFS bypass, if needed
 if grep -q 'revonfsopts' /etc/cmdline; then
     NFSOPT=`sed -e 's/.*revonfsopts=\([^ ]*\).*/\1/' < /etc/cmdline`
-    echo "*** Bypassing NFS options : $NFSOPT"
+    pretty_warn "Bypassing NFS options : $NFSOPT"
 fi
 
-echo "*** Using the following NFS options : $NFSOPT"
+pretty_info "Using the following NFS options : $NFSOPT"
 
 if [ -z "$Option_177" ]
 then
-    echo "*** Using $SIP:$PREFIX as backup dir"
+    pretty_info "Using $SIP:$PREFIX as backup dir"
+    pretty_try "Mounting /revoinfo"
     mount -t nfs $SIP:$PREFIX$INFODIR /revoinfo -o hard,intr,nolock,sync,$NFSOPT
+    pretty_success
+    # TODO: check code, take measures
+    pretty_try "Mounting /revosave"
     mount -t nfs $SIP:$PREFIX$SAVEDIR /revosave -o hard,intr,nolock,sync,$NFSOPT
+    pretty_success
+    # TODO: check code, take measures
 else
-    echo "*** Using Option 177: $Option_177 as backup dir"
+    pretty_info "Using Option 177: $Option_177 as backup dir"
+    pretty_try "Mounting /revoinfo"
     mount -t nfs $Option_177$INFODIR /revoinfo -o hard,intr,nolock,sync,$NFSOPT
+    pretty_success
+    # TODO: check code, take measures
+    pretty_try "Mounting /revosave"
     mount -t nfs $Option_177$SAVEDIR /revosave -o hard,intr,nolock,sync,$NFSOPT
+    pretty_success
+    # TODO: check code, take measures
 fi
 
 EXITCODE=$?
-
 exit $EXITCODE

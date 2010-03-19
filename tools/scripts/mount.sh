@@ -98,10 +98,11 @@ else
     fi
 
 fi
-echo "Mounting Storage directory... mount-$TYPE.sh $SRV $PREFIX $SAVEDIR $INFODIR"
+
+pretty_info "Mounting Storage directory :"
 while ! mount-$TYPE.sh $SRV $PREFIX $SAVEDIR $INFODIR
 do
     sleep 1
 done
 
-cat /proc/mounts
+cat /proc/mounts | logger

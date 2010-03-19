@@ -40,10 +40,12 @@ TYPE="COPY"
 grep /imgbase/Base /etc/cmdline && TYPE="BASE"
 
 # backup my UUID
-get_image_uuid $TYPE $MAC $SRV
-IMAGE_UUID=$ANSWER
-echo "$IMAGE_UUID" > /etc/IMAGE_UUID
-
-pretty_info "Creating backup directory"
-
-sleep 1
+if get_image_uuid $TYPE $MAC $SRV
+then
+    IMAGE_UUID=$ANSWER
+    echo "$IMAGE_UUID" > /etc/IMAGE_UUID
+    sleep 1
+    exit 0
+else
+    exit 1
+fi
