@@ -23,27 +23,43 @@
 #
 
 pretty_print() {
-    echo -en $1
+    echo -en "$1"
 }
 
 pretty_info() {
+    pretty_print "[1;37m"
     pretty_print "==> $1\n"
+    pretty_print "[0m"
+}
+
+pretty_warn() {
+    pretty_print "[1;33m"
+    pretty_print "==> $1\n"
+    pretty_print "[0m"
 }
 
 pretty_try() {
+    pretty_print "[1;37m"
     pretty_print "==> $1 ... "
+    pretty_print "[0m"
 }
 
 pretty_success() {
-    pretty_print "Succeeded !\n"
+    pretty_print "[1;32m"
+    pretty_print " OK"
+    pretty_print "[0m"
+    pretty_print "\n"
 }
 
 pretty_failure() {
-    pretty_print "Failed !\n"
+    pretty_print "[1;31m"
+    pretty_print " KO"
+    pretty_print "[0m"
+    pretty_print "\n"
 }
 
 return_success_or_failure() {
-    if [ "$?" -eq "0" ]; then
+    if [ "$1" -eq "0" ]; then
 	pretty_success
 	return 0
     else
@@ -55,9 +71,21 @@ return_success_or_failure() {
 probe_server() {
     srv=$1
 
+    ret=0
+    tries=10
+    interval=1
+
     pretty_try "Probing server $srv"
-    ping -w 10 -c 1 "$srv" -q 2>/dev/null 1>/dev/null
-    return_success_or_failure
+    while [ "$tries" -ne "0" ]
+    do
+	ping -c 1 "$srv" -q 2>/dev/null 1>/dev/null
+	[ "$?" -eq "0" ] && ret=0 && break
+	echo -en "."
+	tries=$(($tries - 1 ))
+	sleep $interval
+    done
+    return_success_or_failure $ret
+    return $ret
 }
 
 server_command_loop() {
@@ -70,10 +98,11 @@ server_command_loop() {
 
     while [ "$tries" -ne "0" ]
     do
-	echo -en "."
 	ANSWER=`echo -en "$question\00Mc:$mac" | nc -p 1001 -w 1 $srv 1001 2>/dev/null`
 	[ "$?" -eq "0" ] && break
+	echo -en "."
     # tries=$(($tries - 1 ))
+	# TODO : decrement tries, handle this client side
 	sleep $interval
     done
     export ANSWER
@@ -86,8 +115,7 @@ get_image_uuid() {
 
     pretty_try "Asking for an image UUID"
     server_command_loop "\354$type" $mac $srv
-    return_success_or_failure
-    pretty_success
+    return_success_or_failure $?
 }
 
 get_computer_hostname() {
@@ -96,7 +124,7 @@ get_computer_hostname() {
 
     pretty_try "Asking for my hostname"
     server_command_loop "\032" $mac $srv
-    return_success_or_failure
+    return_success_or_failure $?
 }
 
 get_computer_uuid() {
@@ -105,7 +133,7 @@ get_computer_uuid() {
 
     pretty_try "Asking for my UUID"
     server_command_loop "\033" $mac $srv
-    return_success_or_failure
+    return_success_or_failure $?
 }
 
 get_rdate() {
@@ -113,5 +141,27 @@ get_rdate() {
 
     pretty_try "Getting current time from $SRV"
     rdate $srv 2>/dev/null 1>/dev/null
-    return_success_or_failure
+    return_success_or_failure $?
+}
+
+check_nfs() {
+    sip=$1
+
+    pretty_try "Checking NFS service on $sip"
+
+    RPCINFO=`rpcinfo -p $sip`
+
+    logger "rpcinfo:"
+    logger "$RPCINFO"
+
+    if echo "$RPCINFO" | grep -q nfs
+    then
+	pretty_success
+	return 0
+    else
+	pretty_failure
+	pretty_warning "The NFS service does not seem to work on $sip; IP configuration :"
+	cat /etc/netinfo.log
+	return 1
+    fi
 }
