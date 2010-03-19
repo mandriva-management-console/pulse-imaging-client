@@ -36,11 +36,11 @@ POPT_FOLDER		= popt-$(POPT_VERSION)
 POPT_TARBALL	= popt-$(POPT_VERSION).tar.gz
 
 # Busybox
-BUSYBOX_VERSION	= 1.1.3
-BUSYBOX_URI		= http://www.busybox.net/downloads/legacy
-BUSYBOX_FOLDER	= busybox-$(BUSYBOX_VERSION)
-BUSYBOX_TARBALL	= busybox-$(BUSYBOX_VERSION).tar.gz
-BUSYBOX_CONFIG	= busybox-$(BUSYBOX_VERSION).config
+BUSYBOX_VERSION		= 1.1.3
+BUSYBOX_URI		= http://www.busybox.net/downloads
+BUSYBOX_FOLDER		= busybox-$(BUSYBOX_VERSION)
+BUSYBOX_TARBALL		= busybox-$(BUSYBOX_VERSION).tar.bz2
+BUSYBOX_CONFIG		= busybox-$(BUSYBOX_VERSION).config
 
 # SysVInit
 SYSV_VERSION	= 2.84
@@ -57,7 +57,7 @@ ATFTP_TARBALL	= atftp_$(ATFTP_VERSION).orig.tar.gz
 ATFTP_PATCH		= atftp_$(ATFTP_VERSION)-7.diff.gz
 
 # LVM
-#MDV/NR LVM_VERSION		= 2.02.54
+#MDV/NR LVM_VERSION	= 2.02.54
 LVM_VERSION		= 2.01.04
 #MDV/NR LVM_URI	= ftp://sources.redhat.com/pub/lvm2
 LVM_URI			= ftp://sources.redhat.com/pub/lvm2/old
