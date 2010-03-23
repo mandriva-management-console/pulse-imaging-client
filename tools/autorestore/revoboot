@@ -28,29 +28,30 @@
 . /usr/lib/revolib.sh
 
 # Wait for the interface to be configured
-checkip()
-{
+checkip() {
 # CDROM restore ?
-grep -q revosavedir=/cdrom /proc/cmdline && return
+    grep -q revosavedir=/cdrom /proc/cmdline && return
 
-SEC=0
-MAXSEC=45
+    SEC=0
+    MAXSEC=45
+
 # if CDROM boot, then be less patient
-grep -q revocdrom /etc/cmdline && MAXSEC=5
+    grep -q revocdrom /etc/cmdline && MAXSEC=5
+
 # CDROM + static ip mode
-grep -q revocdromstatic /etc/cmdline && staticip
+    grep -q revocdromstatic /etc/cmdline && staticip
 
 # check if eth0 is up
-while true
-do
-    sleep 1
-    if ifconfig $ETH|grep RUNNING >/dev/null ;then
-        break
-    else
-        pretty_warn "$ETH: not yet configured after $SEC seconds"
-        SEC=$(($SEC+1))
-        if [ $SEC -gt $MAXSEC ]; then
-            whiptail --title "Fatal Error" --backtitle "Pulse 2" --menu "I cannot configure the NIC
+    while true
+    do
+	sleep 1
+	if ifconfig $ETH|grep RUNNING >/dev/null ;then
+            break
+	else
+            pretty_warn "$ETH: not yet configured after $SEC seconds"
+            SEC=$(($SEC+1))
+            if [ $SEC -gt $MAXSEC ]; then
+		whiptail --title "Fatal Error" --backtitle "Pulse 2" --menu "I cannot configure the NIC
 
 Possible causes:
 1- No DHCP server has responded
@@ -58,33 +59,33 @@ Possible causes:
 3- No suitable driver found for the NIC
 
 What should I do ?" 20 70 4 1 "Retry to configure the NIC via DHCP" 2 "Manualy set the IP address" 3 "Put some log files on a floppy disk to Debug the problem" 2>/tmp/res
-            case "`cat /tmp/res`" in
-            1)
-                /etc/init.d/network start
-                ;;
-            2)
-                staticip
-                ;;
-            3)
-                wechow "Insert a blank MSDOS formatted floppy and press Enter"
-                floppysave
-                sleep 3
-                wechow "Now you can send the 'messages' file to support@customercare.mandriva.com"
-                ;;
-            esac
-            SEC=0
-        fi
-        continue
-    fi
-    if ifconfig $ETH|grep inet.addr >/dev/null ;then
-        pretty_info "IP configuration :"
-        cat /etc/netinfo.log
-        break
-    else
-        pretty_warn "$ETH: no IP received"
-    fi
-done
-sleep 1
+		case "`cat /tmp/res`" in
+		    1)
+			/etc/init.d/network start
+			;;
+		    2)
+			staticip
+			;;
+		    3)
+			wechow "Insert a blank MSDOS formatted floppy and press Enter"
+			floppysave
+			sleep 3
+			wechow "Now you can send the 'messages' file to support@customercare.mandriva.com"
+			;;
+		esac
+		SEC=0
+            fi
+            continue
+	fi
+	if ifconfig $ETH|grep inet.addr >/dev/null ;then
+            pretty_info "IP configuration :"
+            cat /etc/netinfo.log
+            break
+	else
+            pretty_warn "$ETH: no IP received"
+	fi
+    done
+    sleep 1
 }
 
 # static ip configuration
