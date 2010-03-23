@@ -44,7 +44,6 @@ if get_image_uuid $TYPE $MAC $SRV
 then
     IMAGE_UUID=$ANSWER
     echo "$IMAGE_UUID" > /etc/IMAGE_UUID
-    sleep 1
     exit 0
 else
     exit 1
