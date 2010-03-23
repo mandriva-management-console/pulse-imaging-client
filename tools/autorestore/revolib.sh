@@ -26,36 +26,54 @@ pretty_print() {
     echo -en "$1"
 }
 
-pretty_info() {
+pretty_white () {
     pretty_print "[1;37m"
-    pretty_print "==> $1\n"
+    pretty_print "$1"
+    pretty_print "[0m"
+}
+
+pretty_red () {
+    pretty_print "[1;31m"
+    pretty_print "$1"
+    pretty_print "[0m"
+}
+
+pretty_green () {
+    pretty_print "[1;32m"
+    pretty_print "$1"
+    pretty_print "[0m"
+}
+
+pretty_orange() {
+    pretty_print "[1;33m"
+    pretty_print "$1"
+    pretty_print "[0m"
+}
+
+pretty_blue() {
+    pretty_print "[1;34m"
+    pretty_print "$1"
     pretty_print "[0m"
 }
 
 pretty_warn() {
-    pretty_print "[1;33m"
-    pretty_print "==> $1\n"
-    pretty_print "[0m"
+    pretty_orange "==> $1\n"
+}
+
+pretty_info() {
+    pretty_white "==> $1\n"
 }
 
 pretty_try() {
-    pretty_print "[1;37m"
-    pretty_print "==> $1 ... "
-    pretty_print "[0m"
+    pretty_white "==> $1 ... "
 }
 
 pretty_success() {
-    pretty_print "[1;32m"
-    pretty_print " OK"
-    pretty_print "[0m"
-    pretty_print "\n"
+    pretty_green " OK\n"
 }
 
 pretty_failure() {
-    pretty_print "[1;31m"
-    pretty_print " KO"
-    pretty_print "[0m"
-    pretty_print "\n"
+    pretty_red " KO\n"
 }
 
 return_success_or_failure() {
@@ -99,10 +117,9 @@ server_command_loop() {
     while [ "$tries" -ne "0" ]
     do
 	ANSWER=`echo -en "$question\00Mc:$mac" | nc -p 1001 -w 1 $srv 1001 2>/dev/null`
-	[ "$?" -eq "0" ] && break
+	[ "$?" -eq "0" ] && [ ! -z "$ANSWER" ] && [ ! "$ANSWER" == "ERROR" ] && break
 	echo -en "."
-    # tries=$(($tries - 1 ))
-	# TODO : decrement tries, handle this client side
+	tries=$(($tries - 1 ))
 	sleep $interval
     done
     export ANSWER
