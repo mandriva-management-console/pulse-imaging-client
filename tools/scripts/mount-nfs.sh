@@ -71,11 +71,13 @@ if grep -q 'revonfsopts' /etc/cmdline; then
     pretty_warn "Bypassing NFS options : $NFSOPT"
 fi
 
-pretty_info "Using the following NFS options : $NFSOPT"
+pretty_try "Using the following NFS options"
+pretty_blue "$NFSOPT\n"
 
 if [ -z "$Option_177" ]
 then
-    pretty_info "Using $SIP:$PREFIX as backup dir"
+    pretty_try "Using as backup dir"
+    pretty_blue "$SIP:$PREFIX\n"
     pretty_try "Mounting /revoinfo"
     mount -t nfs $SIP:$PREFIX$INFODIR /revoinfo -o hard,intr,nolock,sync,$NFSOPT
     pretty_success
