@@ -29,6 +29,11 @@ MAC=`cat /etc/mac`
 
 SRV=$Next_server
 
-get_computer_hostname $MAC $SRV
-HOSTNAME=$ANSWER
-echo "$HOSTNAME" > /etc/lbxname
+if get_computer_hostname $MAC $SRV
+then
+    HOSTNAME=$ANSWER
+    echo "$HOSTNAME" > /etc/lbxname
+    exit 0
+else
+    exit 1
+fi
