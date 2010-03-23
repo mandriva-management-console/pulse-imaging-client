@@ -89,27 +89,33 @@ What should I do ?" 20 70 4 1 "Retry to configure the NIC via DHCP" 2 "Manualy s
 }
 
 # static ip configuration
-staticip()
-{
+staticip() {
     IP=192.168.0.100
     NM=255.255.255.0
     while true; do
         whiptail --title "Static IP" --backtitle "Pulse 2" --inputbox "Please enter the IP address:" 10 70 "$IP" 2>/tmp/res
         IP=`cat /tmp/res`
+
         whiptail --title "Static IP" --backtitle "Pulse 2" --inputbox "Please enter the netmask:" 10 70 "$NM" 2>/tmp/res
         NM=`cat /tmp/res`
         DEFGW=`echo $IP|cut -d. -f1-3`".1"
+
         whiptail --title "Static IP" --backtitle "Pulse 2" --inputbox "Please enter the default gateway:" 10 70 "$DEFGW" 2>/tmp/res
         GW=`cat /tmp/res`
+
         whiptail --title "Static IP" --backtitle "Pulse 2" --inputbox "Please enter the LRS IP address:" 10 70 "$DEFGW" 2>/tmp/res
         LRS=`cat /tmp/res`
+
         ifconfig $ETH $IP netmask $NM
         route add default gw $GW
         sleep 5
+
         ping -c 1 $LRS >/dev/null && break
+
         wecho "Cannot reach \"$LRS\". Please check the network configuration again."
         sleep 10
     done
+
     echo "Device $ETH
         IP: $IP
         Netmask: $NM
@@ -120,11 +126,8 @@ staticip()
 }
 
 # get the warning message
-get_warn_message()
-{
-    cd /etc
-    /bin/atftp --tftp-timeout 1 -g -r $BASE/etc/warning.txt $SRV 69 2>/dev/null
-    cd /
+get_warn_message() {
+    cd /etc && /bin/atftp --tftp-timeout 1 -g -r $BASE/etc/warning.txt $SRV 69 2>/dev/null && cd /
 }
 
 # Pre-install (init-inst in fact)
