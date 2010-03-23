@@ -32,7 +32,7 @@ SRV=$Next_server
 COMPUTER_UUID=`grep revouuid /etc/cmdline | sed 's|.*revouuid=\([^ ]*\).*|\1|'`
 
 # either it is given on the command line, or we obtain it by network
-if [ -z "$UUID" ]; then
+if [ -z "$COMPUTER_UUID" ]; then
     get_computer_uuid $MAC $SRV
     echo "$ANSWER" > /etc/COMPUTER_UUID
 else
