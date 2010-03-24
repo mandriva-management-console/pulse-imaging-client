@@ -25,14 +25,14 @@
 ETH=`cat /etc/eth`
 MAC=`cat /etc/mac`
 
+. /usr/lib/revolib.sh
 . /etc/netinfo.sh
+
 SRV=$Next_server
 [ -z "$SRV" ] && exit 1
 
 if [ "$1" = "2" -o "$1" = "3" -o "$1" = "4" -o "$1" = "5" ]
 then
-    # Also log the image name
-
     # try to get the image UUID (Pulse 2 mode)
     if [ -f "/etc/IMAGE_UUID" ]; then
 	N=`cat /etc/IMAGE_UUID`
@@ -44,7 +44,20 @@ then
 	N=`basename $N`
     fi
 
-    echo -en "L${1}-${N}\0Mc:$MAC" | nc -p 1001 -w 1 $SRV 1001
+    if send_log "${1}-${N}" $MAC $SRV
+    then
+	exit 0
+    else
+	exit 1
+    fi
+
 else
-    echo -en "L$1Mc:$MAC" | nc -p 1001 -w 1 $SRV 1001
+
+    if send_log "$1" $MAC $SRV
+    then
+	exit 0
+    else
+	exit 1
+    fi
+
 fi
