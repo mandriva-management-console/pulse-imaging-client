@@ -205,7 +205,7 @@ setup_diskless_environment (void)
     grub_sprintf(config_file,"%s/cfg/%s", basedir, ip);
     if (new_tftpdir(config_file) > 0) {
         grub_printf("%s\n", config_file);
-        grub_printf("Environnement  : LRS\n");
+        grub_printf("Environnement  : Linbox Rescue Server\n");
         zcinit();
         return 1;
     }
@@ -227,6 +227,7 @@ setup_diskless_environment (void)
     grub_sprintf(config_file,"%s/cfg/%s", basedir, ip);
     if (new_tftpdir(config_file) > 0) {
         grub_printf("%s\n", config_file);
+        grub_printf("Environnement  : Linbox Rescue Server\n");
         zcinit();
         return 1;
     }
@@ -237,7 +238,7 @@ setup_diskless_environment (void)
     if (new_tftpdir(config_file) > 0) {
         isLRSEnvironment = 0;
         grub_printf("default configuration\n");
-        grub_printf("Environnement  : LRS\n");
+        grub_printf("Environnement  : Mandriva Pulse 2\n");
         zcinit();
         return 1;
     }
@@ -246,6 +247,7 @@ setup_diskless_environment (void)
     grub_sprintf(config_file,"%s/cfg/default", basedir);
     if (new_tftpdir(config_file) > 0) {
         grub_printf("default configuration\n");
+        grub_printf("Environnement  : Linbox Rescue Server\n");
         zcinit();
         return 1;
     }
