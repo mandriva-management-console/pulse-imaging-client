@@ -1,7 +1,9 @@
 #!/bin/sh
+
+. /usr/lib/revolib.sh
+
 if [ "$VERBOSE" != no ]
 then
-	echo
-	echo "Local time ("`cat /etc/timezone`"): `date`"
-	echo
+    time="Local time ("`cat /etc/timezone`"): `date '+%Y-%m-%d %H:%H:%S'`"
+    pretty_info "$time"
 fi
