@@ -31,8 +31,16 @@ MAC=`cat /etc/mac`
 
 UUID=`cat /etc/IMAGE_UUID`
 
+. /usr/lib/revolib.sh
 . /etc/netinfo.sh
+
 SRV=$Next_server
+
 [ -z "$SRV" ] && exit 1
 
-echo -en "\355$UUID\000Mc:$MAC" | nc -p 1001 -w 1 $SRV 1001
+if done_image $UUID $MAC $SRV
+then
+    exit 0
+else
+    exit 1
+fi
