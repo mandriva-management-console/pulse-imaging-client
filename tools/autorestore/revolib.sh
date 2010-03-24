@@ -135,6 +135,16 @@ done_image() {
     return_success_or_failure $?
 }
 
+set_default()() {
+    item=$1
+    mac=$2
+    srv=$3
+
+    pretty_try "Telling the server to switch the default menu item"
+    server_command_loop "\315\00$item" $mac $srv
+    return_success_or_failure $?
+}
+
 get_image_uuid() {
     type="$1"
     mac=$2
