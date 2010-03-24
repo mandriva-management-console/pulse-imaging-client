@@ -140,7 +140,7 @@ set_default() {
     mac=$2
     srv=$3
 
-    pretty_try "Telling the server to switch the default menu item"
+    pretty_try "Askin the server to switch the default menu item"
     server_command_loop "\315\00$item" $mac $srv
     return_success_or_failure $?
 }
@@ -175,8 +175,8 @@ get_computer_uuid() {
 
 send_log() {
     log=$1
-    mac=$1
-    srv=$2
+    mac=$2
+    srv=$3
 
     pretty_try "Sending log"
     server_command_loop "L$log" $mac $srv
