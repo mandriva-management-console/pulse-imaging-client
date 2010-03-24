@@ -8,5 +8,5 @@ mount -t proc /proc /proc
 
 # Modify some kernel params
 # write core files on the server
-echo "/revosave/core.%p.%e" >/proc/sys/kernel/core_pattern
-echo "1" >/proc/sys/kernel/sysrq
+[ -f /proc/sys/kernel/core_pattern ] && echo "/revosave/core.%p.%e" >/proc/sys/kernel/core_pattern
+[ -f /proc/sys/kernel/sysrq ] && echo "1" >/proc/sys/kernel/sysrq
