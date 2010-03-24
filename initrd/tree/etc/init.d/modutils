@@ -37,7 +37,7 @@ do
 
 	if grep "^$module [0-9]\+ [0-9]*[1-9]\+ " /proc/modules -q
 	then
-	    pretty_print "$module "
+	    pretty_blue "$module "
 	fi
 
 done
