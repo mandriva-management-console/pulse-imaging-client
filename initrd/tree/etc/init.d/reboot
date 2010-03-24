@@ -4,5 +4,5 @@
 
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 
-pretty_info "Rebooting"
+pretty_info "Rebooting !"
 reboot -d -f -i
