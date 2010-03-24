@@ -147,20 +147,18 @@ extern struct arptable_t arptable[];
 static int
 setup_diskless_environment (void)
 {
-  char ip[13];
-  char hex[]="0123456789ABCDEF";
+    char ip[13];
+    char hex[]="0123456789ABCDEF";
 
-  void iphex(unsigned char *ptr)
-  {
+    void iphex(unsigned char *ptr) {
         ip[0]=hex[((*ptr)&0xF0)>>4]; ip[1]=hex[(*ptr++)&0x0F];
         ip[2]=hex[((*ptr)&0xF0)>>4]; ip[3]=hex[(*ptr++)&0x0F];
         ip[4]=hex[((*ptr)&0xF0)>>4]; ip[5]=hex[(*ptr++)&0x0F];
         ip[6]=hex[((*ptr)&0xF0)>>4]; ip[7]=hex[(*ptr++)&0x0F];
         ip[8]=0;
-  }
+    }
 
-  void machex(unsigned char *ptr)
-  {
+    void machex(unsigned char *ptr) {
         ip[ 0]=hex[((*ptr)&0xF0)>>4]; ip[ 1]=hex[(*ptr++)&0x0F];
         ip[ 2]=hex[((*ptr)&0xF0)>>4]; ip[ 3]=hex[(*ptr++)&0x0F];
         ip[ 4]=hex[((*ptr)&0xF0)>>4]; ip[ 5]=hex[(*ptr++)&0x0F];
@@ -168,23 +166,24 @@ setup_diskless_environment (void)
         ip[ 8]=hex[((*ptr)&0xF0)>>4]; ip[ 9]=hex[(*ptr++)&0x0F];
         ip[10]=hex[((*ptr)&0xF0)>>4]; ip[11]=hex[(*ptr++)&0x0F];
         ip[12]=0;
-  }
-
-  /* For now, there is no difference between BOOTP and DHCP in GRUB.  */
-  if (! bootp ())
-    {
-      grub_printf ("BOOTP/DHCP fails.\n");
-      return 0;
     }
 
-  cls();
+    /* For now, there is no difference between BOOTP and DHCP in GRUB.  */
+    if (! bootp ()) {
+        grub_printf ("BOOTP/DHCP fails.\n");
+        return 0;
+    }
 
-  /* This will be erased soon, though...  */
+    cls();
 
-  print_network_configuration ();
+    /* This will be erased soon, though...  */
 
-  imgname[0] = '\0';
-  grub_printf("Base Folder    : %s\n",basedir);
+    print_network_configuration ();
+
+    imgname[0] = '\0';
+    if (strlen(basedir) > 1) {
+        grub_printf("Base Folder    : %s\n", basedir);
+    }
 
     // TODO : guess LRS or not first using new_tftpdir("default")
 
@@ -194,17 +193,19 @@ setup_diskless_environment (void)
 
     // Pulse 2 mode
     grub_sprintf(config_file,"/bootmenus/%s", ip);
-    if (new_tftpdir(config_file) >= 0) {
+    if (new_tftpdir(config_file) > 0) {
         isLRSEnvironment = 0;
         grub_printf("%s\n", config_file);
+        grub_printf("Environnement  : Mandriva Pulse 2\n");
         zcinit();
         return 1;
     }
 
     // LRS mode
     grub_sprintf(config_file,"%s/cfg/%s", basedir, ip);
-    if (new_tftpdir(config_file) >= 0) {
+    if (new_tftpdir(config_file) > 0) {
         grub_printf("%s\n", config_file);
+        grub_printf("Environnement  : LRS\n");
         zcinit();
         return 1;
     }
@@ -214,16 +215,17 @@ setup_diskless_environment (void)
 
     // Pulse 2 mode
     grub_sprintf(config_file,"/bootmenus/%s", ip);
-    if (new_tftpdir(config_file) >= 0) {
+    if (new_tftpdir(config_file) > 0) {
         isLRSEnvironment = 0;
         grub_printf("%s\n", config_file);
+        grub_printf("Environnement  : Mandriva Pulse 2\n");
         zcinit();
         return 1;
     }
 
     // LRS mode
     grub_sprintf(config_file,"%s/cfg/%s", basedir, ip);
-    if (new_tftpdir(config_file) >= 0) {
+    if (new_tftpdir(config_file) > 0) {
         grub_printf("%s\n", config_file);
         zcinit();
         return 1;
@@ -232,23 +234,27 @@ setup_diskless_environment (void)
     // attempt to get default menu
     // Pulse 2 mode
     grub_sprintf(config_file,"/bootmenus/default");
-    if (new_tftpdir(config_file) >= 0) {
+    if (new_tftpdir(config_file) > 0) {
         isLRSEnvironment = 0;
         grub_printf("default configuration\n");
+        grub_printf("Environnement  : LRS\n");
         zcinit();
         return 1;
     }
 
     // LRS mode
     grub_sprintf(config_file,"%s/cfg/default", basedir);
-    if (new_tftpdir(config_file) >= 0) {
+    if (new_tftpdir(config_file) > 0) {
         grub_printf("default configuration\n");
         zcinit();
         return 1;
     }
 
-    grub_printf ("\nCan't find a valid boot menu !");
-    grub_printf ("\nThis is not supposed to happen, please contact your system administrator.");
+    grub_printf("\n\nCan't find a valid boot menu !");
+    grub_printf("\n\nThis is not supposed to happend.");
+    grub_printf("\n\nDON'T PANIC : just contact your system administrator.");
+
+    // FIXME : timeout + reboot
     return 0;
 
 }
