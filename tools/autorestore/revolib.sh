@@ -130,7 +130,7 @@ done_image() {
     mac=$2
     srv=$3
 
-    pretty_try "Telling the server a new image is ready"
+    pretty_try "Saving the new image"
     server_command_loop "\355$uuid\000" $mac $srv
     return_success_or_failure $?
 }
@@ -140,7 +140,7 @@ set_default() {
     mac=$2
     srv=$3
 
-    pretty_try "Askin the server to switch the default menu item"
+    pretty_try "Switching the default menu item"
     server_command_loop "\315\00$item" $mac $srv
     return_success_or_failure $?
 }
