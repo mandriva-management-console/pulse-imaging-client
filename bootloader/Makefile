@@ -24,8 +24,8 @@
 SVNREV:=$(shell echo $Rev: 4491 $ | tr -cd [[:digit:]])
 CC	:= gcc-3.4
 
-SRC 	= bios.c boot.c pci.c char_io.c builtins.c common.c stage2.c cmdline.c disk_io.c graphics.c console.c fsys_fat.c fsys_ext2fs.c builtins_pulse2.c pxe.c udp.c
-OBJ		= asm.o $(subst .c,.o, $(SRC))
+SRCS 	= bios.c boot.c pci.c char_io.c builtins.c common.c stage2.c cmdline.c disk_io.c graphics.c console.c fsys_fat.c fsys_ext2fs.c builtins_pulse2.c pxe.c udp.c
+OBJS	= asm.o $(subst .c,.o, $(SRCS))
 
 # add -DDEBUG to add debug strings
 # remove -DQUIET to recover the original Grub behavior
@@ -39,14 +39,16 @@ OBJZLIB		= adler32.o inflate.o infblock.o infcodes.o inftrees.o inffast.o infuti
 
 all: revoboot.pxe
 	mv revoboot.pxe revoboot.pxe-$(SVNREV)
+.o:
+	$(CC) $(CFLAGS) $@.c
 
 check-syntax:
-	$(CC) $(CFLAGS) -pedantic -fsyntax-only $(SRC)
+	$(CC) $(CFLAGS) -pedantic -fsyntax-only $(SRCS)
 
-revoboot.pxe: $(OBJ) adjust_length
+revoboot.pxe: adjust_length $(SRCS) $(OBJS)
 	rm -f revoboot.pxe
 	$(MAKE) -f Makefile.zlib CC=$(CC)
-	$(CC) -o revoboot.pxe.exec -nostdlib -Wl,-N -Wl,-Ttext -Wl,7C00 $(OBJ) $(OBJZLIB) -m32
+	$(CC) -o revoboot.pxe.exec -nostdlib -Wl,-N -Wl,-Ttext -Wl,7C00 $(OBJS) $(OBJZLIB) -m32
 	objcopy -O binary revoboot.pxe.exec revoboot.pxe && rm revoboot.pxe.exec
 	./adjust_length
 
@@ -60,6 +62,6 @@ dist-clean: clean
 
 clean:
 	$(MAKE) -f Makefile.zlib clean
-	rm -r -f $(OBJ) revoboot.pxe revoboot.pxe-* adjust_length
+	rm -r -f $(OBJS) revoboot.pxe revoboot.pxe-* adjust_length
 
 .PHONY: revoboot.pxe check-syntax
