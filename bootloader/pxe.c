@@ -475,29 +475,23 @@ P ((void))
     // ending to 109, not 108, this way first '/' will never be replaced (to prevent NULL basename)
     {
         int i;
-
-        for (i = 128; i > 0; i--) {
-            if (*(cmp + i) == '/' ) {
-                basedir[i] = 0;
-                if (i >= 4) {
-                    // special case to ensure back compatibility with older LRS installations :
-                    // if the basedir finished by '/bin', also strip it
-                    if (*(cmp + i - 4) == '/'
-                        &&
-                        *(cmp + i - 3) == 'b'
-                        &&
-                        *(cmp + i - 2) == 'i'
-                        &&
-                        *(cmp + i - 1) == 'n'
-                    ) {
-                        basedir[i-4] = 0;
-                    }
-                }
-                break;
+        int levels = 2; // number of levels
+        for (i = 128; i >= 0; i--) {
+            if (*(cmp + i) == '/' ) { // if current char is '/'
+                basedir[i] = 0;       // set it to "NULL"
+                levels --;            // and decrement level
+                if (!levels) {        // if enough levels where decremented
+                    break;            // stop
+                              }
             }
         }
-    }
 
+        if (! basedir[0]) { // keep at least one "/" if needed
+                  basedir[0] = '/';
+                  basedir[1] = 0;
+        }
+
+    }
     parse_dhcp_options(ptr + 240);
 
 #if 0
@@ -1079,25 +1073,22 @@ long new_tftpdir (char *filename) {
   str[len++] = 0;
 
   sec = getrtsecs ();
-  do
-    {
+  do {
       if (sec != getrtsecs ())
         {
-          if ((timeout % 2) == 0)
-            {
+          if ((timeout % 2) == 0) {
               /* Resend every 2 seconds */
-              if (timeout > 0) printf (".");
-              ret = udp_send (str, len, ++iport, 69);
+                if (timeout > 0)
+                    printf (".");
+                ret = udp_send (str, len, ++iport, 69);
             }
           sec = getrtsecs ();
           timeout++;
         }
-      if (!udp_get (str, &len, iport, &s_port))
-        {
+      if (!udp_get (str, &len, iport, &s_port)) {
           break;
-        }
-    }
-  while (timeout < maxtimeout);
+      }
+  } while (timeout < maxtimeout);
 
   tftpclose ();
 
