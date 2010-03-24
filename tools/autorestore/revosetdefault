@@ -23,11 +23,20 @@
 #
 # Bug: limited to numbers 0-9 (decimal to octal conversion needs to be added)
 #
+
 ETH=`cat /etc/eth`
 MAC=`cat /etc/mac`
 
+. /usr/lib/revolib.sh
 . /etc/netinfo.sh
+
 SRV=$Next_server
+
 [ -z "$SRV" ] && exit 1
 
-echo -en "\315\00$1Mc:$MAC" | nc -p 1001 -w 1 $SRV 1001
+if set_default $1 $MAC $SRV
+then
+    exit 0
+else
+    exit 1
+fi
