@@ -1,6 +1,8 @@
 #!/bin/sh
 
+. /usr/lib/revolib.sh
+
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 
-echo -n "Rebooting... "
+pretty_info "Rebooting"
 reboot -d -f -i
