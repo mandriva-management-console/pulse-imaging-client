@@ -135,7 +135,7 @@ done_image() {
     return_success_or_failure $?
 }
 
-set_default()() {
+set_default() {
     item=$1
     mac=$2
     srv=$3
