@@ -146,7 +146,7 @@ set_default() {
 }
 
 get_image_uuid() {
-    type="$1"
+    type=$1
     mac=$2
     srv=$3
 
@@ -170,6 +170,16 @@ get_computer_uuid() {
 
     pretty_try "Asking for my UUID"
     server_command_loop "\033" $mac $srv
+    return_success_or_failure $?
+}
+
+send_log() {
+    log=$1
+    mac=$1
+    srv=$2
+
+    pretty_try "Sending log"
+    server_command_loop "L$log" $mac $srv
     return_success_or_failure $?
 }
 
