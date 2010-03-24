@@ -125,6 +125,16 @@ server_command_loop() {
     export ANSWER
 }
 
+done_image() {
+    uuid="$1"
+    mac=$2
+    srv=$3
+
+    pretty_try "Telling the server a new image is ready"
+    server_command_loop "\355$uuid\000" $mac $srv
+    return_success_or_failure $?
+}
+
 get_image_uuid() {
     type="$1"
     mac=$2
