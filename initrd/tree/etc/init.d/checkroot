@@ -3,6 +3,8 @@
 # this script *before anything else* with a timeout, like on SCO.
 [ "$SULOGIN" = yes ] && sulogin -t 30 $CONSOLE
 
+/bin/dmesg -n 1
+
 # Mount /proc
 mount -t proc /proc /proc
 
