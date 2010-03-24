@@ -5,7 +5,7 @@
 PATH=/sbin:/bin:/usr/sbin:/usr/bin
 # Write a reboot record to /var/log/wtmp before unmounting
 
-pretty_info "Deactivating LVM"
+pretty_try "Deactivating LVM"
 lvm vgchange -an 1>/dev/null 2>/dev/null
 return_success_or_failure
 
