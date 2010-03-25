@@ -40,7 +40,7 @@ check_nfs $SIP
 # TODO : check return code, then reboot if necessary
 
 # NFS base options
-NFSOPT="hard,intr,ac,nfsvers=3,async"
+NFSOPT="hard,intr,ac,nfsvers=3,async,nolock"
 
 # Get NFS proto
 if grep -q 'revoproto=nfsudp' /etc/cmdline; then
@@ -79,21 +79,22 @@ then
     pretty_try "Using as backup dir"
     pretty_blue "$SIP:$PREFIX\n"
     pretty_try "Mounting /revoinfo"
-    mount -t nfs $SIP:$PREFIX$INFODIR /revoinfo -o hard,intr,nolock,sync,$NFSOPT
+    mount -t nfs $SIP:$PREFIX$INFODIR /revoinfo -o $NFSOPT
     pretty_success
     # TODO: check code, take measures
     pretty_try "Mounting /revosave"
-    mount -t nfs $SIP:$PREFIX$SAVEDIR /revosave -o hard,intr,nolock,sync,$NFSOPT
+    mount -t nfs $SIP:$PREFIX$SAVEDIR /revosave -o $NFSOPT
     pretty_success
     # TODO: check code, take measures
 else
-    pretty_info "Using Option 177: $Option_177 as backup dir"
+    pretty_info "Using Option 177 as backup dir :"
+	pretty_blue "$Option_177\n"
     pretty_try "Mounting /revoinfo"
-    mount -t nfs $Option_177$INFODIR /revoinfo -o hard,intr,nolock,sync,$NFSOPT
+    mount -t nfs $Option_177$INFODIR /revoinfo -o $NFSOPT
     pretty_success
     # TODO: check code, take measures
     pretty_try "Mounting /revosave"
-    mount -t nfs $Option_177$SAVEDIR /revosave -o hard,intr,nolock,sync,$NFSOPT
+    mount -t nfs $Option_177$SAVEDIR /revosave -o $NFSOPT
     pretty_success
     # TODO: check code, take measures
 fi
