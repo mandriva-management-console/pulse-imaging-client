@@ -1,10 +1,12 @@
 # Global variables which can be intersting in the postinst scripts
 #
-# Linbox Rescue Server                                                          
-# Copyright (C) 2005-2007 Ludovic Drolez, Linbox FAS 
+# Linbox Rescue Server
+# Copyright (C) 2005-2007 Ludovic Drolez, Linbox FAS
 #
 
+. /usr/lib/revolib.sh
 . /etc/netinfo.sh
+
 MAC=`cat /etc/shortmac`
 HOSTNAME=`cat /revoinfo/$MAC/hostname|tr : /`
 HOSTNAME=`basename $HOSTNAME`
@@ -32,10 +34,10 @@ Strip2 ()
 # return it in the CONFIGDIR variable
 #
 GetWinConfigDir ()
-{    
+{
     # XP paths
     for i in /mnt/[wW][iI][nN]*/[Ss][Yy][Ss][Tt][Ee][Mm]32/[Cc][Oo][Nn][Ff][Ii][Gg]/[Ss][Oo][Ff][Tt][Ww][Aa][Rr][Ee]
-    do	
+    do
 	if [ -d ${i%/*} -a -f $i ] ;then
 	    CONFIGDIR=${i%/*}
 	    SOFTWAREDIR=$i
@@ -51,18 +53,18 @@ GetWinConfigDir ()
 #
 # Add a key in the win registry
 #
-RegistryAddString () 
+RegistryAddString ()
 {
     KEY=$1
     NAM=$2
     VAL=$3
-    
+
     Strip2 $KEY
     KEY2=`Strip2 $KEY`
-    
+
     GetWinConfigDir
-    
-    # build the script that will be sent to chntpw    
+
+    # build the script that will be sent to chntpw
     SCRIPT="cd $KEY2
 nv 1 $NAM
 ed $NAM
@@ -71,13 +73,13 @@ ls
 q
 y
 "
-    
+
     case $KEY in
     HKEY_LOCAL_MACHINE\\Software\\*)
 	echo "*** modifying $KEY in $SOFTWAREDIR ***"
 	echo "$SCRIPT" | $CHNTPWBIN -e $SOFTWAREDIR
 	;;
-    *)	
+    *)
 	echo "*** modifying $KEY not yet supported ***"
 	;;
     esac
@@ -86,18 +88,18 @@ y
 #
 # Add a key(s) in the win registry
 #
-RegistryAddKey () 
+RegistryAddKey ()
 {
     KEY=$1
     shift
     SCRIPT=""
-    
+
     Strip2 $KEY
     KEY2=`Strip2 $KEY`
-    
+
     GetWinConfigDir
-    
-    # build the script that will be sent to chntpw    
+
+    # build the script that will be sent to chntpw
     SCRIPT="cd $KEY2"
     for D in $@
     do
@@ -112,17 +114,17 @@ cd $D"
 ls
 q
 y
-"    
+"
     case $KEY in
     HKEY_LOCAL_MACHINE\\Software\\*)
 	echo "*** modifying $KEY in $SOFTWAREDIR ***"
 	echo "$SCRIPT" | $CHNTPWBIN -e $SOFTWAREDIR
 	;;
-    *)	
+    *)
 	echo "*** modifying $KEY not yet supported ***"
 	;;
     esac
-    
+
 }
 
 #
@@ -149,7 +151,7 @@ RegistryAddRunServicesOnce ()
 }
 
 #
-# Copy a sysprep.inf to file and substitute the hostname 
+# Copy a sysprep.inf to file and substitute the hostname
 # Example: CopySysprepInf /revoinfo/$MAC/mysysprep.inf
 #
 CopySysprepInf ()
@@ -157,8 +159,8 @@ CopySysprepInf ()
     # Warning ! There's a ^M after $HOSTNAME for DOS compatibility
     SYSPREP=sysprep
     [ -d /mnt/Sysprep ] && SYSPREP=Sysprep
-    
-    rm -f /mnt/$SYSPREP/[Ss]ysprep.inf    
+
+    rm -f /mnt/$SYSPREP/[Ss]ysprep.inf
     sed -e "s/^[ 	]*[Cc]omputer[Nn]ame[^\n\r]*/ComputerName=$HOSTNAME"`echo -e "\015"`"/" <$1 >/mnt/$SYSPREP/Sysprep.inf
 }
 
@@ -171,7 +173,7 @@ GetNPart ()
     C4=""
     # read /proc/partitions and find the Nth entry
     while [ $I -le $1 ] ;do
-	read C1 C2 C3 C4 C5 || break	    
+	read C1 C2 C3 C4 C5 || break
 	if echo "$C4"|grep -q "^[a-z]*[0-9]$"; then
 	    I=$(($I+1))
 	fi
@@ -186,10 +188,10 @@ GetPartStart ()
 {
     DISK=$1
     NUM=$2
-    
+
     L=`parted -s $DISK unit s print|grep ^$NUM|sed 's/  */,/g'|cut -f 2 -d ,`
     echo $L
-    
+
 }
 
 #
@@ -199,7 +201,7 @@ IsPartBootable ()
 {
     DISK=$1
     NUM=$2
-    
+
     parted -s $DISK print|grep ^$NUM|grep -q boot && echo "yes"
 }
 
@@ -210,18 +212,18 @@ SetPartBootable ()
 {
     DISK=$1
     NUM=$2
-    
-    parted -s $DISK set $NUM boot on    
+
+    parted -s $DISK set $NUM boot on
 }
 
 #
-# Resize the Nth partition of the 1st disk (not ntfs compatible) 
+# Resize the Nth partition of the 1st disk (not ntfs compatible)
 #
 Resize ()
 {
     NUM=$1
     SZ=$2
-    
+
     P=`GetNPart $NUM`
     D=`PartToDisk $P`
     S=`GetPartStart $D $NUM`
@@ -229,7 +231,7 @@ Resize ()
 }
 
 #
-# Maximize the Nth partition of the 1st disk (not ntfs compatible) 
+# Maximize the Nth partition of the 1st disk (not ntfs compatible)
 #
 ResizeMax ()
 {
@@ -237,14 +239,14 @@ ResizeMax ()
 }
 
 #
-# Resize the Nth primary partition of the 1st disk (ntfs only) 
+# Resize the Nth primary partition of the 1st disk (ntfs only)
 # Should be the last one
 #
 NtfsResize ()
 {
     NUM=$1
     SZ=$2
-    
+
     P=`GetNPart $NUM`
     D=`PartToDisk $P`
     S=`GetPartStart $D $NUM`
@@ -257,7 +259,7 @@ NtfsResize ()
 }
 
 #
-# Maximize the Nth primary partition of the 1st disk (ntfs only) 
+# Maximize the Nth primary partition of the 1st disk (ntfs only)
 # Should be the last one
 #
 NtfsResizeMax ()
@@ -267,7 +269,7 @@ NtfsResizeMax ()
 
 #
 # return the disk device related to the part device
-# /dev/hda1 -> /dev/hda 
+# /dev/hda1 -> /dev/hda
 #
 PartToDisk ()
 {
@@ -281,11 +283,11 @@ PartToDisk ()
 Mount ()
 {
     if echo "$1" | grep -q "^[0-9]" ;then
-	# mount the Nth partition	
+	# mount the Nth partition
 	I=1
 	# read /proc/partitions and find the Nth entry
 	while [ $I -le $1 ] ;do
-	    read C1 C2 C3 C4 C5 || break	    
+	    read C1 C2 C3 C4 C5 || break
 	    if echo "$C4"|grep -q "^[a-z]*[0-9]$"; then
 		I=$(($I+1))
 	    fi
