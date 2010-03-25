@@ -116,7 +116,7 @@ server_command_loop() {
 
     while [ "$tries" -ne "0" ]
     do
-	ANSWER=`echo -en "$question\00Mc:$mac" | nc -p 1001 -w 1 $srv 1001 2>/dev/null`
+	ANSWER=`echo -en "$question\00Mc:$mac" | nc -p 1001 -w 2 $srv 1001 2>/dev/null`
 	[ "$?" -eq "0" ] && [ ! -z "$ANSWER" ] && [ ! "$ANSWER" == "ERROR" ] && break
 	echo -en "."
 	tries=$(($tries - 1 ))
@@ -140,9 +140,7 @@ set_default() {
     mac=$2
     srv=$3
 
-    pretty_try "Switching the default menu item"
-    server_command_loop "\315\00$item" $mac $srv
-    return_success_or_failure $?
+    server_command_loop "\315\00$item" $mac $srv || pretty_warn "Failed to switch default menu item"
 }
 
 get_image_uuid() {
@@ -178,9 +176,8 @@ send_log() {
     mac=$2
     srv=$3
 
-    pretty_try "Sending log"
-    server_command_loop "L$log" $mac $srv
-    return_success_or_failure $?
+    # Keep quiet unless something goes wrong
+    server_command_loop "L$log" $mac $srv || pretty_warn "Failed to send log"
 }
 
 get_rdate() {
