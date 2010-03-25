@@ -1022,14 +1022,14 @@ int main(int argc, char *argv[])
 
     system(tmprintf("echo \"\">%s/progress.txt", revoinfo));
     restoreimage();
+
+    ui_send("close", 0);
+
     if (!nolrs)
         system("revosendlog 3");
 
     system(tmprintf("echo \"\">%s/progress.txt", revoinfo));
     mysystem1("cat /var/log/messages");
 
-    ui_send("close", 0);
-
     return 0;
 }
-
