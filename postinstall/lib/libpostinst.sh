@@ -11,6 +11,7 @@ MAC=`cat /etc/shortmac`
 HOSTNAME="unknown_host"
 [ -f /revoinfo/$MAC/hostname ] && HOSTNAME=`cat /revoinfo/$MAC/hostname | tr : /`
 [ -f /revoinfo/hostname ] && HOSTNAME=`cat /revoinfo/hostname | tr : /`
+# FIXME : should also try using network stack (get_hostname)
 HOSTNAME=`basename $HOSTNAME`
 IPSERVER=$Next_server
 
