@@ -8,11 +8,12 @@
 . /etc/netinfo.sh
 
 MAC=`cat /etc/shortmac`
-HOSTNAME=`cat /revoinfo/$MAC/hostname|tr : /`
+HOSTNAME="unknown_host"
+[ -f /revoinfo/$MAC/hostname ] && HOSTNAME=`cat /revoinfo/$MAC/hostname | tr : /`
+[ -f /revoinfo/hostname ] && HOSTNAME=`cat /revoinfo/hostname | tr : /`
 HOSTNAME=`basename $HOSTNAME`
 IPSERVER=$Next_server
 
-#
 export PATH=$PATH:/opt/bin
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/lib
 
