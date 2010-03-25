@@ -389,27 +389,26 @@ then
     /bin/sh
 fi
 
-# Launch the UI
-[ -x /bin/uinewt ] && /bin/uinewt &
-
 # CDROM boot ?
 grep -q revocdrom /etc/cmdline && do_cdrom
 
+# launch initial pre-inst scripts
+[ -x /bin/postmount ] && do_pre_inst
+
 # Backup / Restore
-if grep -q revosavedir /etc/cmdline ;then
-    # launch initial pre-inst scripts
-    [ -x /bin/postmount ] && do_pre_inst
+if grep -q revosavedir /etc/cmdline
+then
+
+    # Launch the UI, background
+    [ -x /bin/uinewt ] && /bin/uinewt &
+
     # Now backup/restore
-    if grep -q revorestore /etc/cmdline ;then
-        do_restore
-    else
-        grep -q revopost /etc/cmdline || do_backup
-    fi
+    grep -q revorestore /etc/cmdline && do_restore
+    grep -q revopost /etc/cmdline || do_backup
 fi
 
 # Postinstall
-if grep -q revopost /etc/cmdline ; then
-    [ -x /bin/postmount ] && do_postinst
-fi
+grep -q revopost /etc/cmdline && [ -x /bin/postmount ] && do_postinst
 
+# Drop to a shell
 grep -q revodebug /etc/cmdline || reboot
