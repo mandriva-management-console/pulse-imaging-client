@@ -133,7 +133,11 @@ get_warn_message() {
 # Pre-install (init-inst in fact)
 do_pre_inst()
 {
+    # temporally disabled !
+    return
+
     if grep -q revopost /etc/cmdline ; then
+	pretty_warn "Running Pre Installation Phase"
         /bin/postmount
         MAC=`cat /etc/shortmac`
 	if [ -z "$COMPUTER_UUID" ]; then # LRS mode
@@ -154,6 +158,7 @@ do_pre_inst()
 # Restore
 do_restore()
 {
+    pretty_warn "Running Restoration Phase"
     OPTS=
     grep -q revorestorenfs /etc/cmdline || OPTS="--mtftp"
     grep -q revontblfix /etc/cmdline && OPTS="--ntblfix $OPTS"
@@ -165,16 +170,16 @@ do_restore()
 # Backup
 do_backup()
 {
+    pretty_warn "Running Backup Phase"
     grep -q revoraw /etc/cmdline && OPTS=--raw
-
     /bin/revoinc
-
     /bin/mount.sh && /bin/autosave $OPTS
 }
 
 # Post-install
 do_postinst()
 {
+    pretty_warn "Running Post Installation Phase"
     if grep -q revorestore /etc/cmdline ;then
         umount /revoinfo
         umount /revosave
