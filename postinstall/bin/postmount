@@ -141,7 +141,7 @@ if grep -q 'revonfsopts' /etc/cmdline; then
     pretty_warn "Bypassing NFS options : $NFSOPT"
 fi
 
-pretty_try "Using the following NFS options"
+pretty_try "NFS options"
 pretty_blue "$NFSOPT\n"
 
 if [ -z "$Option_177" ]
