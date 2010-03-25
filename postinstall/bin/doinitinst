@@ -27,20 +27,24 @@
 
 # Functions which can be intersting in the postinst scripts
 
+. /usr/lib/revolib.sh
 . /opt/lib/libpostinst.sh
 
 # 1st execute the global preinst
-if [ -r /revoinfo/initinst ] ;then
-    echo "*** Executing global initinst script ***"
+if [ -r /revoinfo/initinst ]
+then
+    pretty_info "Executing global initinst script"
     /bin/revosendlog 6
     . /revoinfo/initinst
     /bin/revosendlog 7
 fi
 
-if grep -q revosavedir /proc/cmdline ;then
-    # then the local image postinst
-    if [ -r /revosave/initinst ] ;then
-        echo "*** Executing local image initinst script ***"
+# then the local image postinst
+if grep -q revosavedir /proc/cmdline
+then
+    if [ -r /revosave/initinst ]
+    then
+        pretty_info "Executing local image initinst script"
         /bin/revosendlog 6
         . /revosave/initinst
         /bin/revosendlog 7
