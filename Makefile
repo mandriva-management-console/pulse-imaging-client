@@ -51,12 +51,11 @@ install-prebuild:
 	# calls "install" target, with the following vars set:
 	# BUILD_FOLDER set to PREBUILD_FOLDER
 	# and SVNREV set to $(PREBUILD_FOLDER)/REVISION
-	$(MAKE) install BUILD_FOLDER=$(PREBUILD_FOLDER) SVNREV=`cat $(PREBUILD_FOLDER)/REVISION`
+	$(MAKE) install BUILD_FOLDER=$(PREBUILD_FOLDER) SVNREV=`cat $(PREBUILD_FOLDER)/REVISION` VERSION_LINUXKERNEL=`cat $(PREBUILD_FOLDER)/KERNEL_VERSION`
 
 install:
 	# bootloader stuff (revoboot + grub/eltorito)
 	# everything is set RO
-
 	$(INSTALL) -m 550 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/bootloader -d
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/revoboot.pxe-$(SVNREV) $(VARDIR)/bootloader
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/pxe_boot $(VARDIR)/bootloader
@@ -87,15 +86,15 @@ install:
 	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/lib/libpostinst.sh $(VARDIR)/postinst/lib
 
 prebuild:
-	@echo This will updated binaries in $(PREBUILD_FOLDER), based on binaries in $(BUILD_FOLDER), at revision $(SVNREV)
+	@echo This will updated binaries in $(PREBUILD_FOLDER), based on binaries in $(BUILD_FOLDER), at revision $(SVNREV), kernel at version $(VERSION_LINUXKERNEL)
 	[ -d $(PREBUILD_FOLDER) ] || mkdir $(PREBUILD_FOLDER)
 	(for i in $(PREBUILD_BINARIES); \
 		do \
 		cp -a "$(BUILD_FOLDER)/$$i" $(PREBUILD_FOLDER); \
-		done \
-	)
+	done)
 	rm -f $(PREBUILD_FOLDER)/BUILDENV
 	echo $(SVNREV) > $(PREBUILD_FOLDER)/REVISION
+	echo $(VERSION_LINUXKERNEL) > $(PREBUILD_FOLDER)/KERNEL_VERSION
 	echo '$$Rev$$' >> $(PREBUILD_FOLDER)/BUILDENV
 	uname -a      >> $(PREBUILD_FOLDER)/BUILDENV
 
@@ -118,7 +117,12 @@ imaging: kernel bootloader tools initrd eltorito
 	cp -a postinstall/bin/doinitinst $(INITRAMFS_FOLDER)/bin
 
 	# add modules
+	rm -f $(INITRAMFS_FOLDER)/lib/modules/*.ko
 	cp -a $(FOLDER_KERNEL)/build/modules/*.ko $(INITRAMFS_FOLDER)/lib/modules
+
+	# check all modules are there
+	(cat "$(INITRAMFS_FOLDER)/etc/modules" | grep ^[a-z1-9] | while read i; do if [ ! -e "$(INITRAMFS_FOLDER)/lib/modules/$$i.ko" ]; then echo "Missing probed module : $$i"; exit 1; fi; done)
+	(find "$(INITRAMFS_FOLDER)/lib/modules" -maxdepth 1 -type f | while read i; do j=`basename $$i .ko` ; grep -q ^$$j$$ "$(INITRAMFS_FOLDER)/etc/modules"; if [ $$? -ne 0 ]; then echo "Missing loaded module : $$i"; exit 1; fi; done)
 
 	# initial CD tree
 	rm -fr $(INITCDFS_FOLDER) && mkdir -p $(INITCDFS_FOLDER)
