@@ -42,10 +42,13 @@ kernel:
 	/usr/sbin/rdev $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) /dev/ram0
 
 	# gather mandatory modules
+	rm $(BUILD_FOLDER)/modules/*.ko
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/net -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/pcmcia -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/ssb -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/i2c -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
+	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/uio -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
+	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/crypto -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/lib -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 
 	# CD modules
@@ -65,7 +68,7 @@ kernel:
 	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/jbd/jbd.ko			$(BUILD_FOLDER)/modules/fs
 	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/exportfs/exportfs.ko		$(BUILD_FOLDER)/modules/fs
 
-modules: module_e1000 module_e1000e module_igb module_r8168 module_r8169 module_r8101 module_atl2 module_nxii module_sk98 module_570x module_atl1e
+modules: module_r8101 module_r8168 module_r8169 module_atl1e module_e1000 module_e1000e module_igb module_nxii module_570x
 
 module_e1000:
 	# If build fails comment 'get_perm_addr' ifdef in e1000_ethtool.c
@@ -104,12 +107,6 @@ module_r8101:
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_R8101) KSRC=../$(FOLDER_LINUXKERNEL)
 	cp -f $(BUILD_FOLDER)/$(FOLDER_R8101)/r8101.ko $(BUILD_FOLDER)/modules
 
-module_atl2:
-	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_ATL2) ] || wget $(URI_ATL2)/$(TARBALL_ATL2) -P $(3RDPARTY_FOLDER)
-	[ -d $(BUILD_FOLDER)/$(FOLDER_ATL2) ] || tar jxf $(3RDPARTY_FOLDER)/$(TARBALL_ATL2) -C $(BUILD_FOLDER)
-	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_ATL2) KSRC=../$(FOLDER_LINUXKERNEL)
-	cp -f $(BUILD_FOLDER)/$(FOLDER_ATL2)/atl2.ko $(BUILD_FOLDER)/modules
-
 module_atl1e:
 	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_ATL1E) ] || wget $(URI_ATL1E)/$(TARBALL_ATL1E) -P $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(FOLDER_ATL1E) ] || mkdir -p $(BUILD_FOLDER)/$(FOLDER_ATL1E) && tar zxf $(3RDPARTY_FOLDER)/$(TARBALL_ATL1E) -C $(BUILD_FOLDER)/$(FOLDER_ATL1E)/../ || true
@@ -133,14 +130,6 @@ module_nxii:
 	[ -d $(BUILD_FOLDER)/$(FOLDER_NXII) ] || tar zxf $(3RDPARTY_FOLDER)/$(TARBALL_NXII) -C $(BUILD_FOLDER)
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_NXII) LINUXSRC=../$(FOLDER_LINUXKERNEL)
 	cp -f $(BUILD_FOLDER)/$(FOLDER_NXII)/bnx2.ko build/modules
-
-module_sk98:
-	[ -e $(3RDPARTY_FOLDER)/$(ARCHIVE_SK98) ] || [ -e $(3RDPARTY_FOLDER)/$(TARBALL_SK98) ] || wget $(URI_SK98)/$(ARCHIVE_SK98) -P $(3RDPARTY_FOLDER)
-	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_SK98) ] || unzip -j $(3RDPARTY_FOLDER)/$(ARCHIVE_SK98) \*$(TARBALL_SK98) -d $(3RDPARTY_FOLDER)
-	[ -d $(BUILD_FOLDER)/$(FOLDER_SK98) ] || tar jxf $(3RDPARTY_FOLDER)/$(TARBALL_SK98) -C $(BUILD_FOLDER) && (cd $(BUILD_FOLDER)/$(FOLDER_SK98); tar jxf sk98lin.tar.bz2; cp -a common/* .; cp -a 2.6/* .)
-	sed -i "s|\-Idrivers/net/sk98lin|-I$(BUILD_FOLDER)/$(FOLDER_SK98)|" $(BUILD_FOLDER)/$(FOLDER_SK98)/Makefile
-	CONFIG_SK98LIN=m $(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_SK98) KSRC=../$(FOLDER_LINUXKERNEL)
-	cp -f $(BUILD_FOLDER)/$(FOLDER_SK98)/sk98lin.ko build/modules
 
 clean: modules_clean
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) clean
@@ -170,4 +159,3 @@ modules_clean:
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_NXII)	KSRC=../$(FOLDER_LINUXKERNEL)
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_SK98)	KSRC=../$(FOLDER_LINUXKERNEL)
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_570X)	KSRC=../$(FOLDER_LINUXKERNEL)
-
