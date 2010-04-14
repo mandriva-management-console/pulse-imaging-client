@@ -86,9 +86,10 @@ busybox:
 
 sysvinit:
 	[ -e $(3RDPARTY_FOLDER)/$(SYSV_TARBALL) ] || wget $(SYSV_URI)/$(SYSV_TARBALL) -P $(3RDPARTY_FOLDER)
-	[ -e $(3RDPARTY_FOLDER)/$(SYSV_PATCH) ] || wget $(SYSV_URI)/$(SYSV_PATCH) -P $(3RDPARTY_FOLDER)
+	[ -e $(3RDPARTY_FOLDER)/$(SYSV_PATCH_DEBIAN) ] || wget $(SYSV_URI)/$(SYSV_PATCH_DEBIAN) -P $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(SYSV_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(SYSV_TARBALL) -C $(BUILD_FOLDER)
-	-zcat $(3RDPARTY_FOLDER)/$(SYSV_PATCH) | patch -N -p1 -d $(BUILD_FOLDER)/$(SYSV_FOLDER)/..
+	-zcat $(3RDPARTY_FOLDER)/$(SYSV_PATCH_DEBIAN) | patch -N -p1 -d $(BUILD_FOLDER)/$(SYSV_FOLDER)/..
+	-cat $(3RDPARTY_FOLDER)/$(SYSV_PATCH_SILENT) | patch -N -p1 -d $(BUILD_FOLDER)/$(SYSV_FOLDER)/..
 	$(MAKE) -C $(BUILD_FOLDER)/$(SYSV_FOLDER) CC=$(CC)
 	for n in halt init killall5 runlevel shutdown; do cp -a $(BUILD_FOLDER)/$(SYSV_FOLDER)/$$n tree/sbin; done
 

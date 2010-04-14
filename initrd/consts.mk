@@ -23,38 +23,39 @@
 
 # PUMP
 PUMP_VERSION	= 0.8.24
-PUMP_URI		= http://www.linuxfocus.org/~guido
-PUMP_FOLDER		= pump-$(PUMP_VERSION)
+PUMP_URI	= http://www.linuxfocus.org/~guido
+PUMP_FOLDER	= pump-$(PUMP_VERSION)
 PUMP_TARBALL	= pump-$(PUMP_VERSION)-patched-2009.tar.gz
 PUMP_PATCH_01	= pump-$(PUMP_VERSION)-fix_typo_in_status.diff
 PUMP_PATCH_02	= pump-$(PUMP_VERSION)-add_option_177_178_179.diff
 
 # POPT
 POPT_VERSION	= 1.15
-POPT_URI		= http://rpm5.org/files/popt
-POPT_FOLDER		= popt-$(POPT_VERSION)
+POPT_URI	= http://rpm5.org/files/popt
+POPT_FOLDER	= popt-$(POPT_VERSION)
 POPT_TARBALL	= popt-$(POPT_VERSION).tar.gz
 
 # Busybox
-BUSYBOX_VERSION		= 1.1.3
-BUSYBOX_URI		= http://www.busybox.net/downloads
-BUSYBOX_FOLDER		= busybox-$(BUSYBOX_VERSION)
-BUSYBOX_TARBALL		= busybox-$(BUSYBOX_VERSION).tar.bz2
-BUSYBOX_CONFIG		= busybox-$(BUSYBOX_VERSION).config
+BUSYBOX_VERSION	= 1.1.3
+BUSYBOX_URI	= http://www.busybox.net/downloads
+BUSYBOX_FOLDER	= busybox-$(BUSYBOX_VERSION)
+BUSYBOX_TARBALL	= busybox-$(BUSYBOX_VERSION).tar.bz2
+BUSYBOX_CONFIG	= busybox-$(BUSYBOX_VERSION).config
 
 # SysVInit
-SYSV_VERSION	= 2.84
+SYSV_VERSION		= 2.84
 SYSV_URI		= ftp://archive.debian.org/debian-archive/debian/pool/main/s/sysvinit
 SYSV_FOLDER		= sysvinit-$(SYSV_VERSION).orig/src
-SYSV_TARBALL	= sysvinit_$(SYSV_VERSION).orig.tar.gz
-SYSV_PATCH		= sysvinit_$(SYSV_VERSION)-2woody1.diff.gz
+SYSV_TARBALL		= sysvinit_$(SYSV_VERSION).orig.tar.gz
+SYSV_PATCH_DEBIAN	= sysvinit_$(SYSV_VERSION)-2woody1.diff.gz
+SYSV_PATCH_SILENT	= sysvinit_$(SYSV_VERSION)-silent.diff
 
 # ATFTP
 ATFTP_VERSION	= 0.7
-ATFTP_URI		= ftp://archive.debian.org/debian-archive/debian/pool/main/a/atftp
+ATFTP_URI	= ftp://archive.debian.org/debian-archive/debian/pool/main/a/atftp
 ATFTP_FOLDER	= atftp-$(ATFTP_VERSION)
 ATFTP_TARBALL	= atftp_$(ATFTP_VERSION).orig.tar.gz
-ATFTP_PATCH		= atftp_$(ATFTP_VERSION)-7.diff.gz
+ATFTP_PATCH	= atftp_$(ATFTP_VERSION)-7.diff.gz
 
 # LVM
 #MDV/NR LVM_VERSION	= 2.02.54

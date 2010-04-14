@@ -1,0 +1,34 @@
+diff -Nru sysvinit-2.84.orig.dist/src/init.c sysvinit-2.84.orig/src/init.c
+--- sysvinit-2.84.orig.dist/src/init.c	2010-04-13 08:03:32.259927000 +0000
++++ sysvinit-2.84.orig/src/init.c	2010-04-13 10:00:24.571926274 +0000
+@@ -1664,7 +1664,9 @@
+ 		log(L_SY, "Trying to re-exec init");
+ 		return 'U';
+ 	default:
+-	  	log(L_VB, "Switching to runlevel: %c", foo);
++	  	/* MDV/NR : disable this message */
++	  	/* log(L_VB, "Switching to runlevel: %c", foo); */
++	  	break;
+   }
+ 
+   if (foo == 'Q') return(runlevel);
+@@ -2159,7 +2161,8 @@
+ 			break;
+ 	}
+ 	if (loglevel > 0) {
+-		log(L_VB, "Entering runlevel: %c", runlevel);
++		/* MDV/NR : disable this message */
++		/* log(L_VB, "Entering runlevel: %c", runlevel); */
+ 		write_utmp_wtmp("runlevel", "~~", runlevel + 256 * oldlevel, RUN_LVL, "~");
+ 		thislevel = runlevel;
+ 		prevlevel = oldlevel;
+@@ -2370,7 +2373,8 @@
+   	/*
+ 	 *	Say hello to the world
+ 	 */
+-  	log(L_CO, bootmsg, "booting");
++  	/* MDV/NR : disable this message */
++  	/* log(L_CO, bootmsg, "booting"); */
+ 
+   	/*
+ 	 *	See if we have to start an emergency shell.
