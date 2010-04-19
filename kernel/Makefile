@@ -42,7 +42,7 @@ kernel:
 	/usr/sbin/rdev $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) /dev/ram0
 
 	# gather mandatory modules
-	rm $(BUILD_FOLDER)/modules/*.ko
+	rm -f $(BUILD_FOLDER)/modules/*.ko
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/net -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/pcmcia -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
 	find $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/ssb -iname \*.ko -exec cp -a {} $(BUILD_FOLDER)/modules \;
