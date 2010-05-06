@@ -34,8 +34,8 @@ all: image save restore ui_newt bench ntblfix memtest
 	cp -a scripts/mount.sh 		$(BUILD_FOLDER)/bin
 	cp -a scripts/mount-nfs.sh 	$(BUILD_FOLDER)/bin
 
-image: e2fs reiserfs
-	$(MAKE) -C revosave CC=$(CC) RFS_DIR=$(BUILD_FOLDER)/$(REISER_FOLDER) E2FS_DIR=$(BUILD_FOLDER)/$(E2FS_FOLDER)
+image: reiserfs
+	$(MAKE) -C revosave CC=$(CC) RFS_DIR=$(BUILD_FOLDER)/$(REISER_FOLDER)
 	(for i in $(REVOBIN_BINARIES); \
 		do \
 		cp -a "revosave/$$i" $(BUILD_FOLDER)/revobin; \
@@ -62,12 +62,6 @@ bench: image
 	$(MAKE) -C bench CC=$(CC) LRS_DIR=../revosave
 	cp -a bench/bench 	$(BUILD_FOLDER)/bin
 	cp -a bench/bench.ping 	$(BUILD_FOLDER)/bin
-
-e2fs:
-	[ -e $(3RDPARTY_FOLDER)/$(E2FS_TARBALL) ] || wget $(E2FS_URI)/$(E2FS_TARBALL) -P $(3RDPARTY_FOLDER)
-	[ -d $(BUILD_FOLDER)/$(E2FS_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(E2FS_TARBALL) -C $(BUILD_FOLDER)
-	[ -f $(BUILD_FOLDER)/$(E2FS_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(E2FS_FOLDER); CC=$(CC) ./configure)
-	$(MAKE) -C $(BUILD_FOLDER)/$(E2FS_FOLDER) CC=$(CC) libs
 
 # please see README.rebuild to learn :
 # - why we do not d/l it
@@ -100,7 +94,6 @@ clean:
 	$(MAKE) clean -C bench
 	$(MAKE) clean -C $(BUILD_FOLDER)/$(REISER_FOLDER)
 	$(MAKE) clean -C $(BUILD_FOLDER)/$(MEMTEST_FOLDER)
-	$(MAKE) clean -C $(BUILD_FOLDER)/$(E2FS_FOLDER)
 	rm -f $(BUILD_FOLDER)/revobin/*
 	rm -f $(BUILD_FOLDER)/bin/*
 	-rm -f $(BUILD_FOLDER)/lib/*
@@ -108,6 +101,5 @@ clean:
 
 dist-clean:
 	rm -fr $(BUILD_FOLDER)/$(REISER_FOLDER)
-	rm -fr $(BUILD_FOLDER)/$(E2FS_FOLDER)
 
 .PHONY: ntblfix

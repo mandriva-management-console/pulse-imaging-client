@@ -30,7 +30,8 @@ LDFLAGS	= -s
 LIBLRS	= -L. -llrs
 LIBZ	= -lz
 RFSLIBS	= -L$(RFS_DIR)/reiserfscore -lcore -L$(RFS_DIR)/lib -lmisc
-LIBE2FS	= -L$(E2FS_DIR)/lib -lext2fs -le2p -luuid -lcom_err
+LIBE2FS	= -lext2fs 
+# -lcom_err could be necessary with static linking
 
 all: $(OBJ) $(LIBOBJ) liblrs.so.1 liblrs.a $(IMGFILES)
 
@@ -77,7 +78,7 @@ image_lvmreiserfs.o: image_lvmreiserfs.c
 	$(CC) $(CFLAGS) -I$(RFS_DIR) -o image_lvmreiserfs.o -c image_lvmreiserfs.c
 
 image_e2fs.o: image_e2fs.c
-	$(CC) $(CFLAGS) -I$(E2FS_DIR)/lib -o image_e2fs.o -c image_e2fs.c
+	$(CC) $(CFLAGS) -o image_e2fs.o -c image_e2fs.c
 
 liblrs.so.1: $(LIBOBJ)
 	$(CC) -shared -Wl,-soname,$@ -o $@ $^ $(LIBZ)

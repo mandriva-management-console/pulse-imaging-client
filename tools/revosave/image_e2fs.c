@@ -54,12 +54,11 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "ext2fs/ext2_fs.h"
-#include "ext2fs/ext2fs.h"
-#include "e2p/e2p.h"
+#include <ext2fs/ext2fs.h>
 
 #include "compress.h"
 #include "client.h"
+#include <assert.h>
 
 #define in_use(m, x)    (ext2fs_test_bit ((x), (m)))
 
@@ -67,97 +66,143 @@
 
 char info1[32], info2[32];
 
-static void setbit(unsigned char *p, int num) {
-    unsigned char mask[8] = { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 };
+static void setbit(unsigned char *p,
+                   unsigned long long num, unsigned long limit) {
+
+    static const unsigned char mask[8] =
+        { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 };
+
+    assert(num < ((unsigned long long)limit * 8));
+
     p[num >> 3] |= mask[num & 7];
 }
 
 static void list_desc(ext2_filsys fs, PARAMS * p) {
-    unsigned long i, j, k, ptr;
-    blk_t group_blk, next_blk;
-    char *block_bitmap = fs->block_map->bitmap;
-    char *inode_bitmap = fs->inode_map->bitmap;
-    int inode_blocks_per_group;
-    int group_desc_blocks;
-    int nbsect;
-    unsigned long used = 0;
 
-    inode_blocks_per_group = ((fs->super->s_inodes_per_group *
-                               EXT2_INODE_SIZE(fs->super)) +
-                              EXT2_BLOCK_SIZE(fs->super) - 1) /
-        EXT2_BLOCK_SIZE(fs->super);
-    group_desc_blocks = ((fs->super->s_blocks_count -
-                          fs->super->s_first_data_block +
-                          EXT2_BLOCKS_PER_GROUP(fs->super) - 1) /
-                         EXT2_BLOCKS_PER_GROUP(fs->super) +
-                         EXT2_DESC_PER_BLOCK(fs->super) - 1) /
-        EXT2_DESC_PER_BLOCK(fs->super);
+    unsigned long blocks_per_group;
+    unsigned long blocks_bitmap_len;
 
-    nbsect = fs->blocksize / 512;
-    p->bitmaplg = (fs->super->s_blocks_count * nbsect + 7) / 8;
+    char *blocks_bitmap;
+
+    unsigned long blocks_size;
+    unsigned long sect_per_block;
+
+    unsigned long long blocks_count;
+
+    /* current sector */
+    unsigned long long ptr;
+    /* total number of used sectors */
+    unsigned long long used;
+
+    unsigned long i, k;
+    blk_t j;
+
+    blk_t blk_itr;
+
+    blk_t first_block;
+    blk_t last_block;
+
+    errcode_t ret;
+
+    assert(fs != NULL);
+    assert(p != NULL);
+
+    blocks_size = EXT2_BLOCK_SIZE(fs->super);
+    assert(blocks_size != 0);
+    assert(blocks_size % 512 == 0);
+
+    blocks_per_group = EXT2_BLOCKS_PER_GROUP(fs->super);
+    assert(blocks_per_group != 0);
+    assert(blocks_per_group % 8 == 0);
+
+    blocks_bitmap_len = blocks_per_group / 8;
+    assert(blocks_bitmap_len > 0);
+
+    /* bitmap of allocated blocks in a group */
+    blocks_bitmap = malloc(blocks_bitmap_len);
+    assert(blocks_bitmap != NULL);
+
+    sect_per_block = blocks_size / 512;
+    assert(sect_per_block > 0);
+
+    /* number of block in the filesystem 
+       (counting reserved blocks) */
+#ifdef HAVE_EXT2FS_BLOCK_COUNT
+    blocks_count = ext2fs_blocks_count(fs);
+#else
+    /* Without ext2fs_blocks_count(), 
+       64bit filesystem are not supported */
+    blocks_count = fs->super->s_blocks_count;
+#endif
+    p->bitmaplg = ((blocks_count * sect_per_block) + 7) / 8;
+    assert(p->bitmaplg > 0);
+
     p->bitmap = (unsigned char *)calloc(p->bitmaplg, 1);
+    assert(p->bitmap != NULL);
 
     ptr = 0;
-    for (i = 0; i < fs->super->s_first_data_block; i++)
-        for (j = 0; j < nbsect; j++)
-            setbit(p->bitmap, ptr++);
+    used = 0;
 
-    group_blk = fs->super->s_first_data_block;
+    /* add the first reserverd blocks (aka block 0 and next) */
+    for (j = 0; j < fs->super->s_first_data_block; j++)
+        for (k = 0; k < sect_per_block; k++)
+            setbit(p->bitmap, ptr++, p->bitmaplg);
+
+    blk_itr = fs->super->s_first_data_block;
     for (i = 0; i < fs->group_desc_count; i++) {
-        next_blk = group_blk + fs->super->s_blocks_per_group;
-        if (next_blk > fs->super->s_blocks_count)
-            next_blk = fs->super->s_blocks_count;
-        /*debug ( _("Group %lu: (Blocks %u -- %u)\t"), i,
-           group_blk, next_blk -1 );
 
-           if (ext2fs_bg_has_super (fs, i))
-           debug ( _("  %s Superblock at %u,"
-           "  Group Descriptors at %u-%u\n"),
-           i == 0 ? _("Primary") : _("Backup"),
-           group_blk, group_blk + 1,
-           group_blk + group_desc_blocks);
-           debug ( _("  Block bitmap at %u (+%d), "
-           "Inode bitmap at %u (+%d)\n  "
-           "Inode table at %u-%u (+%d)\n"),
-           fs->group_desc[i].bg_block_bitmap,
-           fs->group_desc[i].bg_block_bitmap - group_blk,
-           fs->group_desc[i].bg_inode_bitmap,
-           fs->group_desc[i].bg_inode_bitmap - group_blk,
-           fs->group_desc[i].bg_inode_table,
-           fs->group_desc[i].bg_inode_table +
-           inode_blocks_per_group - 1,
-           fs->group_desc[i].bg_inode_table - group_blk);
+        /* get bitmap data of allocated blocks in current group */
+        ret = ext2fs_get_block_bitmap_range(fs->block_map,
+                                            blk_itr, blocks_bitmap_len * 8,
+                                            blocks_bitmap);
+        assert(ret == 0);
 
-           debug (_("  %d free blocks, %d free inodes, %d directories\n"),
-           fs->group_desc[i].bg_free_blocks_count,
-           fs->group_desc[i].bg_free_inodes_count,
-           fs->group_desc[i].bg_used_dirs_count);
+        /* get absolute block index for this group 
+         * first block will be 1
+         * last block could be 8192 for the first group,
+         *  if 8912 block per group
          */
-        for (j = 0; j < next_blk - group_blk; j++) {
-            if (in_use(block_bitmap, j))
-                for (k = 0; k < nbsect; k++) {
+        first_block = ext2fs_group_first_block(fs, i);
+        last_block = ext2fs_group_last_block(fs, i);
+
+        assert(blk_itr <= first_block);
+        assert(blk_itr <= last_block);
+        assert((1 + last_block - first_block) <= blocks_per_group);
+
+        /* set them relative to this */
+        first_block -= blk_itr;
+        last_block -= blk_itr;
+
+        /* up to first block, it's unused */
+        ptr += sect_per_block * first_block;
+
+        /* parse blocks bitmap, from first to last (included) */
+        for (j = first_block; j <= last_block; j++) {
+            if (in_use(blocks_bitmap, j)) {
+                for (k = 0; k < sect_per_block; k++) {
                     used++;
-                    setbit(p->bitmap, ptr + k);
+                    setbit(p->bitmap, ptr + k, p->bitmaplg);
                 }
-            ptr += nbsect;
+            }
+            ptr += sect_per_block;
         }
 
-        block_bitmap += fs->super->s_blocks_per_group / 8;
-        inode_bitmap += fs->super->s_inodes_per_group / 8;
+        /* round up: past last block, there's no data in the group */
+        ptr += sect_per_block * (blocks_per_group - (1 + last_block));
 
-        group_blk = next_blk;
+        blk_itr += blocks_per_group;
     }
 
-    sprintf(info1, "%lu", ((long)fs->super->s_blocks_count * nbsect));
-    sprintf(info2, "%lu", used);
-    print_sect_info(((long)fs->super->s_blocks_count * nbsect), used);
+    sprintf(info1, "%llu", blocks_count * sect_per_block);
+    sprintf(info2, "%llu", used);
 
+    print_sect_info(blocks_count * sect_per_block, used);
 }
 
 /*  */
 int main(int argc, char **argv) {
     errcode_t retval;
-    ext2_filsys fs;
+    ext2_filsys fs = NULL;
     char *device_name;
     PARAMS p;
     int big_endian;
@@ -192,6 +237,8 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
+    memset(&p, 0, sizeof(PARAMS));
+
     list_desc(fs, &p);
     ext2fs_close(fs);
 
@@ -201,7 +248,7 @@ int main(int argc, char **argv) {
     ui_send("init_backup", 5, argv[1], argv[2], info1, info2, argv[0]);
     fd = open(argv[1], O_RDONLY);
     p.nb_sect = 0;
-    compress_volume(fd, argv[2], &p, "E2FS=1|TYPE=131");
+    compress_volume(fd, (unsigned char *)argv[2], &p, "E2FS=1|TYPE=131");
     close(fd);
 
     exit(0);
