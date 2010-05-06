@@ -71,9 +71,10 @@ e2fs:
 
 # please see README.rebuild to learn :
 # - why we do not d/l it
-# - why we do not build it it
 reiserfs:
-	[ -d $(BUILD_FOLDER)/$(REISER_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(REISER_TARBALL) -C $(BUILD_FOLDER)
+	[ -d $(BUILD_FOLDER)/$(REISER_FOLDER) ] || (tar zxf $(3RDPARTY_FOLDER)/$(REISER_TARBALL) -C $(BUILD_FOLDER) && patch -N -p1 -d $(BUILD_FOLDER)/$(REISER_FOLDER) < $(3RDPARTY_FOLDER)/reiserfsprogs-3.x.0i-linbox01.diff)
+	[ -f $(BUILD_FOLDER)/$(REISER_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(REISER_FOLDER) && CC="$(CC)" ./configure)
+	$(MAKE) -C $(BUILD_FOLDER)/$(REISER_FOLDER) CC="$(CC)"
 
 ui_newt: save
 	$(MAKE) -C ui_newt CC=$(CC) LRS_DIR=../revosave
@@ -97,8 +98,8 @@ clean:
 	$(MAKE) clean -C ui_newt
 	$(MAKE) clean -C ntblfix
 	$(MAKE) clean -C bench
+	$(MAKE) clean -C $(BUILD_FOLDER)/$(REISER_FOLDER)
 	$(MAKE) clean -C $(BUILD_FOLDER)/$(MEMTEST_FOLDER)
-	-rm -rf $(BUILD_FOLDER)/$(REISER_FOLDER)
 	$(MAKE) clean -C $(BUILD_FOLDER)/$(E2FS_FOLDER)
 	rm -f $(BUILD_FOLDER)/revobin/*
 	rm -f $(BUILD_FOLDER)/bin/*

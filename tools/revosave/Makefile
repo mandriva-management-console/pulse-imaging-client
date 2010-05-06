@@ -29,7 +29,7 @@ CFLAGS	= -Wall -O2 -DLBLIMAGEVER='1.2'
 LDFLAGS	= -s
 LIBLRS	= -L. -llrs
 LIBZ	= -lz
-RFSLIBS	= -L$(RFS_DIR)/lib -lcore  -lmisc
+RFSLIBS	= -L$(RFS_DIR)/reiserfscore -lcore -L$(RFS_DIR)/lib -lmisc
 LIBE2FS	= -L$(E2FS_DIR)/lib -lext2fs -le2p -luuid -lcom_err
 
 all: $(OBJ) $(LIBOBJ) liblrs.so.1 liblrs.a $(IMGFILES)
