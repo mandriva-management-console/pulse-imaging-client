@@ -1,0 +1,27 @@
+
+posix_{f,m}advise() benchmark
+=============================
+
+Use posix_fadvise() on file
+Use posix_madvise() on memory mapped file.
+
+functions posix_{f,m}advise() allow the program to give hints about file
+usage by the program.
+
+In theory, memory mapped should be faster since it's require less
+memory operation : no need for the kernel to copy data to/from a
+userspace buffer. But disk latency/throughput seems to be the main
+bottleneck, so this doesn't really help to use mmap(). In fact, the
+code to use mmap() is overcomplicated, so it's probably not a way to
+go.
+
+
+http://www.opengroup.org/onlinepubs/9699919799/functions/posix_madvise.html
+http://www.opengroup.org/onlinepubs/9699919799/functions/posix_fadvise.html
+
+The benchmark tests only read operation. Write operations should be
+tested, especially calling DONTNEED would probably requires msync()
+and/or fsync()/fdatasync() before, otherwise, the content could be
+discarded and the destination not updated.
+
+Yann Droneaud <ydroneaud@mandriva.com>

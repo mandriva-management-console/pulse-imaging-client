@@ -24,3 +24,13 @@
 
 /* prototypes */
 double now(void);
+
+void
+compress_bench (int run);
+
+void
+disk_bench(int run);
+
+void
+nfs_bench(int run);
+

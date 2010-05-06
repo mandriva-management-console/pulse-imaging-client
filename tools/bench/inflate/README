@@ -1,0 +1,32 @@
+How to use the tests
+
+In order to benchmark inflate(), data files are needed.
+
+For examples, take some disk content with 
+
+dd if=/dev/sdaX of=data.disk bs=4096 count=$((1024 * 16))
+
+Then compress it with the zpipe tools from
+http://www.zlib.net/zlib_how.html
+
+cat data.disk | ./zpipe > data.disk.zz
+
+Then you can start multiples tests, for example.
+
+for insize in 2048 8192 65536 262144 524288 ; do
+ for outsize in 2048 8192 65536 262144 524288 ; do
+  ./bench-inflate       $insize $outsize data.disk.zz  > values_$insize_$outsize.csv
+  ./bench-inflate-zpipe $insize $outsize data.disk.zz  > values-zpipe_$insize_$outsize.csv
+ done
+done
+
+
+Once run, process the .CSV file with a spreadsheet to found the optimal
+algorithm and buffers sizes suitable for your data.
+
+If run as root, the tool try to get realtime priority: it will be able
+to run at full speed, but for some loop iteration it will be slower, 
+so you have to remove all values too much above the average.
+You should use the standard deviation ("écart type") to help you
+choose which values are really above the normal.
+

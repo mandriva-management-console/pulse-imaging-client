@@ -35,6 +35,8 @@
 #include <time.h>
 #include <sys/time.h>
 
+#include "main.h"
+
 /* global vars */
 unsigned char buf[80];
 unsigned char command[120];
