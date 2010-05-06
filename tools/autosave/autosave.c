@@ -370,7 +370,7 @@ int get_nextpart(struct part *part)
 int save(void)
 {
     unsigned char device[512], majorn[256];
-    int i = 0, magic, backuped, idx;
+    int i = 0, backuped = 0, idx;
     unsigned int s = 0;
     int fi, major, minor, dontsave, fmajor = 0;
     FILE *fo;                   /* /conf.tmp */
@@ -379,7 +379,7 @@ int save(void)
     __u32 ttype[32], poff[32];  /* partitions info */
     __u32 tmin[32], tmax[32];
     char command[256], *prefix, destfile[64];
-    int isldm = 0, should_backup_lvm = 0, isdm = 0;
+    int should_backup_lvm = 0, isdm = 0;
     __u32 pi_start = 0, pi_end = 0;     /* partition info offset to save */
     struct hd_geometry geo;
     struct stat st;
@@ -416,8 +416,6 @@ int save(void)
             /* iterate on each partition found */
             while (get_nextpart(&part)) {
                 dontsave = 0;
-                isldm = 0;
-                magic = -1;
 
                 major = part.major;
                 minor = part.minor;
@@ -496,6 +494,7 @@ int save(void)
                 /* new start of disk */
                 if (dontsave) {
                     FILE *fsize;
+                    int isldm;
 
                     dnum = gethdbios(s);
                     DEBUG(printf("BIOSNUM %d\n", dnum));
@@ -568,7 +567,7 @@ int save(void)
 
                 i = 0;
                 prefix = dnum2pre(dnum);
-                myprintf("%s%-2d, S:%u , E:%u , t:%d\n", dnum2pre(dnum),
+                myprintf("%s%-2d, S:%u , E:%u , t:%d\n", prefix,
                         poff[i], tmin[i], tmax[i], ttype[i]);
                 fprintf(fC, "%c%-2d, S:%u , E:%u , t:%d\n", 'P',
                         poff[i], tmin[i], tmax[i], ttype[i]);
