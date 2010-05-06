@@ -26,6 +26,7 @@
  * Functions to send commands to the user interface.
  */
 
+#include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
