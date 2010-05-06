@@ -23,7 +23,7 @@
 #
 # NT bootloader fix
 #
-CFLAGS=-Os -Wall -s -fpic
+CFLAGS=-Os -Wall -fpic
 
 ntblfix: ntblfix.c vm86.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -DNOT_IN_X_SERVER -o $@ $^

@@ -21,7 +21,7 @@
 # MA 02110-1301, USA.
 
 CFLAGS	= -DLBLIMAGEVER=\"2.0\" -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wall -I$(LRS_DIR)
-LIBS	= -s -lnewt -llrs -L$(LRS_DIR)
+LIBS	= -lnewt -L$(LRS_DIR) -llrs
 SRC	= ui_newt.c server.c
 OBJS	= ui_newt.o server.o
 

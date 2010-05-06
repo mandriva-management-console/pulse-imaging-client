@@ -26,7 +26,7 @@ OBJS	= main.o compress.o disk.o nfs.o
 LDFLAGS	=
 
 bench: $(OBJS)
-	$(CC) $(CFLAGS) -s -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
 
 clean:
 	rm  -f $(OBJS) bench

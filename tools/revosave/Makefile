@@ -26,64 +26,73 @@ OBJS		= decompress-bitmap.o decompress.o decompress-test.o image_e2fs.o image_fa
 IMGFILES	= image_swap image_fat image_ntfs image_e2fs image_xfs image_jfs image_lvm decompress decompress-test image_raw decompress-bitmap image_lvmreiserfs
 
 CFLAGS	= -Wall -O2 -DLBLIMAGEVER='1.2'
-LDFLAGS	= -s
+LDFLAGS	= 
 LIBLRS	= -L. -llrs
 LIBZ	= -lz
 RFSLIBS	= -L$(RFS_DIR)/reiserfscore -lcore -L$(RFS_DIR)/lib -lmisc
 LIBE2FS	= -lext2fs 
 # -lcom_err could be necessary with static linking
 
-all: $(OBJ) $(LIBOBJ) liblrs.so.1 liblrs.a $(IMGFILES)
+#
+# XXX in order to build a shared library, 
+# XXX flags -DPIC -fPIC should be used
+#
+
+# ugly hack to allow some parallel build (make -jX)
+all: 
+	$(MAKE) lib
+	$(MAKE) bin
+
+lib: liblrs.so
+bin: lib $(IMGFILES)
 
 depend:
 	$(CC) -M $(CFLAGS) *.c >.depend
 
-image_fat: image_fat.o  compress.o
+image_fat: image_fat.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
 
-image_swap: image_swap.o compress.o
+image_swap: image_swap.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
 
-image_raw: image_raw.o compress.o
+image_raw: image_raw.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
 
-image_ntfs: image_ntfs.o compress.o
+image_ntfs: image_ntfs.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
 
-image_e2fs: image_e2fs.o compress.o
+image_e2fs: image_e2fs.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS) $(LIBE2FS)
 
-image_xfs: image_xfs.o compress.o
+image_xfs: image_xfs.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
 
-image_jfs: image_jfs.o compress.o
+image_jfs: image_jfs.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
 
-image_lvm: image_lvm.o lvm.o compress.o
+image_lvm: image_lvm.o lvm.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
 
-image_lvmreiserfs: lvm.o image_lvmreiserfs.o compress.o
+image_lvmreiserfs: lvm.o image_lvmreiserfs.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS) $(RFSLIBS)
 
-decompress: decompress.o $(OBJ)
+decompress: decompress.o
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS) $(LIBZ)
 
 decompress-test: decompress-test.o $(OBJ)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< --static $(LIBZ)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< $(LIBZ)
 
 decompress-bitmap: decompress-bitmap.o $(OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< $(LIBZ)
 
 image_lvmreiserfs.o: image_lvmreiserfs.c
-	$(CC) $(CFLAGS) -I$(RFS_DIR) -o image_lvmreiserfs.o -c image_lvmreiserfs.c
-
-image_e2fs.o: image_e2fs.c
-	$(CC) $(CFLAGS) -o image_e2fs.o -c image_e2fs.c
+	$(CC) $(CFLAGS) -I$(RFS_DIR) -o $@ -c $<
 
 liblrs.so.1: $(LIBOBJ)
 	$(CC) -shared -Wl,-soname,$@ -o $@ $^ $(LIBZ)
-	strip $@
-	ln -sf $@ liblrs.so
+
+liblrs.so: liblrs.so.1
+	ln -sf $< $@
 
 liblrs.a: $(LIBOBJ)
 	ar rc $@ $^ $(LIBOBJ)
@@ -92,4 +101,4 @@ liblrs.a: $(LIBOBJ)
 include .depend
 
 clean:
-	rm -f liblrs.so.1 liblrs.so liblrs.a $(LIBOBJ) $(IMGFILES) $(OBJS)
+	$(RM) -f liblrs.so.1 liblrs.so $(IMGFILES) liblrs.a $(LIBOBJ)  $(OBJS) $(OBJ)

@@ -21,7 +21,7 @@
 # MA 02110-1301, USA.
 #
 
-CC			:= gcc-3.4
+CC			:= gcc
 SVNREV			:= $(shell echo $Rev: 4505 $ | tr -cd [[:digit:]])
 BUILD_FOLDER		= $(shell pwd)/build
 3RDPARTY_FOLDER		= $(shell pwd)/3rd_party
