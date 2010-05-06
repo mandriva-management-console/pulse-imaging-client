@@ -47,12 +47,12 @@ typedef struct {
     unsigned long long nb_sect;
 } PARAMS;
 
-typedef struct i {
-    unsigned char header[HEADERLG] __attribute__ ((packed));
-    unsigned char bitmap[ALLOCLG] __attribute__ ((packed));
+typedef struct __attribute__ ((packed)) {
+    unsigned char header[HEADERLG];
+    unsigned char bitmap[ALLOCLG];
 } IMAGE_HEADER;
 
-typedef struct c {
+typedef struct {
     z_streamp zptr;
     unsigned char outbuff[OUTBUFF];
     int end, state, header;

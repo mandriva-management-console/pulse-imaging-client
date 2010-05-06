@@ -36,13 +36,13 @@
 
 #define BLKGETSIZE _IO(0x12,96) /* return device size /512 (long *arg) */
 
-typedef struct i
+typedef struct __attribute__((packed))
 {
-    unsigned char header[HEADERLG] __attribute__((packed));
-    unsigned char bitmap[ALLOCLG]  __attribute__((packed));
+    unsigned char header[HEADERLG];
+    unsigned char bitmap[ALLOCLG];
 } IMAGE_HEADER;
 
-typedef struct c
+typedef struct
 {
         z_streamp zptr;
         unsigned char outbuff[OUTBUFF];
