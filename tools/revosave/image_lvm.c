@@ -52,17 +52,16 @@
 char info1[32], info2[32];
 unsigned long lvm_sect;
 
+static inline void setbit(unsigned char *base, unsigned long bit) {
+    unsigned char mask[8] = { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 };
+
+    base[bit >> 3] |= mask[bit & 7];
+}
+
 void allocated_sectors(PARAMS * p) {
     unsigned long i;
     unsigned long bitmap_lg;
     int off = 0;
-
-    void setbit(unsigned char *base, unsigned long bit) {
-        unsigned char mask[8] =
-            { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 };
-
-        base[bit >> 3] |= mask[bit & 7];
-    }
 
     off = p->nb_sect;
 

@@ -251,17 +251,16 @@ int myreiserfs_fetch_disk_bitmap(reiserfs_bitmap_t bm, reiserfs_filsys_t fs) {
     return 0;
 }
 
+static inline void setbit(unsigned char *base, unsigned long bit) {
+    unsigned char mask[8] = { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 };
+
+    base[bit >> 3] |= mask[bit & 7];
+}
+
 void allocated_sectors(PARAMS * p, CPARAMS * cp) {
     unsigned long i, used = 0;
     unsigned long bitmap_lg;
     int off = 0;
-
-    void setbit(unsigned char *base, unsigned long bit) {
-        unsigned char mask[8] =
-            { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 };
-
-        base[bit >> 3] |= mask[bit & 7];
-    }
 
     // TODO : check if block is really 4096 byte long...
     // ...it seems to be
@@ -282,7 +281,7 @@ void allocated_sectors(PARAMS * p, CPARAMS * cp) {
             used++;
         }
 
-    sprintf(info1, "%lu", p->nb_sect + off);
+    sprintf(info1, "%llu", p->nb_sect + off);
     sprintf(info2, "%lu", used + off);
     print_sect_info(p->nb_sect + off, used + off);
 

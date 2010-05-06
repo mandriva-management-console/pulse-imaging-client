@@ -208,32 +208,31 @@ void check_bootsect(FILE * f, PARAMS * p, CPARAMS * cp) {
     fread(cp->fat, 512, cp->FAT_size, f);
 }
 
+static inline void setbit(unsigned char *base, unsigned long bit) {
+    unsigned char mask[8] = { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 };
+
+    base[bit >> 3] |= mask[bit & 7];
+}
+
+static inline int checkFAT(CPARAMS * cp, int shift, unsigned long i) {
+    unsigned long clustnb, ent;
+
+    clustnb = 2 + ((i - cp->FirstDataSector) >> shift);
+
+    if (cp->fat32)
+        ent = *(((unsigned long *)cp->fat) + clustnb);  //&0x0FFFFFFF;
+    else
+        ent = *(((unsigned short *)cp->fat) + clustnb);
+
+    if (ent)
+        return 1;
+    return 0;
+}
+
 void allocated_sectors(PARAMS * p, CPARAMS * cp) {
     unsigned long i, used = 0;
     unsigned long bitmap_lg;
     int shift = 0;
-
-    void setbit(unsigned char *base, unsigned long bit) {
-        unsigned char mask[8] =
-            { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 };
-
-        base[bit >> 3] |= mask[bit & 7];
-    }
-
-    int checkFAT(unsigned long i) {
-        unsigned long clustnb, ent;
-
-        clustnb = 2 + ((i - cp->FirstDataSector) >> shift);
-
-        if (cp->fat32)
-            ent = *(((unsigned long *)cp->fat) + clustnb);      //&0x0FFFFFFF;
-        else
-            ent = *(((unsigned short *)cp->fat) + clustnb);
-
-        if (ent)
-            return 1;
-        return 0;
-    }
 
     if (cp->bootsect.BPB_SecPerClus == 1)
         shift = 0;
@@ -272,7 +271,7 @@ void allocated_sectors(PARAMS * p, CPARAMS * cp) {
     //
 
     for (i = cp->FirstDataSector; i < p->nb_sect; i++)
-        if (checkFAT(i)) {
+        if (checkFAT(cp, shift, i)) {
             setbit(p->bitmap, i);
             used++;
         }
