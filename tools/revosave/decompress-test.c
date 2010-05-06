@@ -41,7 +41,7 @@
 #include <dirent.h>
 #include <ctype.h>
 
-#include "zlib.h"
+#include <zlib.h>
 
 #define INSIZE 2048
 

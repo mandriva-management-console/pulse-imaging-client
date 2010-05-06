@@ -25,10 +25,10 @@ LIBOBJ		= compress.o easy_sock.o client.o
 OBJS		= decompress-bitmap.o decompress.o decompress-test.o image_e2fs.o image_fat.o image_jfs.o image_lvm.o image_ntfs.o image_raw.o image_swap.o image_xfs.o lvm.o image_lvmreiserfs.o
 IMGFILES	= image_swap image_fat image_ntfs image_e2fs image_xfs image_jfs image_lvm decompress decompress-test image_raw decompress-bitmap image_lvmreiserfs
 
-CFLAGS	= -Wall -O2 -DLBLIMAGEVER='1.2' -I$(ZLIB_DIR)
+CFLAGS	= -Wall -O2 -DLBLIMAGEVER='1.2'
 LDFLAGS	= -s
 LIBLRS	= -L. -llrs
-LIBZ	= -L$(ZLIB_DIR) -lz
+LIBZ	= -lz
 RFSLIBS	= -L$(RFS_DIR)/lib -lcore  -lmisc
 LIBE2FS	= -L$(E2FS_DIR)/lib -lext2fs -le2p -luuid -lcom_err
 

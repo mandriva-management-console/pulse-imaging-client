@@ -59,7 +59,7 @@
 //#define TEST 1
 //#define TEST_PARTONLY 1
 
-#include "zlib.h"
+#include <zlib.h>
 
 #define INSIZE 2048
 

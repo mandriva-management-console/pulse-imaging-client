@@ -34,8 +34,8 @@ all: image save restore ui_newt bench ntblfix memtest
 	cp -a scripts/mount.sh 		$(BUILD_FOLDER)/bin
 	cp -a scripts/mount-nfs.sh 	$(BUILD_FOLDER)/bin
 
-image: zlib e2fs reiserfs
-	$(MAKE) -C revosave CC=$(CC) ZLIB_DIR=$(BUILD_FOLDER)/$(ZLIB_FOLDER) RFS_DIR=$(BUILD_FOLDER)/$(REISER_FOLDER) E2FS_DIR=$(BUILD_FOLDER)/$(E2FS_FOLDER)
+image: e2fs reiserfs
+	$(MAKE) -C revosave CC=$(CC) RFS_DIR=$(BUILD_FOLDER)/$(REISER_FOLDER) E2FS_DIR=$(BUILD_FOLDER)/$(E2FS_FOLDER)
 	(for i in $(REVOBIN_BINARIES); \
 		do \
 		cp -a "revosave/$$i" $(BUILD_FOLDER)/revobin; \
@@ -49,7 +49,7 @@ save: image
 	cp -a autosave/floppysave 		$(BUILD_FOLDER)/bin
 
 restore: image
-	$(MAKE) -C autorestore CC=$(CC) 	ZLIB_DIR=$(BUILD_FOLDER)/$(ZLIB_FOLDER) LRS_DIR=../revosave
+	$(MAKE) -C autorestore CC=$(CC) LRS_DIR=../revosave
 	(for i in $(REVORESTORE_BINARIES); \
 		do \
 		cp -a "autorestore/$$i" $(BUILD_FOLDER)/bin; \
@@ -59,15 +59,9 @@ restore: image
 	cp -a autorestore/revolib.sh 		$(BUILD_FOLDER)/usr/lib/revolib.sh
 
 bench: image
-	$(MAKE) -C bench CC=$(CC) LRS_DIR=../revosave ZLIB_DIR=$(BUILD_FOLDER)/$(ZLIB_FOLDER)
+	$(MAKE) -C bench CC=$(CC) LRS_DIR=../revosave
 	cp -a bench/bench 	$(BUILD_FOLDER)/bin
 	cp -a bench/bench.ping 	$(BUILD_FOLDER)/bin
-
-zlib:
-	[ -e $(3RDPARTY_FOLDER)/$(ZLIB_TARBALL) ] || wget $(ZLIB_URI)/$(ZLIB_TARBALL) -P $(3RDPARTY_FOLDER)
-	[ -d $(BUILD_FOLDER)/$(ZLIB_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(ZLIB_TARBALL) -C $(BUILD_FOLDER)
-	-patch -N -p1 -d $(BUILD_FOLDER)/$(ZLIB_FOLDER) < $(3RDPARTY_FOLDER)/zlib-1.2.3.diff
-	$(MAKE) -C $(BUILD_FOLDER)/$(ZLIB_FOLDER) CC=$(CC)
 
 slang:
 	[ -e $(3RDPARTY_FOLDER)/$(SLANG_TARBALL) ] || wget $(SLANG_URI)/$(SLANG_TARBALL) -P $(3RDPARTY_FOLDER)
@@ -129,7 +123,6 @@ clean:
 	$(MAKE) clean -C ui_newt
 	$(MAKE) clean -C ntblfix
 	$(MAKE) clean -C bench
-	$(MAKE) clean -C $(BUILD_FOLDER)/$(ZLIB_FOLDER)
 	$(MAKE) clean -C $(BUILD_FOLDER)/$(MEMTEST_FOLDER)
 	-[ -f $(BUILD_FOLDER)/$(NEWT_FOLDER)/Makefile ] && $(MAKE) clean -C $(BUILD_FOLDER)/$(NEWT_FOLDER) && rm -f $(BUILD_FOLDER)/$(NEWT_FOLDER)/Makefile
 	-[ -f $(BUILD_FOLDER)/$(SLANG_FOLDER)/Makefile ] && $(MAKE) clean -C $(BUILD_FOLDER)/$(SLANG_FOLDER) && rm -f $(BUILD_FOLDER)/$(SLANG_FOLDER)/Makefile
@@ -141,7 +134,6 @@ clean:
 	rm -f $(BUILD_FOLDER)/lib/modules/*.ko
 
 dist-clean:
-	rm -fr $(BUILD_FOLDER)/$(ZLIB_FOLDER)
 	rm -fr $(BUILD_FOLDER)/$(NEWT_FOLDER)
 	rm -fr $(BUILD_FOLDER)/$(SLANG_FOLDER)
 	rm -fr $(BUILD_FOLDER)/$(REISER_FOLDER)

@@ -31,7 +31,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "zlib.h"
+#include <zlib.h>
 
 #define INSIZE 2048
 

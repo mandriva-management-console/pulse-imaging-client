@@ -32,7 +32,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
-#include "zlib.h"
+#include <zlib.h>
 
 
 #define BENCH 1

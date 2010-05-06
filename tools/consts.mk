@@ -1,9 +1,3 @@
-# ZLIB stuff
-ZLIB_VERSION	= 1.2.3
-ZLIB_URI		= http://www.zlib.net
-ZLIB_FOLDER		= zlib-$(ZLIB_VERSION)
-ZLIB_TARBALL	= zlib-$(ZLIB_VERSION).tar.gz
-
 # NEWT stuff
 NEWT_VERSION	= 0.52.10
 NEWT_URI		= https://fedorahosted.org/releases/n/e/newt

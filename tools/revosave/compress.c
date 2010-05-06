@@ -129,9 +129,24 @@ compress_init(COMPRESS ** c, int block, unsigned long long bytes,
     FILE *f;
 
     *c = (COMPRESS *) malloc(sizeof(COMPRESS));
+    if (*c == NULL) {
+        return;
+    }
+
     (*c)->zptr = (z_streamp) malloc(sizeof(z_stream));
+    if ((*c)->zptr == NULL) {
+        free(*c);
+        *c = NULL;
+        return;
+    }
+
+    (*c)->zptr->opaque = Z_NULL;
     (*c)->zptr->zalloc = Z_NULL;
-    (*c)->zptr->zfree = Z_NULL;
+    (*c)->zptr->zfree =  Z_NULL;
+    (*c)->zptr->avail_out = Z_NULL;
+    (*c)->zptr->next_out =  0;
+    (*c)->zptr->avail_in =  Z_NULL;
+    (*c)->zptr->next_in =   0;
 
 //      deflateInit((*c)->zptr,Z_BEST_SPEED);
     if ((f = fopen("/etc/complevel", "r")) != NULL) {
