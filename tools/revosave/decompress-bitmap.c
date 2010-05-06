@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
     currentparams.bitindex = 0;
 
     if (argc > 2) {
-        currentparams.fo = open(argv[2], O_RDWR | O_CREAT | O_LARGEFILE);
+        currentparams.fo = open(argv[2], O_RDWR | O_CREAT | O_LARGEFILE, 0666);
         sscanf(argv[3], "%lld", &currentparams.offset);
         if (currentparams.fo) {
             unsigned long long i;
