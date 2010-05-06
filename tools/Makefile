@@ -63,32 +63,6 @@ bench: image
 	cp -a bench/bench 	$(BUILD_FOLDER)/bin
 	cp -a bench/bench.ping 	$(BUILD_FOLDER)/bin
 
-slang:
-	[ -e $(3RDPARTY_FOLDER)/$(SLANG_TARBALL) ] || wget $(SLANG_URI)/$(SLANG_TARBALL) -P $(3RDPARTY_FOLDER)
-	[ -d $(BUILD_FOLDER)/$(SLANG_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(SLANG_TARBALL) -C $(BUILD_FOLDER)
-	[ -f $(BUILD_FOLDER)/$(SLANG_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(SLANG_FOLDER); CC=$(CC) ./configure)
-	$(MAKE) -C $(BUILD_FOLDER)/$(SLANG_FOLDER) CC=$(CC)
-	cp -a $(BUILD_FOLDER)/$(SLANG_FOLDER)/src/elfobjs/libslang.so* $(BUILD_FOLDER)/lib
-	strip $(BUILD_FOLDER)/lib/libslang.so*
-
-newt: slang popt
-	[ -e $(3RDPARTY_FOLDER)/$(NEWT_TARBALL) ] || wget --no-check-certificate $(NEWT_URI)/$(NEWT_TARBALL) -P $(3RDPARTY_FOLDER)
-	[ -d $(BUILD_FOLDER)/$(NEWT_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(NEWT_TARBALL) -C $(BUILD_FOLDER)
-	[ -f $(BUILD_FOLDER)/$(NEWT_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(NEWT_FOLDER); CC="$(CC)" CPPFLAGS='-I../$(POPT_FOLDER) -I../$(SLANG_FOLDER)/src' LIBS='-L../$(POPT_FOLDER)/.libs -L../$(SLANG_FOLDER)' ./configure)
-	$(MAKE) -C $(BUILD_FOLDER)/$(NEWT_FOLDER) CC="$(CC) -L../$(POPT_FOLDER)/.libs -L../$(SLANG_FOLDER)/src/elfobjs" sharedlib whiptail
-	cp -a $(BUILD_FOLDER)/$(NEWT_FOLDER)/libnewt.so* $(BUILD_FOLDER)/lib
-	strip $(BUILD_FOLDER)/lib/libnewt.so*
-	cp -a $(BUILD_FOLDER)/$(NEWT_FOLDER)/whiptail $(BUILD_FOLDER)/usr/bin
-	strip $(BUILD_FOLDER)/usr/bin/whiptail
-
-popt:
-	[ -e $(3RDPARTY_FOLDER)/$(POPT_TARBALL) ] || wget $(POPT_URI)/$(POPT_TARBALL) -P $(3RDPARTY_FOLDER)
-	[ -d $(BUILD_FOLDER)/$(POPT_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(POPT_TARBALL) -C $(BUILD_FOLDER)
-	[ -f $(BUILD_FOLDER)/$(POPT_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(POPT_FOLDER); CC=$(CC) ./configure)
-	$(MAKE) -C $(BUILD_FOLDER)/$(POPT_FOLDER) CC=$(CC)
-	cp -a $(BUILD_FOLDER)/$(POPT_FOLDER)/.libs/libpopt.so* $(BUILD_FOLDER)/lib
-	strip $(BUILD_FOLDER)/lib/libpopt.so*
-
 e2fs:
 	[ -e $(3RDPARTY_FOLDER)/$(E2FS_TARBALL) ] || wget $(E2FS_URI)/$(E2FS_TARBALL) -P $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(E2FS_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(E2FS_TARBALL) -C $(BUILD_FOLDER)
@@ -101,8 +75,8 @@ e2fs:
 reiserfs:
 	[ -d $(BUILD_FOLDER)/$(REISER_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(REISER_TARBALL) -C $(BUILD_FOLDER)
 
-ui_newt: save newt
-	$(MAKE) -C ui_newt CC=$(CC) LRS_DIR=../revosave NEWT_DIR=$(BUILD_FOLDER)/$(NEWT_FOLDER)
+ui_newt: save
+	$(MAKE) -C ui_newt CC=$(CC) LRS_DIR=../revosave
 	cp -a ui_newt/ui_newt $(BUILD_FOLDER)/bin/uinewt # changes name
 
 ntblfix:
@@ -124,8 +98,6 @@ clean:
 	$(MAKE) clean -C ntblfix
 	$(MAKE) clean -C bench
 	$(MAKE) clean -C $(BUILD_FOLDER)/$(MEMTEST_FOLDER)
-	-[ -f $(BUILD_FOLDER)/$(NEWT_FOLDER)/Makefile ] && $(MAKE) clean -C $(BUILD_FOLDER)/$(NEWT_FOLDER) && rm -f $(BUILD_FOLDER)/$(NEWT_FOLDER)/Makefile
-	-[ -f $(BUILD_FOLDER)/$(SLANG_FOLDER)/Makefile ] && $(MAKE) clean -C $(BUILD_FOLDER)/$(SLANG_FOLDER) && rm -f $(BUILD_FOLDER)/$(SLANG_FOLDER)/Makefile
 	-rm -rf $(BUILD_FOLDER)/$(REISER_FOLDER)
 	$(MAKE) clean -C $(BUILD_FOLDER)/$(E2FS_FOLDER)
 	rm -f $(BUILD_FOLDER)/revobin/*
@@ -134,8 +106,6 @@ clean:
 	rm -f $(BUILD_FOLDER)/lib/modules/*.ko
 
 dist-clean:
-	rm -fr $(BUILD_FOLDER)/$(NEWT_FOLDER)
-	rm -fr $(BUILD_FOLDER)/$(SLANG_FOLDER)
 	rm -fr $(BUILD_FOLDER)/$(REISER_FOLDER)
 	rm -fr $(BUILD_FOLDER)/$(E2FS_FOLDER)
 
