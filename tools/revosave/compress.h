@@ -70,7 +70,7 @@ void compress_data(COMPRESS * c, unsigned char *data, int lg, FILE * out,
                    char end);
 unsigned long long compress_end(COMPRESS * c, FILE * out);
 void compress_write_error(void);
-void not_enough_space_error(long needed, long available);
+void not_enough_space_error(unsigned long long needed, unsigned long long available);
 long free_blocks_on_target(char* target);
 //void setblocksize(FILE *f);
 void setblocksize(int f);

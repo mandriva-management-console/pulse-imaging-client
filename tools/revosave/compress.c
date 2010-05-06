@@ -296,11 +296,11 @@ void compress_write_error(void) {
 }
 
 /* Not enought space error */
-void not_enough_space_error(long needed, long available) {
+void not_enough_space_error(unsigned long long needed, unsigned long long available) {
     char tmp1[32], tmp2[32];
 
     fatal();
-    fprintf(stderr, "ERROR: Space Availability Error ! Not enough space on the server to safely create the image : need at most %lu blocks, got %lu blocks.\n", needed, available);
+    fprintf(stderr, "ERROR: Space Availability Error ! Not enough space on the server to safely create the image : need at most %llu blocks, got %llu blocks.\n", needed, available);
 
     sprintf(tmp1, "%llu", needed);
     sprintf(tmp2, "%llu", available);
