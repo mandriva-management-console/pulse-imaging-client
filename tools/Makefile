@@ -40,6 +40,8 @@ deps:
 	cp -a /lib/libslang.so* $(BUILD_FOLDER)/lib
 	cp -a /usr/lib/libz.so* $(BUILD_FOLDER)/lib
 	cp -a /usr/bin/whiptail $(BUILD_FOLDER)/usr/bin
+	cp -a /lib/libext2fs.so.* /usr/lib/libext2fs.so $(BUILD_FOLDER)/lib
+	cp -a /lib/libcom_err.so.2* $(BUILD_FOLDER)/lib
 
 image: reiserfs
 	$(MAKE) -C revosave CC=$(CC) RFS_DIR=$(BUILD_FOLDER)/$(REISER_FOLDER)
@@ -70,8 +72,7 @@ bench: image
 	cp -a bench/bench 	$(BUILD_FOLDER)/bin
 	cp -a bench/bench.ping 	$(BUILD_FOLDER)/bin
 
-# please see README.rebuild to learn :
-# - why we do not d/l it
+# please see README.rebuild to learn why we do not d/l it
 reiserfs:
 	[ -d $(BUILD_FOLDER)/$(REISER_FOLDER) ] || (tar zxf $(3RDPARTY_FOLDER)/$(REISER_TARBALL) -C $(BUILD_FOLDER) && patch -N -p1 -d $(BUILD_FOLDER)/$(REISER_FOLDER) < $(3RDPARTY_FOLDER)/reiserfsprogs-3.x.0i-linbox01.diff)
 	[ -f $(BUILD_FOLDER)/$(REISER_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(REISER_FOLDER) && CC="$(CC)" ./configure)
