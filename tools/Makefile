@@ -30,9 +30,16 @@ REVORESTORE_BINARIES	= autorestore revosendlog revowait revodoneimage revogetnam
 
 include consts.mk
 
-all: image save restore ui_newt bench ntblfix memtest
+all: image save restore ui_newt bench ntblfix memtest deps
 	cp -a scripts/mount.sh 		$(BUILD_FOLDER)/bin
 	cp -a scripts/mount-nfs.sh 	$(BUILD_FOLDER)/bin
+
+deps:
+	# also copy the requiered stuff
+	cp -a /usr/lib/libnewt.so* $(BUILD_FOLDER)/lib
+	cp -a /lib/libslang.so* $(BUILD_FOLDER)/lib
+	cp -a /usr/lib/libz.so* $(BUILD_FOLDER)/lib
+	cp -a /usr/bin/whiptail $(BUILD_FOLDER)/usr/bin
 
 image: reiserfs
 	$(MAKE) -C revosave CC=$(CC) RFS_DIR=$(BUILD_FOLDER)/$(REISER_FOLDER)
