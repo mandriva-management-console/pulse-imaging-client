@@ -76,6 +76,7 @@ popt:
 	[ -d $(BUILD_FOLDER)/$(POPT_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(POPT_TARBALL) -C $(BUILD_FOLDER)
 	[ -f $(BUILD_FOLDER)/$(POPT_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(POPT_FOLDER); CC=$(CC) ./configure)
 	$(MAKE) -C $(BUILD_FOLDER)/$(POPT_FOLDER) CC=$(CC)
+	cp -a $(BUILD_FOLDER)/$(POPT_FOLDER)/.libs/libpopt.so* tree/lib
 
 busybox:
 	[ -e $(3RDPARTY_FOLDER)/$(BUSYBOX_TARBALL) ] || wget $(BUSYBOX_URI)/$(BUSYBOX_TARBALL) -P $(3RDPARTY_FOLDER)
