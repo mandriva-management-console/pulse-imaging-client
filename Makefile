@@ -124,6 +124,9 @@ imaging: kernel bootloader tools initrd eltorito
 	(cat "$(INITRAMFS_FOLDER)/etc/modules" | grep ^[a-z1-9] | while read i; do if [ ! -e "$(INITRAMFS_FOLDER)/lib/modules/$$i.ko" ]; then echo "Missing probed module : $$i"; exit 1; fi; done)
 	(find "$(INITRAMFS_FOLDER)/lib/modules" -maxdepth 1 -type f | while read i; do j=`basename $$i .ko` ; grep -q ^$$j$$ "$(INITRAMFS_FOLDER)/etc/modules"; if [ $$? -ne 0 ]; then echo "Missing loaded module : $$i"; exit 1; fi; done)
 
+	# check all libs are there
+	(find "$(INITRAMFS_FOLDER)" -type f | while read i; do j=`echo "$$i" | sed "s|$(INITRAMFS_FOLDER)||"`; chroot "$(INITRAMFS_FOLDER)" /lib/ld-linux.so.2 --verify "$$j" >/dev/null || continue && chroot "$(INITRAMFS_FOLDER)" /lib/ld-linux.so.2 --list "$$j" >/dev/null || exit 1; done)
+
 	# initial CD tree
 	rm -fr $(INITCDFS_FOLDER) && mkdir -p $(INITCDFS_FOLDER)
 	mkdir -p $(INITCDFS_FOLDER)/lib/modules
