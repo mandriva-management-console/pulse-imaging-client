@@ -88,7 +88,7 @@ then
     # TODO: check code, take measures
 else
     pretty_info "Using Option 177 as backup dir :"
-	pretty_blue "$Option_177\n"
+    pretty_blue "$Option_177\n"
     pretty_try "Mounting /revoinfo"
     mount -t nfs $Option_177$INFODIR /revoinfo -o $NFSOPT
     pretty_success
