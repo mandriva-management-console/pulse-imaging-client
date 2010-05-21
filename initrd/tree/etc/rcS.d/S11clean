@@ -2,7 +2,7 @@
 
 . /usr/lib/revolib.sh
 
-pretty_orange "Mandriva Pulse 2 Imaging Client\n"
+lrs && pretty_orange "Mandriva LRS Client\n" || pretty_orange "Mandriva Pulse 2 Imaging Client\n" 
 pretty_orange "`cat /proc/version | cut -f -3 -d \ `"
 
 # disable console blank
