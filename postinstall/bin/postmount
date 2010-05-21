@@ -27,36 +27,27 @@
 
 . /usr/lib/revolib.sh
 
-# get the mac address
-getmac() {
-    MAC=`cat /etc/shortmac`
-}
-
 # Get DHCP options
 sed -e "s/Device/#/" -e "s/: */=/" -e "s/   //" -e "s/ /_/g" </etc/netinfo.log >/etc/netinfo.sh
 . /etc/netinfo.sh
 
 SIP=$Next_server
 PREFIX=`grep revobase /etc/cmdline | sed 's|.*revobase=\([^ ]*\).*|\1|'`
-if [ ! -z "$PREFIX" ]; then # Pulse 2 environment ?
+if [ ! -z "$PREFIX" ]; then
 
     # get the base image dir
     SAVEDIR=`grep revosavedir /etc/cmdline | sed 's|.*revosavedir=\([^ ]*\).*|\1|'`
-    if [ -z "$SAVEDIR" ]; then
-        echo "No SAVEDIR received; giving up !"
-        echo "Something weird happened; please contact your system administrator"
-        echo "Press any key to reboot"
-        read answer
+    if [ -z "$SAVEDIR" ]
+    then
+        whiptail --title 'Error' --msgbox '   It seems that something weird happened : \n\n\n        I did not received SAVEDIR\n\n\n  Please contact your system administrator.\n\n          Press any key to reboot.' 15 50
         exit 1
     fi
 
     # get the base info dir
     INFODIR=`grep revoinfodir /etc/cmdline | sed 's|.*revoinfodir=\([^ ]*\).*|\1|'`
-    if [ -z "$INFODIR" ]; then
-        echo "No INFODIR received; giving up !"
-        echo "Something weird happened; please contact your system administrator"
-        echo "Press any key to reboot"
-        read answer
+    if [ -z "$INFODIR" ]
+    then
+        whiptail --title 'Error' --msgbox '   It seems that something weird happened : \n\n\n        I did not received INFODIR\n\n\n  Please contact your system administrator.\n\n          Press any key to reboot.' 15 50
         exit 1
     fi
 
@@ -73,33 +64,28 @@ if [ ! -z "$PREFIX" ]; then # Pulse 2 environment ?
 
     # get the computer UUID
     COMPUTER_UUID=`cat /etc/COMPUTER_UUID`
-    if [ -z "$COMPUTER_UUID" ]; then
-        echo "No computer UUID received; giving up !"
-        echo "Something weird happened; please contact your system administrator"
-        echo "Press any key to reboot"
-        read answer
+    if [ -z "$COMPUTER_UUID" ]
+    then
+        whiptail --title 'Error' --msgbox '   It seems that something weird happened : \n\n\n     I did not received a Computer UUID\n\n\n  Please contact your system administrator.\n\n          Press any key to reboot.' 15 50
         exit 1
     fi
     INFODIR="/$INFODIR/$COMPUTER_UUID"
 
     # get the image UUID, if we are saving
     IMAGE_UUID=`grep revoimage /etc/cmdline | sed 's|.*revoimage=\([^ ]*\).*|\1|'`
-    if [ -z "$IMAGE_UUID" ]; then
-        echo "No image UUID received; giving up !"
-        echo "Something weird happened; please contact your system administrator"
-        echo "Press any key to reboot"
-        read answer
+    if [ -z "$IMAGE_UUID" ]
+    then
+        whiptail --title 'Error' --msgbox '   It seems that something weird happened : \n\n\n      I did not received an Image UUID\n\n\n  Please contact your system administrator.\n\n          Press any key to reboot.' 15 50
         exit 1
     fi
     SAVEDIR="/$SAVEDIR/$IMAGE_UUID"
-else # LRS environment !
-    PREFIX=`dirname $Boot_file`
-    PREFIX=`dirname $PREFIX`
-    SAVEDIR=/lib/util/
-    INFODIR=/images
-    if grep -q revosavedir /proc/cmdline ;then
-	SAVEDIR=`sed -e "s/.*revosavedir=\([^ ]*\).*/\1/" < /proc/cmdline`
-    fi
+else
+    # uses the original boot file name to guess the NFS prefix ("LRS mode")
+    PREFIX=`echo $Boot_file | sed 's|/revoboot.pxe$||' | sed 's|/bin$||'`
+    SAVEDIR=`grep revosavedir /etc/cmdline | sed 's|.*revosavedir=\([^ ]*\).*|\1|'`
+    INFODIR="/images/$MAC"
+	OPTDIR="/lib/util"
+
 fi
 
 # get the short mac address
