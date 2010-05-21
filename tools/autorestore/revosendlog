@@ -33,15 +33,16 @@ SRV=$Next_server
 
 if [ "$1" = "2" -o "$1" = "3" -o "$1" = "4" -o "$1" = "5" ]
 then
-    # try to get the image UUID (Pulse 2 mode)
-    if [ -f "/etc/IMAGE_UUID" ]; then
-	N=`cat /etc/IMAGE_UUID`
-    else
-	N=`grep revoimage /etc/cmdline | sed 's|.*revoimage=\([^ ]*\).*|\1|'`
-    fi
-    if [ -z "$N" ]; then # failed => LRS mode
+    if lrs # try to get the image name (LRS mode)
+    then
 	N=`sed -e 's/.*revosavedir=\([^ ]*\).*/\1/' </etc/cmdline`
 	N=`basename $N`
+    else # try to get the image UUID (Pulse 2 mode)
+	if [ -f "/etc/IMAGE_UUID" ]; then
+	    N=`cat /etc/IMAGE_UUID`
+	else
+	    N=`grep revoimage /etc/cmdline | sed 's|.*revoimage=\([^ ]*\).*|\1|'`
+	fi
     fi
 
     if send_log "${1}-${N}" $MAC $SRV
