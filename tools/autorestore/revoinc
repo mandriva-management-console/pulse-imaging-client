@@ -37,7 +37,7 @@ probe_server $SRV
 
 # shared or not ?
 TYPE="COPY"
-grep /imgbase/Base /etc/cmdline && TYPE="BASE"
+grep -q /imgbase/Base /etc/cmdline && TYPE="BASE"
 
 # backup my UUID
 if get_image_uuid $TYPE $MAC $SRV
