@@ -77,8 +77,14 @@ pretty_failure() {
 }
 
 return_success_or_failure() {
-    if [ "$1" -eq "0" ]; then
-	pretty_success
+    if [ "$1" -eq "0" ]
+    then
+	if [ ! -z "$2" ]
+	then
+	    pretty_green "$2\n"
+	else
+	    pretty_success
+	fi
 	return 0
     else
 	pretty_failure
@@ -117,12 +123,18 @@ server_command_loop() {
     while [ "$tries" -ne "0" ]
     do
 	ANSWER=`echo -en "$question\00Mc:$mac" | nc -p 1001 -w 2 $srv 1001 2>/dev/null`
-	[ "$?" -eq "0" ] && [ ! -z "$ANSWER" ] && [ ! "$ANSWER" == "ERROR" ] && break
+	exitcode=$?
+	status=0 # preset exit code
+	[ "$exitcode" -eq "0" ] && [ ! -z "$ANSWER" ] && [ ! "$ANSWER" == "ERROR" ] && break
+	# LRS : don't care if no answer was given
+	[ "$exitcode" -eq "0" ] && lrs && break
+	status=1
 	echo -en "."
 	tries=$(($tries - 1 ))
 	sleep $interval
     done
     export ANSWER
+    return $status
 }
 
 done_image() {
@@ -150,7 +162,7 @@ get_image_uuid() {
 
     pretty_try "Asking for an image UUID"
     server_command_loop "\354$type" $mac $srv
-    return_success_or_failure $?
+    return_success_or_failure $? $ANSWER
 }
 
 get_computer_hostname() {
@@ -159,7 +171,7 @@ get_computer_hostname() {
 
     pretty_try "Asking for my hostname"
     server_command_loop "\032" $mac $srv
-    return_success_or_failure $?
+    return_success_or_failure $? $ANSWER
 }
 
 get_computer_uuid() {
@@ -168,7 +180,7 @@ get_computer_uuid() {
 
     pretty_try "Asking for my UUID"
     server_command_loop "\033" $mac $srv
-    return_success_or_failure $?
+    return_success_or_failure $? $ANSWER
 }
 
 send_log() {
@@ -185,7 +197,7 @@ get_rdate() {
 
     pretty_try "Getting current time from $SRV"
     rdate $srv 2>/dev/null 1>/dev/null
-    return_success_or_failure $?
+    return_success_or_failure $? "`date '+%Y-%m-%d %H:%M:%S'`"
 }
 
 check_nfs() {
@@ -208,4 +220,13 @@ check_nfs() {
 	cat /etc/netinfo.log
 	return 1
     fi
+}
+
+lrs () {
+    grep -vq " revobase=" /proc/cmdline
+}
+
+getmac() {
+    MAC=`cat /etc/shortmac`
+    export MAC
 }
