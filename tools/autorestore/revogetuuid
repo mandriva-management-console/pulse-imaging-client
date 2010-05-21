@@ -27,6 +27,9 @@ MAC=`cat /etc/mac`
 . /usr/lib/revolib.sh
 . /etc/netinfo.sh
 
+# give up is LRS is spotted
+lrs && exit 0
+
 SRV=$Next_server
 
 COMPUTER_UUID=`grep revouuid /etc/cmdline | sed 's|.*revouuid=\([^ ]*\).*|\1|'`
