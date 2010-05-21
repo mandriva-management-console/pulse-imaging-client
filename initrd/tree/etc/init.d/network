@@ -5,7 +5,7 @@
 pretty_try "Configuring and Starting Network"
 
 # Localhost
-ifconfig lo 127.0.0.1 && pretty_blue "lo "
+ifconfig lo 127.0.0.1 && pretty_green "lo "
 
 # CDROM restore ?
 grep -q revosavedir=/cdrom /proc/cmdline && NOPUMP=1
@@ -46,7 +46,7 @@ echo $ETH >/etc/eth
 # dhcp
 if ifconfig $ETH up 2>/dev/null
 then
-    pretty_blue "$ETH\n"
+    pretty_green "$ETH\n"
 else
     # iface not found : give up
     pretty_red "$ETH\n"
