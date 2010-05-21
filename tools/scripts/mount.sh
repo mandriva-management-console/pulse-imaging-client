@@ -24,8 +24,6 @@
 #
 # Mount helper script
 #
-# $Id$
-#
 
 TYPE=nfs
 . /usr/lib/revolib.sh
@@ -48,40 +46,46 @@ if [ ! -z "$PREFIX" ]; then
 
     # get the base image dir
     SAVEDIR=`grep revosavedir /etc/cmdline | sed 's|.*revosavedir=\([^ ]*\).*|\1|'`
-    if [ -z "$SAVEDIR" ]; then
-	whiptail --title 'Error' --msgbox '   It seems that something weird happened : \n\n\n        I did not received SAVEDIR\n\n\n  Please contact your system administrator.\n\n          Press any key to reboot.' 15 50
+    if [ -z "$SAVEDIR" ]
+    then
+        whiptail --title 'Error' --msgbox '   It seems that something weird happened : \n\n\n        I did not received SAVEDIR\n\n\n  Please contact your system administrator.\n\n          Press any key to reboot.' 15 50
         exit 1
     fi
 
     # get the base info dir
     INFODIR=`grep revoinfodir /etc/cmdline | sed 's|.*revoinfodir=\([^ ]*\).*|\1|'`
-    if [ -z "$INFODIR" ]; then
-	whiptail --title 'Error' --msgbox '   It seems that something weird happened : \n\n\n        I did not received INFODIR\n\n\n  Please contact your system administrator.\n\n          Press any key to reboot.' 15 50
+    if [ -z "$INFODIR" ]
+    then
+        whiptail --title 'Error' --msgbox '   It seems that something weird happened : \n\n\n        I did not received INFODIR\n\n\n  Please contact your system administrator.\n\n          Press any key to reboot.' 15 50
         exit 1
     fi
 
     # get the computer UUID
     COMPUTER_UUID=`cat /etc/COMPUTER_UUID`
-    if [ -z "$COMPUTER_UUID" ]; then
-	whiptail --title 'Error' --msgbox '   It seems that something weird happened : \n\n\n     I did not received a Computer UUID\n\n\n  Please contact your system administrator.\n\n          Press any key to reboot.' 15 50
+    if [ -z "$COMPUTER_UUID" ]
+    then
+        whiptail --title 'Error' --msgbox '   It seems that something weird happened : \n\n\n     I did not received a Computer UUID\n\n\n  Please contact your system administrator.\n\n          Press any key to reboot.' 15 50
         exit 1
     fi
     INFODIR="/$INFODIR/$COMPUTER_UUID"
 
-    if [ -z "$I_M_RESTORING" ]; then # get the image UUID, if we are saving
-	IMAGE_UUID=`cat /etc/IMAGE_UUID`
-	if [ -z "$IMAGE_UUID" ]; then
-	    whiptail --title 'Error' --msgbox '   It seems that something weird happened : \n\n\n     I did not received an Image UUID\n\n\n  Please contact your system administrator.\n\n          Press any key to reboot.' 15 50
+    if [ -z "$I_M_RESTORING" ]
+    then # get the image UUID, if we are saving
+        IMAGE_UUID=`cat /etc/IMAGE_UUID`
+        if [ -z "$IMAGE_UUID" ]
+        then
+	        whiptail --title 'Error' --msgbox '   It seems that something weird happened : \n\n\n     I did not received an Image UUID\n\n\n  Please contact your system administrator.\n\n          Press any key to reboot.' 15 50
             exit 1
-	fi
-	SAVEDIR="/$SAVEDIR/$IMAGE_UUID"
+	    fi
+	    SAVEDIR="/$SAVEDIR/$IMAGE_UUID"
     else # image uuid given on the command line
-	IMAGE_UUID=`grep revoimage /etc/cmdline | sed 's|.*revoimage=\([^ ]*\).*|\1|'`
-	if [ -z "$IMAGE_UUID" ]; then
-	    whiptail --title 'Error' --msgbox '   It seems that something weird happened : \n\n\n      I did not received an Image UUID\n\n\n  Please contact your system administrator.\n\n          Press any key to reboot.' 15 50
+	    IMAGE_UUID=`grep revoimage /etc/cmdline | sed 's|.*revoimage=\([^ ]*\).*|\1|'`
+	    if [ -z "$IMAGE_UUID" ]
+        then
+	        whiptail --title 'Error' --msgbox '   It seems that something weird happened : \n\n\n      I did not received an Image UUID\n\n\n  Please contact your system administrator.\n\n          Press any key to reboot.' 15 50
             exit 1
-	fi
-	SAVEDIR="/$SAVEDIR/$IMAGE_UUID"
+	    fi
+	    SAVEDIR="/$SAVEDIR/$IMAGE_UUID"
     fi
 
 else
@@ -90,16 +94,11 @@ else
 
     # directories below the NFS prefix
     SAVEDIR=`grep revosavedir /etc/cmdline | sed 's|.*revosavedir=\([^ ]*\).*|\1|'`
-    INFODIR="$SAVEDIR"
-
-    # shared backup ?
-    if echo $SAVEDIR | grep -q /imgbase; then
-        INFODIR="/images/$MAC"
-    fi
+    INFODIR="/images/$MAC"
 
 fi
 
-pretty_info "Mounting Storage directory :"
+pretty_warn "Mounting Storage directory"
 while ! mount-$TYPE.sh $SRV $PREFIX $SAVEDIR $INFODIR
 do
     sleep 1
