@@ -26,15 +26,17 @@
 #
 
 
-# Functions which can be intersting in the postinst scripts
+# Functions which can be interesting in the postinst scripts
 
 . /usr/lib/revolib.sh
 . /opt/lib/libpostinst.sh
 
+getmac
+
 # 1st execute the global preinst
 if [ -r /revoinfo/preinst ]
 then
-    pretty_info "Executing global preinst script"
+    pretty_warn "Executing global preinst script"
     /bin/revosendlog 6
     . /revoinfo/preinst
     /bin/revosendlog 7
@@ -46,17 +48,17 @@ then
     # then the local image postinst
     if [ -r /revosave/postinst ]
     then
-        pretty_info "Executing local image postinst script"
+        pretty_warn "Executing local image postinst script"
         /bin/revosendlog 6
         set -v
         . /revosave/postinst
         set +v
         /bin/revosendlog 7
     fi
-else
+
 # or the local postinst
     if [ -r /revoinfo/$MAC/postinst ] ;then
-        pretty_info "Executing local postinst script"
+        pretty_warn "Executing local postinst script"
         /bin/revosendlog 6
         set -v
         . /revoinfo/$MAC/postinst
@@ -68,7 +70,7 @@ fi
 # and finally the global postinst
 if [ -r /revoinfo/postinst ]
 then
-    pretty_info "Executing global postinst script"
+    pretty_warn "Executing global postinst script"
     /bin/revosendlog 6
     . /revoinfo/postinst
     /bin/revosendlog 7
