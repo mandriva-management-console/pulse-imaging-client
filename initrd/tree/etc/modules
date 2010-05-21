@@ -3,10 +3,10 @@
 # misc dependencies
 8390
 crc-ccitt
-crc32c
 crypto
 crypto_algapi
 crypto_hash
+crc32c
 i2c-core
 i2c-algo-bit
 libcrc32c
