@@ -27,6 +27,8 @@ done
 
 # let the time for card init
 sleep 2
+pretty_success
+exit
 
 cat $F |
 while read module args
