@@ -38,6 +38,9 @@ SRV=$Next_server
 
 [ -z "$SRV" ] && exit 1
 
+# skip unless in pulse 2 env
+lrs && exit 0
+
 if done_image $UUID $MAC $SRV
 then
     exit 0
