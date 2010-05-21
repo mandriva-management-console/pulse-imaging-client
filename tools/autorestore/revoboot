@@ -359,8 +359,7 @@ get_rdate $SRV
 revogetname
 
 # try to get the UUID
-revogetuuid
-COMPUTER_UUID=`cat /etc/COMPUTER_UUID`
+revogetuuid && COMPUTER_UUID=`cat /etc/COMPUTER_UUID 2>/dev/null`
 
 # get the warning message
 get_warn_message
