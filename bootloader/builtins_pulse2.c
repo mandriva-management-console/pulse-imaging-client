@@ -1239,7 +1239,7 @@ int identify_func(char *arg, int flags) {
         title_prompt = "\n\
 ออออออออออออต  Register a computer with a Pulse 2 Imaging Server  ฦอออออออออออออ\n\
 \n\
-    When registrering the client computer, if the ID respects the\n\
+    When registering the client computer, if the ID respects the\n\
     following format :\n\
 \n\
         <profile>:/<entity_A>/<entity_B>/<computer-name>\n\
