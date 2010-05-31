@@ -226,6 +226,10 @@ lrs () {
     grep -vq " revobase=" /proc/cmdline
 }
 
+standalone() {
+    grep -q " revosavedir=/cdrom " /proc/cmdline
+}
+
 getmac() {
     MAC=`cat /etc/shortmac`
     export MAC
