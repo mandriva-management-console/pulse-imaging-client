@@ -362,16 +362,16 @@ if [ "$SRV" = "0.0.0.0" ]; then
 fi
 
 # date
-get_rdate $SRV
+standalone || get_rdate $SRV
 
 # try to get the name
-revogetname
+standalone || revogetname
 
 # try to get the UUID
-revogetuuid && COMPUTER_UUID=`cat /etc/COMPUTER_UUID 2>/dev/null`
+standalone || revogetuuid && COMPUTER_UUID=`cat /etc/COMPUTER_UUID 2>/dev/null`
 
 # get the warning message
-get_warn_message
+standalone || get_warn_message
 
 # Restore => mount a tmpfs
 if grep -q revorestore /etc/cmdline
