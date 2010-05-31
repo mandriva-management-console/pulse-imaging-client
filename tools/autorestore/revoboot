@@ -29,9 +29,6 @@
 
 # Wait for the interface to be configured
 checkip() {
-# CDROM restore ?
-    grep -q revosavedir=/cdrom /proc/cmdline && return
-
     SEC=0
     MAXSEC=45
 
@@ -344,7 +341,7 @@ ulimit -c 100000
 [ ! -f /etc/cmdline ] && cp -f /proc/cmdline /etc
 ETH=`cat /etc/eth`
 BASE="/tftpboot/revoboot"
-grep -q revodebug /etc/cmdline || checkip
+grep -q revodebug /etc/cmdline || standalone || checkip
 MAC=`cat /etc/shortmac`
 [ ! -f /etc/netinfo.log ] && pump -i $ETH -s >/etc/netinfo.log
 [ -f /etc/netinfo.fake ] && mv -f /etc/netinfo.fake /etc/netinfo.log
@@ -413,7 +410,7 @@ then
 
     # Now backup/restore
     grep -q revorestore /etc/cmdline && do_restore
-    grep -q revopost /etc/cmdline || do_backup
+    grep -q revopost /etc/cmdline || standalone || do_backup
 fi
 
 # Postinstall
