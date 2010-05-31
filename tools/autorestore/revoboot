@@ -314,15 +314,24 @@ identify()
 # mount a CDROM drive for restoration
 mount_cdrom()
 {
+    pretty_info "Mounting CDROM"
     cd /lib/modules/cd/
-    for i in *; do insmod $i; done
+    for i in *
+    do
+	insmod $i
+    done
     sleep 5
     for i in hdc hda hdb hdd scd0 scd1
     do
-        wecho "Trying to find CDROM on $i"
+        pretty_try "Trying to find CDROM on $i"
         ln -sf /dev/$i /dev/cdrom
         mount -t iso9660 /dev/$i /revosave
-        [ -r /revosave/conf.txt ] && break
+        if [ -r /revosave/conf.txt ]
+	then
+	    pretty_success
+	    break
+	fi
+	pretty_failure
         sleep 2
     done
     cp /revosave/conf.txt /tmp
@@ -380,11 +389,7 @@ then
 fi
 
 # Restore from CDROM ?
-if grep -q revosavedir=/cdrom /etc/cmdline
-then
-    pretty_info "Mounting CDROM"
-    mount_cdrom
-fi
+standalone && mount_cdrom
 
 # Debug ?
 if grep -q revodebug /etc/cmdline
