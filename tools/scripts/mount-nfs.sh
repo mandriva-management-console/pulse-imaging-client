@@ -36,8 +36,7 @@ INFODIR=$4
 [ -n "$Option_177" ] && SIP=`echo $Option_177|cut -d : -f 1`
 
 sleep 1
-check_nfs $SIP
-# TODO : check return code, then reboot if necessary
+check_nfs $SIP || exit 1
 
 # NFS base options
 NFSOPT="hard,intr,ac,nfsvers=3,async,nolock"
