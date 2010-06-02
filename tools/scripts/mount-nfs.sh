@@ -78,25 +78,56 @@ then
     pretty_try "Using as backup dir"
     pretty_blue "$SIP:$PREFIX\n"
     pretty_try "Mounting /revoinfo"
-    mount -t nfs $SIP:$PREFIX$INFODIR /revoinfo -o $NFSOPT
-    pretty_success
-    # TODO: check code, take measures
+    if ! grep -q "^/revoinfo " /etc/mtab
+    then
+	mount -t nfs $SIP:$PREFIX$INFODIR /revoinfo -o $NFSOPT 2>/dev/null
+	if [ "$?" -eq "0" ]
+	then
+	    pretty_success
+	else
+	    pretty_failure
+	    exit 1
+	fi
+    fi
+
     pretty_try "Mounting /revosave"
-    mount -t nfs $SIP:$PREFIX$SAVEDIR /revosave -o $NFSOPT
-    pretty_success
-    # TODO: check code, take measures
+    if grep -q "^/revosave " /etc/mtab
+    then
+	mount -t nfs $SIP:$PREFIX$SAVEDIR /revosave -o $NFSOPT 2>/dev/null
+	if [ "$?" -eq "0" ]
+	then
+	    pretty_success
+	else
+	    pretty_failure
+	    exit 1
+	fi
+    fi
 else
     pretty_info "Using Option 177 as backup dir :"
     pretty_blue "$Option_177\n"
     pretty_try "Mounting /revoinfo"
-    mount -t nfs $Option_177$INFODIR /revoinfo -o $NFSOPT
-    pretty_success
-    # TODO: check code, take measures
-    pretty_try "Mounting /revosave"
-    mount -t nfs $Option_177$SAVEDIR /revosave -o $NFSOPT
-    pretty_success
-    # TODO: check code, take measures
-fi
+    if grep -q "^/revoinfo " /etc/mtab
+    then
+	mount -t nfs $Option_177$INFODIR /revoinfo -o $NFSOPT 2>/dev/null
+	if [ "$?" -eq "0" ]
+	then
+	    pretty_success
+	else
+	    pretty_failure
+	    exit 1
+	fi
+    fi
 
-EXITCODE=$?
-exit $EXITCODE
+    pretty_try "Mounting /revosave"
+    if grep -q "^/revosave " /etc/mtab
+    then
+	mount -t nfs $Option_177$SAVEDIR /revosave -o $NFSOPT 2>/dev/null
+	if [ "$?" -eq "0" ]
+	then
+	    pretty_success
+	else
+	    pretty_failure
+	    exit 1
+	fi
+    fi
+fi
