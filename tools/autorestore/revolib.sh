@@ -220,7 +220,6 @@ check_nfs() {
 	return 0
     else
 	pretty_failure
-	pretty_error "The NFS service does not seem to work on $sip"
 	return 1
     fi
 }
