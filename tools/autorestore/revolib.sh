@@ -56,6 +56,10 @@ pretty_blue() {
     pretty_print "[0m"
 }
 
+pretty_error() {
+    pretty_red "==> $1\n"
+}
+
 pretty_warn() {
     pretty_orange "==> $1\n"
 }
@@ -216,8 +220,7 @@ check_nfs() {
 	return 0
     else
 	pretty_failure
-	pretty_warning "The NFS service does not seem to work on $sip; IP configuration :"
-	cat /etc/netinfo.log
+	pretty_error "The NFS service does not seem to work on $sip"
 	return 1
     fi
 }
