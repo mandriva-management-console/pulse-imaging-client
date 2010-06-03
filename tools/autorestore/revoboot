@@ -170,10 +170,6 @@ do_backup()
 do_postinst()
 {
     pretty_warn "Running Post Installation Phase"
-    if grep -q revorestore /etc/cmdline ;then
-        umount /revoinfo
-        umount /revosave
-    fi
     MAC=`cat /etc/shortmac`
     if [ -z "$COMPUTER_UUID" ]; then # LRS mode
 	echo -e "\n=== `date` ===" >> /revoinfo/$MAC/postinst.log
@@ -182,7 +178,6 @@ do_postinst()
 	echo -e "\n=== `date` ===" >> /revoinfo/postinst.log
 	/bin/dopostinst 2>&1 | tee -a /revoinfo/postinst.log
     fi
-    grep -q revodebug /etc/cmdline || umount /mnt 2>/dev/null
 }
 
 # whiptail echo
