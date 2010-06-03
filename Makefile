@@ -112,7 +112,6 @@ imaging: kernel bootloader tools initrd eltorito
 	cp -a $(FOLDER_TOOLS)/build/usr/lib/* $(INITRAMFS_FOLDER)/usr/lib/
 
 	# additionnal stuff under /bin
-	cp -a postinstall/bin/postmount $(INITRAMFS_FOLDER)/bin
 	cp -a postinstall/bin/dopostinst $(INITRAMFS_FOLDER)/bin
 	cp -a postinstall/bin/doinitinst $(INITRAMFS_FOLDER)/bin
 
