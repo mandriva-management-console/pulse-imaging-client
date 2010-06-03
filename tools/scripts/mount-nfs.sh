@@ -24,10 +24,11 @@
 #
 # Mount helper script for NFS
 
-SIP=$1
-PREFIX=$2
-SAVEDIR=$3
-INFODIR=$4
+SIP="$1"
+PREFIX="$2"
+SAVEDIR="$3"
+INFODIR="$4"
+OPTDIR="$5"
 
 . /usr/lib/revolib.sh
 # Get DHCP options
@@ -77,11 +78,11 @@ if [ -z "$Option_177" ]
 then
     pretty_try "Using as backup dir"
     pretty_blue "$SIP:$PREFIX\n"
-    pretty_try "Mounting /revoinfo"
-    if ! grep -q "^/revoinfo " /etc/mtab
+
+    if ! grep -q " /revoinfo " /proc/mounts
     then
-	mount -t nfs $SIP:$PREFIX$INFODIR /revoinfo -o $NFSOPT 2>/dev/null
-	if [ "$?" -eq "0" ]
+	pretty_try "Mounting /revoinfo"
+	if mount -t nfs $SIP:$PREFIX$INFODIR /revoinfo -o $NFSOPT 2>/dev/null
 	then
 	    pretty_success
 	else
@@ -90,11 +91,10 @@ then
 	fi
     fi
 
-    pretty_try "Mounting /revosave"
-    if grep -q "^/revosave " /etc/mtab
+    if ! grep -q " /revosave " /proc/mounts
     then
-	mount -t nfs $SIP:$PREFIX$SAVEDIR /revosave -o $NFSOPT 2>/dev/null
-	if [ "$?" -eq "0" ]
+	pretty_try "Mounting /revosave"
+	if mount -t nfs $SIP:$PREFIX$SAVEDIR /revosave -o $NFSOPT 2>/dev/null
 	then
 	    pretty_success
 	else
@@ -102,14 +102,32 @@ then
 	    exit 1
 	fi
     fi
+
+    if ! [ "$OPTDIR" == "/" ]
+    then
+	if ! grep -q " /opt " /proc/mounts
+	then
+	    pretty_try "Mounting /opt"
+	    if mount -t nfs  $SIP:$PREFIX$OPTDIR /opt -o $NFSOPT 2>/dev/null
+	    then
+		pretty_success
+	    else
+		pretty_failure
+		exit 1
+	    fi
+	fi
+    else
+	pretty_info "Not mounting /opt"
+    fi
+
 else
     pretty_info "Using Option 177 as backup dir :"
     pretty_blue "$Option_177\n"
-    pretty_try "Mounting /revoinfo"
-    if grep -q "^/revoinfo " /etc/mtab
+
+    if ! grep -q " /revoinfo " /proc/mounts
     then
-	mount -t nfs $Option_177$INFODIR /revoinfo -o $NFSOPT 2>/dev/null
-	if [ "$?" -eq "0" ]
+	pretty_try "Mounting /revoinfo"
+	if mount -t nfs $Option_177$INFODIR /revoinfo -o $NFSOPT 2>/dev/null
 	then
 	    pretty_success
 	else
@@ -118,16 +136,32 @@ else
 	fi
     fi
 
-    pretty_try "Mounting /revosave"
-    if grep -q "^/revosave " /etc/mtab
+    if ! grep -q " /revosave " /proc/mounts
     then
-	mount -t nfs $Option_177$SAVEDIR /revosave -o $NFSOPT 2>/dev/null
-	if [ "$?" -eq "0" ]
+	pretty_try "Mounting /revosave"
+	if mount -t nfs $Option_177$SAVEDIR /revosave -o $NFSOPT 2>/dev/null
 	then
 	    pretty_success
 	else
 	    pretty_failure
 	    exit 1
 	fi
+    fi
+
+    if [ ! -z "$OPTDIR" ]
+    then
+	if ! grep -q " /opt " /proc/mounts
+	then
+	    pretty_try "Mounting /opt"
+	    if mount -t nfs $Option_177$OPTDIR /opt -o $NFSOPT 2>/dev/null
+	    then
+		pretty_success
+	    else
+		pretty_failure
+		exit 1
+	    fi
+	fi
+    else
+	pretty_info "Not mounting /opt"
     fi
 fi

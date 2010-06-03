@@ -52,6 +52,11 @@ if [ ! -z "$PREFIX" ]; then
     INFODIR=`grep revoinfodir /etc/cmdline | sed 's|.*revoinfodir=\([^ ]*\).*|\1|'`
     [ -z "$INFODIR" ] && fatal_error "I did not received INFODIR from $SRV"
 
+    # get the base opt dir
+    # OPTDIR is not mandatory
+    OPTDIR=`grep revooptdir /etc/cmdline | sed 's|.*revooptdir=\([^ ]*\).*|\1|'`
+    OPTDIR="/$OPTDIR"
+
     # get the computer UUID
     COMPUTER_UUID=`cat /etc/COMPUTER_UUID`
     [ -z "$COMPUTER_UUID" ] && fatal_error "I did not received a Computer UUID from $SRV"
@@ -63,11 +68,11 @@ if [ ! -z "$PREFIX" ]; then
         [ -z "$IMAGE_UUID" ] && fatal_error "I did not received an Image UUID from $SRV"
 	SAVEDIR="/$SAVEDIR/$IMAGE_UUID"
     else # image uuid given on the command line
-	    IMAGE_UUID=`grep revoimage /etc/cmdline | sed 's|.*revoimage=\([^ ]*\).*|\1|'`
-	    [ -z "$IMAGE_UUID" ]&& fatal_error "I did not received an Image UUID from $SRV"
-	    SAVEDIR="/$SAVEDIR/$IMAGE_UUID"
+        IMAGE_UUID=`grep revoimage /etc/cmdline | sed 's|.*revoimage=\([^ ]*\).*|\1|'`
+	[ -z "$IMAGE_UUID" ]&& fatal_error "I did not received an Image UUID from $SRV"
+	SAVEDIR="/$SAVEDIR/$IMAGE_UUID"
     fi
-
+    
 else
     # uses the original boot file name to guess the NFS prefix ("LRS mode")
     PREFIX=`echo $Boot_file | sed 's|/revoboot.pxe$||' | sed 's|/bin$||'`
@@ -75,11 +80,11 @@ else
     # directories below the NFS prefix
     SAVEDIR=`grep revosavedir /etc/cmdline | sed 's|.*revosavedir=\([^ ]*\).*|\1|'`
     INFODIR="/images/$MAC"
-
+    OPTDIR="/lib/util"
 fi
 
 pretty_warn "Mounting Storage directory"
-while ! mount-$TYPE.sh $SRV $PREFIX $SAVEDIR $INFODIR
+while ! mount-$TYPE.sh "$SRV" "$PREFIX" "$SAVEDIR" "$INFODIR" "$OPTDIR"
 do
     sleep 1
 done
