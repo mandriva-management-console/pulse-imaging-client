@@ -362,10 +362,11 @@ fi
 standalone || get_rdate $SRV
 
 # try to get the name
-standalone || revogetname
+standalone || revogetname || fatal_error "Can't get my hostname : please make sure everything is OK on $SRV"
 
 # try to get the UUID
-standalone || revogetuuid && COMPUTER_UUID=`cat /etc/COMPUTER_UUID 2>/dev/null`
+standalone || revogetuuid || fatal_error "Can't get my UUID : please make sure everything is OK on $SRV"
+COMPUTER_UUID=`cat /etc/COMPUTER_UUID 2>/dev/null`
 
 # get the warning message
 standalone || get_warn_message

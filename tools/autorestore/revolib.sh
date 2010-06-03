@@ -96,6 +96,15 @@ return_success_or_failure() {
     fi
 }
 
+fatal_error() {
+    msg="$1"
+    whiptail \
+	--title 'Fatal Error' \
+	--msgbox "   It seems that something weird happened : \n\n\n$msg\n\n\n  Please contact your system administrator.\n\n          Press any key to reboot." \
+	16 60
+    /sbin/reboot
+}
+
 probe_server() {
     srv=$1
 
