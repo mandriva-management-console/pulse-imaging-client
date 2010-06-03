@@ -130,12 +130,9 @@ get_warn_message() {
 # Pre-install (init-inst in fact)
 do_pre_inst()
 {
-    # temporally disabled !
-    return
 
     if grep -q revopost /etc/cmdline ; then
 	pretty_warn "Running Pre Installation Phase"
-        /bin/postmount
         MAC=`cat /etc/shortmac`
 	if [ -z "$COMPUTER_UUID" ]; then # LRS mode
 	    echo -e "\n=== `date` ===" >> /revoinfo/$MAC/postinst.log
@@ -145,10 +142,6 @@ do_pre_inst()
             /bin/doinitinst 2>&1 | tee -a /revoinfo/postinst.log
 	fi
         umount /mnt 2>/dev/null
-        sleep 5
-        umount /opt
-        umount /revoinfo
-        umount /revosave
     fi
 }
 
@@ -181,7 +174,6 @@ do_postinst()
         umount /revoinfo
         umount /revosave
     fi
-    /bin/postmount
     MAC=`cat /etc/shortmac`
     if [ -z "$COMPUTER_UUID" ]; then # LRS mode
 	echo -e "\n=== `date` ===" >> /revoinfo/$MAC/postinst.log
@@ -191,7 +183,6 @@ do_postinst()
 	/bin/dopostinst 2>&1 | tee -a /revoinfo/postinst.log
     fi
     grep -q revodebug /etc/cmdline || umount /mnt 2>/dev/null
-    sleep 5
 }
 
 # whiptail echo
@@ -400,7 +391,8 @@ fi
 grep -q revocdrom /etc/cmdline && do_cdrom
 
 # launch initial pre-inst scripts
-[ -x /bin/postmount ] && do_pre_inst
+# disabled for now
+# do_pre_inst
 
 # Backup / Restore
 if grep -q revosavedir /etc/cmdline
@@ -415,7 +407,7 @@ then
 fi
 
 # Postinstall
-grep -q revopost /etc/cmdline && [ -x /bin/postmount ] && do_postinst
+grep -q revopost /etc/cmdline && do_postinst
 
 # Drop to a shell
 grep -q revodebug /etc/cmdline || reboot
