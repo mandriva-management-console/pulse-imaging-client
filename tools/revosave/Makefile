@@ -100,5 +100,8 @@ liblrs.a: $(LIBOBJ)
 
 include .depend
 
+check-syntax:
+	$(CC) $(CFLAGS) -pedantic -fsyntax-only *.c
+
 clean:
 	$(RM) -f liblrs.so.1 liblrs.so $(IMGFILES) liblrs.a $(LIBOBJ)  $(OBJS) $(OBJ)

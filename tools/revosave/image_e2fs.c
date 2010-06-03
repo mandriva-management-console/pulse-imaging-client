@@ -125,12 +125,12 @@ static void list_desc(ext2_filsys fs, PARAMS * p) {
     sect_per_block = blocks_size / 512;
     assert(sect_per_block > 0);
 
-    /* number of block in the filesystem 
+    /* number of block in the filesystem
        (counting reserved blocks) */
 #ifdef HAVE_EXT2FS_BLOCK_COUNT
     blocks_count = ext2fs_blocks_count(fs);
 #else
-    /* Without ext2fs_blocks_count(), 
+    /* Without ext2fs_blocks_count(),
        64bit filesystem are not supported */
     blocks_count = fs->super->s_blocks_count;
 #endif
@@ -157,7 +157,7 @@ static void list_desc(ext2_filsys fs, PARAMS * p) {
                                             blocks_bitmap);
         assert(ret == 0);
 
-        /* get absolute block index for this group 
+        /* get absolute block index for this group
          * first block will be 1
          * last block could be 8192 for the first group,
          *  if 8912 block per group
