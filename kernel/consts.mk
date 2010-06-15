@@ -12,7 +12,7 @@ URI_E1000			= http://downloadmirror.intel.com/9180/eng
 FOLDER_E1000			= e1000-$(VERSION_E1000)/src
 TARBALL_E1000			= e1000-$(VERSION_E1000).tar.gz
 
-VERSION_E1000e			= 1.1.2.1a
+VERSION_E1000e			= 1.1.19
 URI_E1000e			= http://downloadmirror.intel.com/15817/eng
 FOLDER_E1000e			= e1000e-$(VERSION_E1000e)/src
 TARBALL_E1000e			= e1000e-$(VERSION_E1000e).tar.gz
