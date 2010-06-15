@@ -17,7 +17,7 @@ URI_E1000e			= http://downloadmirror.intel.com/15817/eng
 FOLDER_E1000e			= e1000e-$(VERSION_E1000e)/src
 TARBALL_E1000e			= e1000e-$(VERSION_E1000e).tar.gz
 
-VERSION_IGB			= 2.1.9
+VERSION_IGB			= 2.2.9
 URI_IGB				= http://downloadmirror.intel.com/13663/eng
 FOLDER_IGB			= igb-$(VERSION_IGB)/src
 TARBALL_IGB			= igb-$(VERSION_IGB).tar.gz
