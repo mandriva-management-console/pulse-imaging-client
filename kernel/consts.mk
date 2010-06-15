@@ -48,8 +48,8 @@ FOLDER_570X			= tg3-$(VERSION_570X)
 ARCHIVE_570X			= linux-$(VERSION_570X).zip
 TARBALL_570X			= tg3-$(VERSION_570X).tar.gz
 
-VERSION_NXII			= 2.0.8b_1.52.12
+VERSION_NXII			= 2.0.8e
 URI_NXII			= http://www.broadcom.com/docs/driver_download/NXII
-FOLDER_NXII			= netxtreme2-5.2.50/bnx2/src
+FOLDER_NXII			= netxtreme2-5.2.55/bnx2/src
 ARCHIVE_NXII			= linux-$(VERSION_NXII).zip
-TARBALL_NXII			= netxtreme2-5.2.50.tar.gz
+TARBALL_NXII			= netxtreme2-5.2.55.tar.gz
