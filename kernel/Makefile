@@ -30,7 +30,7 @@ include consts.mk
 
 all: kernel modules
 
-kernel:
+kernel: rdev
 	# preparation
 	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_LINUXKERNEL) ] || wget $(URI_LINUXKERNEL)/$(TARBALL_LINUXKERNEL) -P $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) ] || tar jxf $(3RDPARTY_FOLDER)/$(TARBALL_LINUXKERNEL) -C $(BUILD_FOLDER)
@@ -39,7 +39,7 @@ kernel:
 	# kernel build
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) ARCH=$(ARCHITECTURE) all
 	cp -aL $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/arch/i386/boot/bzImage $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV)
-	/usr/sbin/rdev $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) /dev/ram0
+	./rdev $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) /dev/ram0
 
 	# gather mandatory modules
 	rm -f $(BUILD_FOLDER)/modules/*.ko
@@ -131,7 +131,7 @@ module_nxii:
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) CC=$(CC) ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_NXII) LINUXSRC=../$(FOLDER_LINUXKERNEL)
 	cp -f $(BUILD_FOLDER)/$(FOLDER_NXII)/bnx2.ko build/modules
 
-clean: modules_clean
+clean: modules_clean rdev_clean
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) clean
 
 dist-clean:
@@ -159,3 +159,11 @@ modules_clean:
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_NXII)	KSRC=../$(FOLDER_LINUXKERNEL)
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_SK98)	KSRC=../$(FOLDER_LINUXKERNEL)
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_570X)	KSRC=../$(FOLDER_LINUXKERNEL)
+
+rdev: rdev.c
+	gcc -Wall -o rdev rdev.c
+
+rdev_clean:
+	rm -f rdev
+
+
