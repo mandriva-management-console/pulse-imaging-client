@@ -60,11 +60,18 @@
 #include "client.h"
 #include <assert.h>
 
+#include <string.h>
+#include <errno.h>
+
 #define in_use(m, x)    (ext2fs_test_bit ((x), (m)))
 
 #define _(a) a
 
 char info1[32], info2[32];
+
+const char *program_name = "image_e2fs";
+
+const char *device_name = NULL;
 
 static void setbit(unsigned char *p,
                    unsigned long long num, unsigned long limit) {
@@ -138,7 +145,11 @@ static void list_desc(ext2_filsys fs, PARAMS * p) {
     assert(p->bitmaplg > 0);
 
     p->bitmap = (unsigned char *)calloc(p->bitmaplg, 1);
-    assert(p->bitmap != NULL);
+    if (p->bitmap == NULL) {
+        debug(_("%s can't allocate %lu bytes for filesystem '%s': %s\n"),
+              program_name, p->bitmaplg, device_name, strerror(errno));
+        exit(1);
+    }
 
     ptr = 0;
     used = 0;
@@ -203,13 +214,15 @@ static void list_desc(ext2_filsys fs, PARAMS * p) {
 int main(int argc, char **argv) {
     errcode_t retval;
     ext2_filsys fs = NULL;
-    char *device_name;
     PARAMS p;
     int big_endian;
     int fd;
 
+    program_name = argv[0];
+
     if (argc != 3) {
-        fprintf(stderr, "Usage : image_e2fs [device] [image prefix name]\n");
+        fprintf(stderr, "Usage : %s [device] [image prefix name]\n",
+                program_name);
         exit(1);
     }
 
