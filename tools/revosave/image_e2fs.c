@@ -109,7 +109,7 @@ static void list_desc(ext2_filsys fs, PARAMS * p) {
     blk_t first_block;
     blk_t last_block;
 
-    errcode_t ret;
+    errcode_t retval;
 
     assert(fs != NULL);
     assert(p != NULL);
@@ -163,10 +163,15 @@ static void list_desc(ext2_filsys fs, PARAMS * p) {
     for (i = 0; i < fs->group_desc_count; i++) {
 
         /* get bitmap data of allocated blocks in current group */
-        ret = ext2fs_get_block_bitmap_range(fs->block_map,
-                                            blk_itr, blocks_bitmap_len * 8,
-                                            blocks_bitmap);
-        assert(ret == 0);
+        retval = ext2fs_get_block_bitmap_range(fs->block_map,
+                                               blk_itr, blocks_bitmap_len * 8,
+                                               blocks_bitmap);
+        if (retval != 0) {
+            com_err(program_name, retval,
+                    _("while trying to read bitmap from '%s'"), device_name);
+            debug(_("Error while reading bitmap\n"));
+            exit(1);
+        }
 
         /* get absolute block index for this group
          * first block will be 1
@@ -233,7 +238,9 @@ int main(int argc, char **argv) {
     retval = ext2fs_open(device_name, 0, 0, 0, unix_io_manager, &fs);
 
     if (retval) {
-        debug(_("Couldn't find valid filesystem superblock.\n"));
+        com_err(program_name, retval, _("while trying to open '%s'"),
+                device_name);
+        debug(_("Couldn't open filesystem, leaving.\n"));
         exit(1);
     }
 
@@ -245,6 +252,8 @@ int main(int argc, char **argv) {
 
     retval = ext2fs_read_bitmaps(fs);
     if (retval) {
+        com_err(program_name, retval, _("while reading bitmap from '%s'"),
+                device_name);
         debug(_("Couldn't read bitmaps.\n"));
         ext2fs_close(fs);
         exit(1);

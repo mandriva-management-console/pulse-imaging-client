@@ -30,8 +30,7 @@ LDFLAGS	=
 LIBLRS	= -L. -llrs
 LIBZ	= -lz
 RFSLIBS	= -L$(RFS_DIR)/reiserfscore -lcore -L$(RFS_DIR)/lib -lmisc
-LIBE2FS	= -lext2fs 
-# -lcom_err could be necessary with static linking
+LIBE2FS	= -lext2fs -lcom_err
 
 #
 # XXX in order to build a shared library, 
