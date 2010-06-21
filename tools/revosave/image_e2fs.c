@@ -53,6 +53,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <ctype.h>
 
 #include <ext2fs/ext2fs.h>
 
@@ -215,6 +216,35 @@ static void list_desc(ext2_filsys fs, PARAMS * p) {
     print_sect_info(blocks_count * sect_per_block, used);
 }
 
+/* extract the patchlevel from a version string:
+ * example: "1.41.12" = 12
+ */
+static int extract_patchlevel_version(const char *ver_string) {
+    const char *cp;
+    int version = 0, dot_count = 0;
+
+    for (cp = ver_string; *cp; cp++) {
+
+        if (*cp == '.') {
+            dot_count++;
+
+            if (dot_count > 2) {
+                break;
+            }
+            continue;
+        }
+
+        if (!isdigit(*cp))
+            break;
+
+        if (dot_count > 1) {
+            version = (version * 10) + (*cp - '0');
+        }
+    }
+
+    return version;
+}
+
 /*  */
 int main(int argc, char **argv) {
     errcode_t retval;
@@ -222,6 +252,13 @@ int main(int argc, char **argv) {
     PARAMS p;
     int big_endian;
     int fd;
+
+    int flags = 0;
+
+    int version;
+    int patchlevel;
+    const char *version_string;
+    const char *date_string;
 
     program_name = argv[0];
 
@@ -233,15 +270,71 @@ int main(int argc, char **argv) {
 
     initialize_ext2_error_table();
 
+    /* get e2fsprogs version */
+    version_string = NULL;
+    date_string = NULL;
+    version = ext2fs_get_library_version(&version_string, &date_string);
+
+    if (version_string != NULL || date_string != NULL) {
+        debug(_("- Using e2fsprogs"));
+
+        if (version_string != NULL) {
+            debug(_(" version %s"), version_string);
+        }
+
+        if (date_string != NULL) {
+            debug(_(" date %s"), date_string);
+        }
+
+        debug("\n");
+    }
+
     device_name = argv[1];
 
-    retval = ext2fs_open(device_name, 0, 0, 0, unix_io_manager, &fs);
+    flags = EXT2_FLAG_EXCLUSIVE;
+
+    retval = ext2fs_open(device_name, flags, 0, 0, unix_io_manager, &fs);
 
     if (retval) {
         com_err(program_name, retval, _("while trying to open '%s'"),
                 device_name);
         debug(_("Couldn't open filesystem, leaving.\n"));
         exit(1);
+    }
+
+    /* check for known feature at build time */
+    if ((fs->super->s_feature_compat & ~EXT2_LIB_FEATURE_COMPAT_SUPP) != 0 ||
+        (fs->super->s_feature_ro_compat & ~EXT2_LIB_FEATURE_RO_COMPAT_SUPP) != 0
+        || (fs->super->s_feature_incompat & ~EXT2_LIB_FEATURE_INCOMPAT_SUPP) !=
+        0) {
+        debug(_
+              ("Warning: probably some unknown feature on this filesystem, please report\n"));
+    }
+
+    /* check for ext4 features, then check
+     * for a supported e2fsprogs version */
+    if ((fs->super->s_feature_ro_compat & (EXT4_FEATURE_RO_COMPAT_GDT_CSUM |
+                                           EXT4_FEATURE_RO_COMPAT_HUGE_FILE |
+                                           EXT4_FEATURE_RO_COMPAT_DIR_NLINK)) ||
+        (fs->super->s_feature_incompat & (EXT3_FEATURE_INCOMPAT_EXTENTS |
+                                          EXT4_FEATURE_INCOMPAT_FLEX_BG))) {
+
+        debug(_("- ext4 features found\n"));
+
+        /* check library version
+         * anything less than 1.41 can't support ext4 
+         * anything less than 1.41.9 can't support ext4 "correctly"
+         * http://sourceforge.net/projects/e2fsprogs/forums/forum/7052/topic/3738703/index/page/1
+         */
+        patchlevel = extract_patchlevel_version(version_string);
+
+        if (version < 141 || (version == 141 && patchlevel < 9)) {
+            debug(_
+                  ("- unsupported library version for ext4, require at least 1.41.9\n"));
+            ext2fs_close(fs);
+
+            exit(1);
+        }
     }
 
     big_endian = ((fs->flags & EXT2_FLAG_SWAP_BYTES) != 0);
