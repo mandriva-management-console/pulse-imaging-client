@@ -161,7 +161,7 @@ modules_clean:
 	$(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) clean ARCH=$(ARCHITECTURE) SUBDIRS=../$(FOLDER_570X)	KSRC=../$(FOLDER_LINUXKERNEL)
 
 rdev: rdev.c
-	gcc -Wall -o rdev rdev.c
+	$(CC) -Wall -o rdev rdev.c
 
 rdev_clean:
 	rm -f rdev

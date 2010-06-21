@@ -1,5 +1,5 @@
 ARCHITECTURE			= i386
-CC				= gcc-3.4
+CC				= gcc
 
 VERSION_LINUXKERNEL		= 2.6.32.15
 URI_LINUXKERNEL     		= http://www.kernel.org/pub/linux/kernel/v2.6
