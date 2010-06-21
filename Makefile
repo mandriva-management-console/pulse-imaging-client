@@ -168,6 +168,7 @@ clean: target-clean
 	$(MAKE) clean -C $(FOLDER_KERNEL)
 	$(MAKE) clean -C $(FOLDER_TOOLS)
 	$(MAKE) clean -C $(FOLDER_INITRD)
+	$(MAKE) clean -C $(FOLDER_ELTORITO)
 
 dist-clean:
 	rm -fr $(INITRAMFS_FOLDER)
@@ -175,5 +176,6 @@ dist-clean:
 	$(MAKE) dist-clean -C $(FOLDER_KERNEL)
 	$(MAKE) dist-clean -C $(FOLDER_TOOLS)
 	$(MAKE) dist-clean -C $(FOLDER_INITRD)
+	$(MAKE) dist-clean -C $(FOLDER_ELTORITO)
 
 .PHONY: kernel bootloader tools initrd eltorito prebuild

@@ -47,7 +47,7 @@ all:
 
 clean:
 	$(MAKE) clean -C $(GRUB_FOLDER)
-	rm -f stage2_eltorito-$(SVNREV)
+	rm -f stage2_eltorito-*
 
 distclean:
 	$(MAKE) distclean -C $(GRUB_FOLDER)

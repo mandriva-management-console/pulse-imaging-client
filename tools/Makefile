@@ -106,6 +106,7 @@ clean:
 	rm -f $(BUILD_FOLDER)/bin/*
 	-rm -f $(BUILD_FOLDER)/lib/*
 	rm -f $(BUILD_FOLDER)/lib/modules/*.ko
+	rm -f $(BUILD_FOLDER)/usr/lib/revolib.sh
 
 dist-clean:
 	rm -fr $(BUILD_FOLDER)/$(REISER_FOLDER)
