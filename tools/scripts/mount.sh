@@ -25,6 +25,13 @@
 # Mount helper script
 #
 
+# STAGE represents the operation which is currently going on
+# its value can be "backup", "restore" or "postinst"
+# - backup :
+#    + 
+STAGE="$1"
+[ -n "$STAGE" ] && exit 1
+
 TYPE=nfs
 . /usr/lib/revolib.sh
 . /etc/netinfo.sh
@@ -32,16 +39,17 @@ TYPE=nfs
 # CDROM restoration: already mounted
 grep -q revosavedir=/cdrom /etc/cmdline && exit 0
 
-# Check if we are saving or restoring
-grep -q revorestore /etc/cmdline && I_M_RESTORING=1
-
 # get the mac address
 MAC=`cat /etc/shortmac`
 
-# Other restoration types
+# get server IP addr
 SRV=$Next_server
 
+# get mount prefix on server
 PREFIX=`grep revobase /etc/cmdline | sed 's|.*revobase=\([^ ]*\).*|\1|'`
+
+# prefix is not empty : Pulse 2 mode
+
 if [ ! -z "$PREFIX" ]; then
 
     # get the base image dir
@@ -88,5 +96,13 @@ while ! mount-$TYPE.sh "$SRV" "$PREFIX" "$SAVEDIR" "$INFODIR" "$OPTDIR"
 do
     sleep 1
 done
+
+# Restore => mount a tmpfs
+if grep -q revorestore /etc/cmdline
+then
+    pretty_info "Mounting a 96 MB tmpfs"
+    mount -t tmpfs -o size=96M tmpfs /tmpfs
+fi
+
 
 cat /proc/mounts | logger
