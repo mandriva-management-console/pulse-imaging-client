@@ -25,13 +25,6 @@
 # Mount helper script
 #
 
-# STAGE represents the operation which is currently going on
-# its value can be "backup", "restore" or "postinst"
-# - backup :
-#    + 
-STAGE="$1"
-[ -n "$STAGE" ] && exit 1
-
 TYPE=nfs
 . /usr/lib/revolib.sh
 . /etc/netinfo.sh
@@ -42,17 +35,26 @@ grep -q revosavedir=/cdrom /etc/cmdline && exit 0
 # get the mac address
 MAC=`cat /etc/shortmac`
 
-# get server IP addr
+# get server IP address
 SRV=$Next_server
 
 # get mount prefix on server
 PREFIX=`grep revobase /etc/cmdline | sed 's|.*revobase=\([^ ]*\).*|\1|'`
 # prefix is not empty : Pulse 2 mode, else LRS mode
 MODE="lrs"
-[ ! -z "$PREFIX" ] && MODE="pulse2"
+[ -n "$PREFIX" ] && MODE="pulse2"
+
+# default values : everything is initialized at '/', then mount-$TYPE.sh will do some cleanup
+SAVEDIR='/'  # the folder which contains the image itself
+INFODIR='/'  # the folder which contains target-related files
+OPTDIR='/'   # additional software
 
 if [ "$MODE" == 'pulse2' ]
 then
+    # get the computer UUID
+    COMPUTER_UUID=`cat /etc/COMPUTER_UUID`
+    [ -z "$COMPUTER_UUID" ] && fatal_error "I did not received a Computer UUID from $SRV"
+
     # get the base image dir
     SAVEDIR=`grep revosavedir /etc/cmdline | sed 's|.*revosavedir=\([^ ]*\).*|\1|'`
     [ -z "$SAVEDIR" ] && fatal_error "I did not received SAVEDIR from $SRV"
@@ -60,29 +62,23 @@ then
     # get the base info dir
     INFODIR=`grep revoinfodir /etc/cmdline | sed 's|.*revoinfodir=\([^ ]*\).*|\1|'`
     [ -z "$INFODIR" ] && fatal_error "I did not received INFODIR from $SRV"
-
-    # get the base opt dir
-    # OPTDIR is not mandatory
-    OPTDIR=`grep revooptdir /etc/cmdline | sed 's|.*revooptdir=\([^ ]*\).*|\1|'`
-    OPTDIR="/$OPTDIR"
-
-    # get the computer UUID
-    COMPUTER_UUID=`cat /etc/COMPUTER_UUID`
-    [ -z "$COMPUTER_UUID" ] && fatal_error "I did not received a Computer UUID from $SRV"
     INFODIR="/$INFODIR/$COMPUTER_UUID"
 
-    if [ -z "$I_M_RESTORING" ]
-    then # get the image UUID, if we are saving
-        IMAGE_UUID=`cat /etc/IMAGE_UUID`
-        [ -z "$IMAGE_UUID" ] && fatal_error "I did not received an Image UUID from $SRV"
-	SAVEDIR="/$SAVEDIR/$IMAGE_UUID"
-    else # image uuid given on the command line
-        IMAGE_UUID=`grep revoimage /etc/cmdline | sed 's|.*revoimage=\([^ ]*\).*|\1|'`
-	[ -z "$IMAGE_UUID" ]&& fatal_error "I did not received an Image UUID from $SRV"
-	SAVEDIR="/$SAVEDIR/$IMAGE_UUID"
-    fi
-    
-else
+    # get the base opt dir
+    OPTDIR=`grep revooptdir /etc/cmdline | sed 's|.*revooptdir=\([^ ]*\).*|\1|'`
+    [ -z "$OPTDIR" ] && fatal_error "I did not received OPTDIR from $SRV"
+    OPTDIR="/$OPTDIR"
+
+    # get the image UUID, if we are saving
+    IMAGE_UUID=`cat /etc/IMAGE_UUID`
+    [ -z "$IMAGE_UUID" ] && IMAGE_UUID=`grep revoimage /etc/cmdline | sed 's|.*revoimage=\([^ ]*\).*|\1|'`
+    [ -z "$IMAGE_UUID" ] && fatal_error "I did not received an Image UUID from $SRV"
+    SAVEDIR="/$SAVEDIR/$IMAGE_UUID"
+
+fi
+
+if [ "$MODE" == "lrs" ]
+then
     # uses the original boot file name to guess the NFS prefix ("LRS mode")
     PREFIX=`echo $Boot_file | sed 's|/revoboot.pxe$||' | sed 's|/bin$||'`
 
@@ -92,7 +88,7 @@ else
     OPTDIR="/lib/util"
 fi
 
-pretty_warn "Mounting Storage directory"
+pretty_warn "Mounting Storage Directories"
 while ! mount-$TYPE.sh "$SRV" "$PREFIX" "$SAVEDIR" "$INFODIR" "$OPTDIR"
 do
     sleep 1
@@ -104,6 +100,5 @@ then
     pretty_info "Mounting a 96 MB tmpfs"
     mount -t tmpfs -o size=96M tmpfs /tmpfs
 fi
-
 
 cat /proc/mounts | logger
