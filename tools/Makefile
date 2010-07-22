@@ -33,6 +33,7 @@ include consts.mk
 all: image save restore ui_newt bench ntblfix memtest deps
 	cp -a scripts/mount.sh 		$(BUILD_FOLDER)/bin
 	cp -a scripts/mount-nfs.sh 	$(BUILD_FOLDER)/bin
+	cp -a scripts/postinst.sh	$(BUILD_FOLDER)/bin
 
 deps:
 	# also copy the requiered stuff
