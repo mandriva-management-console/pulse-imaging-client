@@ -141,7 +141,6 @@ do_pre_inst()
 	    echo -e "\n=== `date` ===" >> /revoinfo/postinst.log
             /bin/doinitinst 2>&1 | tee -a /revoinfo/postinst.log
 	fi
-        umount /mnt 2>/dev/null
     fi
 }
 
@@ -154,7 +153,7 @@ do_restore()
     grep -q revontblfix /etc/cmdline && OPTS="--ntblfix $OPTS"
     grep -q revonospc /etc/cmdline && OPTS="--nospc $OPTS"
 
-    /bin/mount.sh && /bin/autorestore $OPTS
+    /bin/autorestore $OPTS
 }
 
 # Backup
@@ -163,7 +162,7 @@ do_backup()
     pretty_warn "Running Backup Phase"
     grep -q revoraw /etc/cmdline && OPTS=--raw
     /bin/revoinc
-    /bin/mount.sh && /bin/autosave $OPTS
+    /bin/autosave $OPTS
 }
 
 # Post-install
@@ -320,6 +319,11 @@ mount_cdrom()
     cp /revosave/conf.txt /tmp
 }
 
+mount_network()
+{
+    /bin/mount.sh
+}
+
 #
 # Env Set-up
 #
@@ -357,13 +361,6 @@ COMPUTER_UUID=`cat /etc/COMPUTER_UUID 2>/dev/null`
 # get the warning message
 standalone || get_warn_message
 
-# Restore => mount a tmpfs
-if grep -q revorestore /etc/cmdline
-then
-    pretty_info "Mounting a 96 MB tmpfs"
-    mount -t tmpfs -o size=96M tmpfs /tmpfs
-fi
-
 # compression level
 grep -q revonocomp /etc/cmdline
 if [ "$?" -eq "0" ]
@@ -372,8 +369,10 @@ then
     echo 0 >/etc/complevel
 fi
 
-# Restore from CDROM ?
+# from CDROM ?
 standalone && mount_cdrom
+# ... or not ?
+standalone || mount_network
 
 # Debug ?
 if grep -q revodebug /etc/cmdline
