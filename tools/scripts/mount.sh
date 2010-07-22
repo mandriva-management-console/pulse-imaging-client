@@ -47,11 +47,12 @@ SRV=$Next_server
 
 # get mount prefix on server
 PREFIX=`grep revobase /etc/cmdline | sed 's|.*revobase=\([^ ]*\).*|\1|'`
+# prefix is not empty : Pulse 2 mode, else LRS mode
+MODE="lrs"
+[ ! -z "$PREFIX" ] && MODE="pulse2"
 
-# prefix is not empty : Pulse 2 mode
-
-if [ ! -z "$PREFIX" ]; then
-
+if [ "$MODE" == 'pulse2' ]
+then
     # get the base image dir
     SAVEDIR=`grep revosavedir /etc/cmdline | sed 's|.*revosavedir=\([^ ]*\).*|\1|'`
     [ -z "$SAVEDIR" ] && fatal_error "I did not received SAVEDIR from $SRV"
