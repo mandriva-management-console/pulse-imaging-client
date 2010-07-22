@@ -79,8 +79,6 @@ install:
 	# everything is set RO
 	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/postinst -d
 	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/postinst/bin -d
-	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/bin/doinitinst $(VARDIR)/postinst/bin
-	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/bin/dopostinst $(VARDIR)/postinst/bin
 	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/bin/mountwin $(VARDIR)/postinst/bin
 	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/postinst/lib -d
 	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/lib/libpostinst.sh $(VARDIR)/postinst/lib
@@ -110,10 +108,6 @@ imaging: kernel bootloader tools initrd eltorito
 	cp -a $(FOLDER_TOOLS)/build/usr/bin/* $(INITRAMFS_FOLDER)/usr/bin/
 	cp -a $(FOLDER_TOOLS)/build/etc/init.d/* $(INITRAMFS_FOLDER)/etc/init.d/
 	cp -a $(FOLDER_TOOLS)/build/usr/lib/* $(INITRAMFS_FOLDER)/usr/lib/
-
-	# additionnal stuff under /bin
-	cp -a postinstall/bin/dopostinst $(INITRAMFS_FOLDER)/bin
-	cp -a postinstall/bin/doinitinst $(INITRAMFS_FOLDER)/bin
 
 	# add modules
 	rm -f $(INITRAMFS_FOLDER)/lib/modules/*.ko
