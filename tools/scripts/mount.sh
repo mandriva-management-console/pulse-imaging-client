@@ -66,15 +66,14 @@ then
 
     # get the base opt dir
     OPTDIR=`grep revooptdir /etc/cmdline | sed 's|.*revooptdir=\([^ ]*\).*|\1|'`
-    [ -z "$OPTDIR" ] && fatal_error "I did not received OPTDIR from $SRV"
+    [ -z "$OPTDIR" ] && postinst_enabled && fatal_error "I did not received OPTDIR from $SRV"
     OPTDIR="/$OPTDIR"
 
-    # get the image UUID, if we are saving
-    IMAGE_UUID=`cat /etc/IMAGE_UUID`
+    # get the image UUID, if we are saving or backuping
+    IMAGE_UUID=`cat /etc/IMAGE_UUID 2>/dev/null`
     [ -z "$IMAGE_UUID" ] && IMAGE_UUID=`grep revoimage /etc/cmdline | sed 's|.*revoimage=\([^ ]*\).*|\1|'`
     [ -z "$IMAGE_UUID" ] && fatal_error "I did not received an Image UUID from $SRV"
     SAVEDIR="/$SAVEDIR/$IMAGE_UUID"
-
 fi
 
 if [ "$MODE" == "lrs" ]
