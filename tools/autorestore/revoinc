@@ -33,8 +33,6 @@ MAC=`cat /etc/mac`
 SRV=$Next_server
 [ -z "$SRV" ] && exit 1
 
-probe_server $SRV
-
 # shared or not ?
 TYPE="COPY"
 grep -q /imgbase/Base /etc/cmdline && TYPE="BASE"
