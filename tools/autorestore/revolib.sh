@@ -241,6 +241,10 @@ standalone() {
     grep -q " revosavedir=/cdrom " /proc/cmdline
 }
 
+postinst() {
+    grep -q " revopost " /proc/cmdline
+}
+
 getmac() {
     MAC=`cat /etc/shortmac`
     export MAC
