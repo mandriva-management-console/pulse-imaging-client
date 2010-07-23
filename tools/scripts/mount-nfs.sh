@@ -148,7 +148,7 @@ else
 	fi
     fi
 
-    if [ ! -z "$OPTDIR" ]
+    if postinst_enabled
     then
 	if ! grep -q " /opt " /proc/mounts
 	then
