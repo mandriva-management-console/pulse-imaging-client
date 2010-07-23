@@ -241,8 +241,24 @@ standalone() {
     grep -q " revosavedir=/cdrom " /proc/cmdline
 }
 
-postinst() {
+# postinst enabled if revopost keyword is found
+postinst_enabled() {
     grep -q " revopost " /proc/cmdline
+}
+
+# restore mode if revorestoreXXX on command line
+restore_mode() {
+    grep -q " revorestore" /proc/cmdline
+}
+
+# backup mode if no restore mode and postinst disabled
+backup_mode() {
+    postinst_enabled || restore_mode || return 0
+    false
+}
+
+dev_mode() {
+    grep -q revodebug /etc/cmdline
 }
 
 getmac() {
