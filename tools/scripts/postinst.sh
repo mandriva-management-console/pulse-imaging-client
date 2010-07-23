@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # (c) 2003-2007 Linbox FAS, http://linbox.com
-# (c) 2008-2009 Mandriva, http://www.mandriva.com
+# (c) 2008-2010 Mandriva, http://www.mandriva.com
 #
 # $Id$
 #
@@ -24,54 +24,55 @@
 #
 # Launch all postinstall scripts
 #
-
+# two cases : 
+# "file"   : we "just" source it
+# "folder" : launch "run-parts" over it
 
 # Functions which can be interesting in the postinst scripts
+
+# try either to source $basename, or to run-parts over $basename.d
 
 . /usr/lib/revolib.sh
 . /opt/lib/libpostinst.sh
 
 getmac
 
-# 1st execute the global preinst
-if [ -r /revoinfo/preinst ]
-then
-    pretty_warn "Executing global preinst script"
-    /bin/revosendlog 6
-    . /revoinfo/preinst
-    /bin/revosendlog 7
-fi
+run_script() {
+    basename="$1"
+    message="$2"
 
-# Image postinst or system postinst ?
-if grep -q revosavedir /proc/cmdline
-then
-    # then the local image postinst
-    if [ -r /revosave/postinst ]
+    # executable
+    if [ -x $basename ]
     then
-        pretty_warn "Executing local image postinst script"
-        /bin/revosendlog 6
-        set -v
-        . /revosave/postinst
-        set +v
-        /bin/revosendlog 7
+	pretty_warn "Executing $message post-installation script"
+	/bin/revosendlog 6
+        $basename
+	/bin/revosendlog 7
     fi
 
-# or the local postinst
-    if [ -r /revoinfo/$MAC/postinst ] ;then
-        pretty_warn "Executing local postinst script"
-        /bin/revosendlog 6
-        set -v
-        . /revoinfo/$MAC/postinst
-        set +v
-        /bin/revosendlog 7
+    # not executable, source it
+    if [ -r $basename ]
+    then
+	pretty_warn "Executing $message post-installation script"
+	/bin/revosendlog 6
+	set -v
+        . $basename
+	set +v
+	/bin/revosendlog 7
     fi
-fi
 
-# and finally the global postinst
-if [ -r /revoinfo/postinst ]
-then
-    pretty_warn "Executing global postinst script"
-    /bin/revosendlog 6
-    . /revoinfo/postinst
-    /bin/revosendlog 7
-fi
+    # not executable, source it
+    if [ -d $basename.d ]
+    then
+	pretty_warn "Executing $message post-installation script"
+	/bin/revosendlog 6
+	/bin/run-parts -t $basename.d
+	/bin/run-parts $basename.d
+	/bin/revosendlog 7
+    fi
+}
+
+run_script "/revoinfo/preinst" "Pre"
+grep -q revosavedir /proc/cmdline && run_script "/revosave/postinst" "image"
+grep -q revosavedir /proc/cmdline && run_script "/revoinfo/$MAC/postinst" "computer"
+run_script "/revoinfo/postinst" "global"
