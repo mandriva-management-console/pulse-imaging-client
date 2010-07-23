@@ -161,7 +161,6 @@ do_backup()
 {
     pretty_warn "Running Backup Phase"
     grep -q revoraw /etc/cmdline && OPTS=--raw
-    /bin/revoinc
     /bin/autosave $OPTS
 }
 
@@ -172,10 +171,10 @@ do_postinst()
     MAC=`cat /etc/shortmac`
     if [ -z "$COMPUTER_UUID" ]; then # LRS mode
 	echo -e "\n=== `date` ===" >> /revoinfo/$MAC/postinst.log
-	/bin/dopostinst 2>&1 | tee -a /revoinfo/$MAC/postinst.log
+	/bin/postinst.sh 2>&1 | tee -a /revoinfo/$MAC/postinst.log
     else # Pulse 2 mode
 	echo -e "\n=== `date` ===" >> /revoinfo/postinst.log
-	/bin/dopostinst 2>&1 | tee -a /revoinfo/postinst.log
+	/bin/postinst.sh 2>&1 | tee -a /revoinfo/postinst.log
     fi
 }
 
@@ -331,7 +330,7 @@ ulimit -c 100000
 [ ! -f /etc/cmdline ] && cp -f /proc/cmdline /etc
 ETH=`cat /etc/eth`
 BASE="/tftpboot/revoboot"
-grep -q revodebug /etc/cmdline || standalone || checkip
+dev_mode || standalone || checkip
 MAC=`cat /etc/shortmac`
 [ ! -f /etc/netinfo.log ] && pump -i $ETH -s >/etc/netinfo.log
 [ -f /etc/netinfo.fake ] && mv -f /etc/netinfo.fake /etc/netinfo.log
@@ -348,6 +347,12 @@ if [ "$SRV" = "0.0.0.0" ]; then
     SRV=`cat /tmp/res`
 fi
 
+# Debug ?
+dev_mode && pretty_warn "Entering debug mode" && /bin/sh
+
+# ping
+standalone || probe_server $SRV
+
 # date
 standalone || get_rdate $SRV
 
@@ -355,15 +360,23 @@ standalone || get_rdate $SRV
 standalone || revogetname || fatal_error "Can't get my hostname : please make sure everything is OK on $SRV"
 
 # try to get the UUID
-standalone || revogetuuid || fatal_error "Can't get my UUID : please make sure everything is OK on $SRV"
+standalone || revogetuuid || fatal_error "Can't get my computer UUID : please make sure everything is OK on $SRV"
 COMPUTER_UUID=`cat /etc/COMPUTER_UUID 2>/dev/null`
+
+# try to get the image UUID
+if backup_mode
+then
+    /bin/revoinc || fatal_error "Can't get my image UUID : please make sure everything is OK on $SRV"
+fi
+
+# Debug ?
+dev_mode && pretty_warn "Entering debug mode" && /bin/sh
 
 # get the warning message
 standalone || get_warn_message
 
 # compression level
-grep -q revonocomp /etc/cmdline
-if [ "$?" -eq "0" ]
+if grep -q revonocomp /etc/cmdline
 then
     pretty_warn "Disabling compression"
     echo 0 >/etc/complevel
@@ -375,18 +388,10 @@ standalone && mount_cdrom
 standalone || mount_network
 
 # Debug ?
-if grep -q revodebug /etc/cmdline
-then
-    pretty_warn "Entering debug mode"
-    /bin/sh
-fi
+dev_mode && pretty_warn "Entering debug mode" && /bin/sh
 
 # CDROM boot ?
 grep -q revocdrom /etc/cmdline && do_cdrom
-
-# launch initial pre-inst scripts
-# disabled for now
-# do_pre_inst
 
 # Backup / Restore
 if grep -q revosavedir /etc/cmdline
@@ -396,12 +401,13 @@ then
     [ -x /bin/uinewt ] && /bin/uinewt &
 
     # Now backup/restore
-    grep -q revorestore /etc/cmdline && do_restore
-    grep -q revopost /etc/cmdline || standalone || do_backup
+    restore_mode && do_restore
+    backup_mode && do_backup
 fi
 
 # Postinstall
-grep -q revopost /etc/cmdline && do_postinst
+postinst_enabled && do_postinst
 
 # Drop to a shell
-grep -q revodebug /etc/cmdline || reboot
+dev_mode && pretty_warn "Entering debug mode" && /bin/sh
+reboot
