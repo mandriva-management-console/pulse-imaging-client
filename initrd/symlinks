@@ -40,6 +40,7 @@ ln -sf busybox ./bin/pwd
 ln -sf busybox ./bin/reset
 ln -sf busybox ./bin/rm
 ln -sf busybox ./bin/rmdir
+ln -sf busybox ./bin/run-parts
 ln -sf busybox ./bin/sed
 ln -sf busybox ./bin/sh
 ln -sf busybox ./bin/sleep
@@ -57,6 +58,7 @@ ln -sf busybox ./bin/umount
 ln -sf busybox ./bin/uname
 ln -sf busybox ./bin/uniq
 ln -sf busybox ./bin/unix2dos
+ln -sf busybox ./bin/wget
 ln -sf busybox ./bin/zcat
 
 ln -sf ../bin/busybox ./sbin/chroot
