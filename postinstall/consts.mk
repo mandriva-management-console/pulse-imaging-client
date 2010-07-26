@@ -15,3 +15,9 @@ NTFS3G_VERSION	= 2010.5.22
 NTFS3G_URI	= http://tuxera.com/opensource/
 NTFS3G_FOLDER	= ntfs-3g-$(NTFS3G_VERSION)
 NTFS3G_TARBALL	= ntfs-3g-$(NTFS3G_VERSION).tgz
+
+# Parted
+PARTED_VERSION	= 2.3
+PARTED_URI	= http://ftp.gnu.org/gnu/parted/
+PARTED_FOLDER	= parted-$(PARTED_VERSION)
+PARTED_TARBALL	= parted-$(PARTED_VERSION).tar.gz
