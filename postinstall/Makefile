@@ -28,7 +28,7 @@ BUILD_FOLDER		= $(shell pwd)/build
 
 include consts.mk
 
-all: chntpw fuse ntfs3g parted
+all: chntpw fuse ntfs3g parted ntfsprogs
 
 chntpw:
 	[ -e $(3RDPARTY_FOLDER)/$(CHNTPW_TARBALL) ] || wget $(CHNTPW_URI)/$(CHNTPW_TARBALL) -P $(3RDPARTY_FOLDER)
@@ -59,7 +59,7 @@ parted:
 	cp -a $(BUILD_FOLDER)/$(PARTED_FOLDER)/parted/.libs/parted $(BUILD_FOLDER)/
 	cp -a $(BUILD_FOLDER)/$(PARTED_FOLDER)/libparted/.libs/libparted.so* $(BUILD_FOLDER)/
 
-parted:
+ntfsprogs:
 	[ -e $(3RDPARTY_FOLDER)/$(NTFSPROGS_TARBALL) ] || wget $(NTFSPROGS_URI)/$(NTFSPROGS_TARBALL) -P $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(NTFSPROGS_FOLDER) ] || tar jxf $(3RDPARTY_FOLDER)/$(NTFSPROGS_TARBALL) -C $(BUILD_FOLDER)
 	[ -f $(BUILD_FOLDER)/$(NTFSPROGS_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(NTFSPROGS_FOLDER) && CC="$(CC)" ./configure)
