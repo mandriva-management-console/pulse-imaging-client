@@ -58,3 +58,8 @@ parted:
 	$(MAKE) -C $(BUILD_FOLDER)/$(PARTED_FOLDER) CC="$(CC)"
 	cp -a $(BUILD_FOLDER)/$(NTFS3G_FOLDER)/parted/.libs/parted $(BUILD_FOLDER)/
 	cp -a $(BUILD_FOLDER)/$(NTFS3G_FOLDER)/libparted/.libs/libparted.so* $(BUILD_FOLDER)/
+
+clean:
+	$(MAKE) clean -C $(BUILD_FOLDER)/$(FUSE_FOLDER)
+	$(MAKE) clean -C $(BUILD_FOLDER)/$(NTFS3G_FOLDER)
+	$(MAKE) clean -C $(BUILD_FOLDER)/$(PARTED_FOLDER)
