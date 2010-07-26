@@ -168,14 +168,8 @@ do_backup()
 do_postinst()
 {
     pretty_warn "Running Post Installation Phase"
-    MAC=`cat /etc/shortmac`
-    if [ -z "$COMPUTER_UUID" ]; then # LRS mode
-	echo -e "\n=== `date` ===" >> /revoinfo/$MAC/postinst.log
-	/bin/postinst.sh 2>&1 | tee -a /revoinfo/$MAC/postinst.log
-    else # Pulse 2 mode
-	echo -e "\n=== `date` ===" >> /revoinfo/postinst.log
-	/bin/postinst.sh 2>&1 | tee -a /revoinfo/postinst.log
-    fi
+    echo -e "\n=== `date` ===" >> /revoinfo/postinst.log
+    /bin/postinst.sh 2>&1 | tee -a /revoinfo/postinst.log
 }
 
 # whiptail echo
