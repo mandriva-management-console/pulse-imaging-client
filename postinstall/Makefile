@@ -59,7 +59,16 @@ parted:
 	cp -a $(BUILD_FOLDER)/$(PARTED_FOLDER)/parted/.libs/parted $(BUILD_FOLDER)/
 	cp -a $(BUILD_FOLDER)/$(PARTED_FOLDER)/libparted/.libs/libparted.so* $(BUILD_FOLDER)/
 
+parted:
+	[ -e $(3RDPARTY_FOLDER)/$(NTFSPROGS_TARBALL) ] || wget $(NTFSPROGS_URI)/$(NTFSPROGS_TARBALL) -P $(3RDPARTY_FOLDER)
+	[ -d $(BUILD_FOLDER)/$(NTFSPROGS_FOLDER) ] || tar jxf $(3RDPARTY_FOLDER)/$(NTFSPROGS_TARBALL) -C $(BUILD_FOLDER)
+	[ -f $(BUILD_FOLDER)/$(NTFSPROGS_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(NTFSPROGS_FOLDER) && CC="$(CC)" ./configure)
+	$(MAKE) -C $(BUILD_FOLDER)/$(NTFSPROGS_FOLDER) CC="$(CC)"
+	cp -a $(BUILD_FOLDER)/$(NTFSPROGS_FOLDER)/ntfsprogs/.libs/ntfsresize $(BUILD_FOLDER)/
+	cp -a $(BUILD_FOLDER)/$(NTFSPROGS_FOLDER)/libntfs/.libs/libntfs.so* $(BUILD_FOLDER)/
+
 clean:
 	$(MAKE) clean -C $(BUILD_FOLDER)/$(FUSE_FOLDER)
 	$(MAKE) clean -C $(BUILD_FOLDER)/$(NTFS3G_FOLDER)
 	$(MAKE) clean -C $(BUILD_FOLDER)/$(PARTED_FOLDER)
+	$(MAKE) clean -C $(BUILD_FOLDER)/$(NTFSPROGS_FOLDER)
