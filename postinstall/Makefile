@@ -28,7 +28,7 @@ BUILD_FOLDER		= $(shell pwd)/build
 
 include consts.mk
 
-all: chntpw fuse ntfs3g parted ntfsprogs
+all: chntpw fuse ntfs3g parted ntfsprogs ddrescue
 
 chntpw:
 	[ -e $(3RDPARTY_FOLDER)/$(CHNTPW_TARBALL) ] || wget $(CHNTPW_URI)/$(CHNTPW_TARBALL) -P $(3RDPARTY_FOLDER)
@@ -67,8 +67,16 @@ ntfsprogs:
 	cp -a $(BUILD_FOLDER)/$(NTFSPROGS_FOLDER)/ntfsprogs/.libs/ntfsresize $(BUILD_FOLDER)/
 	cp -a $(BUILD_FOLDER)/$(NTFSPROGS_FOLDER)/libntfs/.libs/libntfs.so* $(BUILD_FOLDER)/
 
+ddrescue:
+	[ -e $(3RDPARTY_FOLDER)/$(DDRESCUE_TARBALL) ] || wget $(DDRESCUE_URI)/$(DDRESCUE_TARBALL) -P $(3RDPARTY_FOLDER)
+	[ -d $(BUILD_FOLDER)/$(DDRESCUE_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(DDRESCUE_TARBALL) -C $(BUILD_FOLDER)
+	[ -f $(BUILD_FOLDER)/$(DDRESCUE_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(DDRESCUE_FOLDER) && CC="$(CC)" ./configure)
+	$(MAKE) -C $(BUILD_FOLDER)/$(DDRESCUE_FOLDER) CC="$(CC)"
+	cp -a $(BUILD_FOLDER)/$(DDRESCUE_FOLDER)/dd_rescue $(BUILD_FOLDER)/dd_rescue.bin
+
 clean:
 	$(MAKE) clean -C $(BUILD_FOLDER)/$(FUSE_FOLDER)
 	$(MAKE) clean -C $(BUILD_FOLDER)/$(NTFS3G_FOLDER)
 	$(MAKE) clean -C $(BUILD_FOLDER)/$(PARTED_FOLDER)
 	$(MAKE) clean -C $(BUILD_FOLDER)/$(NTFSPROGS_FOLDER)
+	$(MAKE) clean -C $(BUILD_FOLDER)/$(DDRESCUE_FOLDER)

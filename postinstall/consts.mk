@@ -27,3 +27,9 @@ NTFSPROGS_VERSION	= 2.0.0
 NTFSPROGS_URI		= http://downloads.sourceforge.net/project/linux-ntfs/NTFS%20Tools%20and%20Library/$(NTFSPROGS_VERSION)
 NTFSPROGS_FOLDER	= ntfsprogs-$(NTFSPROGS_VERSION)
 NTFSPROGS_TARBALL	= ntfsprogs-$(NTFSPROGS_VERSION).tar.bz2
+
+# DD Rescue
+DDRESCUE_VERSION	= 1.14
+DDRESCUE_URI		= http://www.garloff.de/kurt/linux/ddrescue
+DDRESCUE_FOLDER		= dd_rescue
+DDRESCUE_TARBALL	= dd_rescue-$(DDRESCUE_VERSION).tar.gz
