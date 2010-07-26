@@ -73,6 +73,5 @@ run_script() {
 }
 
 run_script "/revoinfo/preinst" "pre"
-grep -q revosavedir /proc/cmdline && run_script "/revosave/postinst" "image"
-grep -q revosavedir /proc/cmdline && run_script "/revoinfo/$MAC/postinst" "computer"
-run_script "/revoinfo/postinst" "global"
+run_script "/revosave/postinst" "image"
+run_script "/revoinfo/postinst" "computer"
