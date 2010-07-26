@@ -72,7 +72,7 @@ run_script() {
     fi
 }
 
-run_script "/revoinfo/preinst" "Ppre"
+run_script "/revoinfo/preinst" "pre"
 grep -q revosavedir /proc/cmdline && run_script "/revosave/postinst" "image"
 grep -q revosavedir /proc/cmdline && run_script "/revoinfo/$MAC/postinst" "computer"
 run_script "/revoinfo/postinst" "global"
