@@ -28,10 +28,17 @@ BUILD_FOLDER		= $(shell pwd)/build
 
 include consts.mk
 
-all: chntpw
+all: chntpw fuse
 
 chntpw:
 	[ -e $(3RDPARTY_FOLDER)/$(CHNTPW_TARBALL) ] || wget $(CHNTPW_URI)/$(CHNTPW_TARBALL) -P $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(CHNTPW_FOLDER) ] || unzip $(3RDPARTY_FOLDER)/$(CHNTPW_TARBALL) -d $(BUILD_FOLDER)
 	cp -a $(BUILD_FOLDER)/$(CHNTPW_FOLDER)/chntpw.static $(BUILD_FOLDER)/
 	chmod +x $(BUILD_FOLDER)/chntpw.static
+
+fuse:
+	[ -e $(3RDPARTY_FOLDER)/$(FUSE_TARBALL) ] || wget $(FUSE_URI)/$(FUSE_TARBALL) -P $(3RDPARTY_FOLDER)
+	[ -d $(BUILD_FOLDER)/$(FUSE_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(FUSE_TARBALL) -C $(BUILD_FOLDER)
+	[ -f $(BUILD_FOLDER)/$(FUSE_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(FUSE_FOLDER) && CC="$(CC)" ./configure)
+	$(MAKE) -C $(BUILD_FOLDER)/$(FUSE_FOLDER) CC="$(CC)"
+	cp -a $(BUILD_FOLDER)/$(FUSE_FOLDER)/util/fusermount $(BUILD_FOLDER)/
