@@ -127,23 +127,6 @@ get_warn_message() {
     cd /etc && /bin/atftp --tftp-timeout 1 -g -r $BASE/etc/warning.txt $SRV 69 2>/dev/null && cd /
 }
 
-# Pre-install (init-inst in fact)
-do_pre_inst()
-{
-
-    if grep -q revopost /etc/cmdline ; then
-	pretty_warn "Running Pre Installation Phase"
-        MAC=`cat /etc/shortmac`
-	if [ -z "$COMPUTER_UUID" ]; then # LRS mode
-	    echo -e "\n=== `date` ===" >> /revoinfo/$MAC/postinst.log
-            /bin/doinitinst 2>&1 | tee -a /revoinfo/$MAC/postinst.log
-	else # Pulse 2 mode
-	    echo -e "\n=== `date` ===" >> /revoinfo/postinst.log
-            /bin/doinitinst 2>&1 | tee -a /revoinfo/postinst.log
-	fi
-    fi
-}
-
 # Restore
 do_restore()
 {
