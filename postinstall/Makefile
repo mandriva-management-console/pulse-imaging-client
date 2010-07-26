@@ -56,8 +56,8 @@ parted:
 	[ -d $(BUILD_FOLDER)/$(PARTED_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(PARTED_TARBALL) -C $(BUILD_FOLDER)
 	[ -f $(BUILD_FOLDER)/$(PARTED_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(PARTED_FOLDER) && CC="$(CC)" ./configure --disable-device-mapper --without-readline)
 	$(MAKE) -C $(BUILD_FOLDER)/$(PARTED_FOLDER) CC="$(CC)"
-	cp -a $(BUILD_FOLDER)/$(NTFS3G_FOLDER)/parted/.libs/parted $(BUILD_FOLDER)/
-	cp -a $(BUILD_FOLDER)/$(NTFS3G_FOLDER)/libparted/.libs/libparted.so* $(BUILD_FOLDER)/
+	cp -a $(BUILD_FOLDER)/$(PARTED_FOLDER)/parted/.libs/parted $(BUILD_FOLDER)/
+	cp -a $(BUILD_FOLDER)/$(PARTED_FOLDER)/libparted/.libs/libparted.so* $(BUILD_FOLDER)/
 
 clean:
 	$(MAKE) clean -C $(BUILD_FOLDER)/$(FUSE_FOLDER)
