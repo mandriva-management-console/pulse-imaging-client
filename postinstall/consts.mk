@@ -21,3 +21,9 @@ PARTED_VERSION	= 2.3
 PARTED_URI	= http://ftp.gnu.org/gnu/parted/
 PARTED_FOLDER	= parted-$(PARTED_VERSION)
 PARTED_TARBALL	= parted-$(PARTED_VERSION).tar.gz
+
+# NTFS progs
+NTFSPROGS_VERSION	= 2.0.0
+NTFSPROGS_URI		= http://downloads.sourceforge.net/project/linux-ntfs/NTFS%20Tools%20and%20Library/$(NTFSPROGS_VERSION)
+NTFSPROGS_FOLDER	= ntfsprogs-$(NTFSPROGS_VERSION)
+NTFSPROGS_TARBALL	= ntfsprogs-$(NTFSPROGS_VERSION).tar.bz2
