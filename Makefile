@@ -41,7 +41,7 @@ include $(FOLDER_INITRD)/consts.mk
 
 BUILD_FOLDER		:= build
 PREBUILD_FOLDER		= prebuild-binaries
-PREBUILD_BINARIES	= revoboot.pxe-$(SVNREV) pxe_boot stage2_eltorito-$(SVNREV) cdrom_boot bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) kernel initrd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz initrd  initrdcd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz initrdcd memtest-$(SVNREV) memtest
+PREBUILD_BINARIES	= revoboot.pxe-$(SVNREV) pxe_boot stage2_eltorito-$(SVNREV) cdrom_boot bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) kernel initrd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz initrd  initrdcd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz initrdcd memtest-$(SVNREV) memtest chntpw fusermount ntfs-3g parted ntfsresize dd_rescue libntfs-3g.so libntfs-3g.so.76 libntfs-3g.so.76.0.0 libntfs.so libntfs.so.10 libntfs.so.10.0.0 libparted.so libparted.so.0 libparted.so.0.0.1
 INITRAMFS_FOLDER	= $(BUILD_FOLDER)/initramfs
 INITCDFS_FOLDER		= $(BUILD_FOLDER)/initcdfs
 
@@ -77,20 +77,20 @@ install:
 
 	# postinstall related stuff
 	# everything is set RO
-	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/postinst -d
-	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/postinst/bin -d
+	$(INSTALL) -m 550 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/postinst -d
+	$(INSTALL) -m 550 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/postinst/bin -d
 	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/bin/mountwin $(VARDIR)/postinst/bin
-	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/build/chntpw.static $(VARDIR)/postinst/bin
-	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/build/fusermount $(VARDIR)/postinst/bin
-	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/build/ntfs-3g $(VARDIR)/postinst/bin
-	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/build/parted $(VARDIR)/postinst/bin
-	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/build/ntfsresize $(VARDIR)/postinst/bin
-	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/build/dd_rescue.bin $(VARDIR)/postinst/bin/dd_rescue
-	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/postinst/lib -d
+	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/chntpw $(VARDIR)/postinst/bin
+	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/fusermount $(VARDIR)/postinst/bin
+	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/ntfs-3g $(VARDIR)/postinst/bin
+	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/parted $(VARDIR)/postinst/bin
+	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/ntfsresize $(VARDIR)/postinst/bin
+	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/dd_rescue $(VARDIR)/postinst/bin
+	$(INSTALL) -m 550 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/postinst/lib -d
 	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/lib/libpostinst.sh $(VARDIR)/postinst/lib
-	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/build/libntfs-3g.so* $(VARDIR)/postinst/lib
-	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/build/libparted.so* $(VARDIR)/postinst/lib
-	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/build/libntfs.so* $(VARDIR)/postinst/lib
+	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/libntfs-3g.so* $(VARDIR)/postinst/lib
+	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/libparted.so* $(VARDIR)/postinst/lib
+	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/libntfs.so* $(VARDIR)/postinst/lib
 
 prebuild:
 	@echo This will updated binaries in $(PREBUILD_FOLDER), based on binaries in $(BUILD_FOLDER), at revision $(SVNREV), kernel at version $(VERSION_LINUXKERNEL)
@@ -165,6 +165,15 @@ eltorito:
 
 postinst:
 	$(MAKE) -C $(FOLDER_POSTINST) SVNREV=$(SVNREV)
+	cp -a $(FOLDER_POSTINST)/build/chntpw.static $(BUILD_FOLDER)/chntpw
+	cp -a $(FOLDER_POSTINST)/build/fusermount $(BUILD_FOLDER)/fusermount
+	cp -a $(FOLDER_POSTINST)/build/ntfs-3g $(BUILD_FOLDER)/ntfs-3g
+	cp -a $(FOLDER_POSTINST)/build/parted $(BUILD_FOLDER)/parted
+	cp -a $(FOLDER_POSTINST)/build/ntfsresize $(BUILD_FOLDER)/ntfsresize
+	cp -a $(FOLDER_POSTINST)/build/dd_rescue.bin $(BUILD_FOLDER)/dd_rescue
+	cp -a $(FOLDER_POSTINST)/build/libntfs-3g.so* $(BUILD_FOLDER)/
+	cp -a $(FOLDER_POSTINST)/build/libparted.so* $(BUILD_FOLDER)/
+	cp -a $(FOLDER_POSTINST)/build/libntfs.so* $(BUILD_FOLDER)/
 
 target-clean:
 	rm -fr $(INITRAMFS_FOLDER)
