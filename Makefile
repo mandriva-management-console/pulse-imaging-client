@@ -56,7 +56,7 @@ install-prebuild:
 install:
 	# bootloader stuff (revoboot + grub/eltorito)
 	# everything is set RO
-	$(INSTALL) -m 550 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/bootloader -d
+	$(INSTALL) -m 770 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/bootloader -d
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/revoboot.pxe-$(SVNREV) $(VARDIR)/bootloader
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/pxe_boot $(VARDIR)/bootloader
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/stage2_eltorito-$(SVNREV) $(VARDIR)/bootloader
@@ -65,7 +65,7 @@ install:
 
 	# diskless stuff (kernel, initramfs, memtest)
 	# everything is set RO
-	$(INSTALL) -m 550 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/diskless -d
+	$(INSTALL) -m 770 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/diskless -d
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) $(VARDIR)/diskless
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/kernel $(VARDIR)/diskless
 	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/initrd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz $(VARDIR)/diskless
@@ -77,8 +77,8 @@ install:
 
 	# postinstall related stuff
 	# everything is set RO
-	$(INSTALL) -m 550 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/postinst -d
-	$(INSTALL) -m 550 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/postinst/bin -d
+	$(INSTALL) -m 770 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/postinst -d
+	$(INSTALL) -m 770 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/postinst/bin -d
 	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/bin/mountwin $(VARDIR)/postinst/bin
 	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/chntpw $(VARDIR)/postinst/bin
 	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/fusermount $(VARDIR)/postinst/bin
@@ -86,7 +86,7 @@ install:
 	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/parted $(VARDIR)/postinst/bin
 	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/ntfsresize $(VARDIR)/postinst/bin
 	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/dd_rescue $(VARDIR)/postinst/bin
-	$(INSTALL) -m 550 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/postinst/lib -d
+	$(INSTALL) -m 770 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/postinst/lib -d
 	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/lib/libpostinst.sh $(VARDIR)/postinst/lib
 	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/libntfs-3g.so* $(VARDIR)/postinst/lib
 	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(BUILD_FOLDER)/libparted.so* $(VARDIR)/postinst/lib
