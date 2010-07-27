@@ -105,7 +105,7 @@ prebuild:
 	echo '$$Rev$$' >> $(PREBUILD_FOLDER)/BUILDENV
 	uname -a      >> $(PREBUILD_FOLDER)/BUILDENV
 
-imaging: kernel bootloader tools initrd eltorito
+imaging: kernel bootloader tools initrd eltorito postinst
 	# initial tree
 	rm -fr $(INITRAMFS_FOLDER) && mkdir -p $(INITRAMFS_FOLDER)
 	tar c --exclude=\.svn -C initrd/tree . | tar x -C build/initramfs
@@ -163,6 +163,9 @@ eltorito:
 	cp -a $(FOLDER_ELTORITO)/stage2_eltorito-$(SVNREV) $(BUILD_FOLDER)/stage2_eltorito-$(SVNREV)
 	ln -sf stage2_eltorito-$(SVNREV) $(BUILD_FOLDER)/cdrom_boot
 
+postinst:
+	$(MAKE) -C $(FOLDER_POSTINST) SVNREV=$(SVNREV)
+
 target-clean:
 	rm -fr $(INITRAMFS_FOLDER)
 
@@ -172,6 +175,7 @@ clean: target-clean
 	$(MAKE) clean -C $(FOLDER_TOOLS)
 	$(MAKE) clean -C $(FOLDER_INITRD)
 	$(MAKE) clean -C $(FOLDER_ELTORITO)
+	$(MAKE) clean -C $(FOLDER_POSTINST)
 
 dist-clean:
 	rm -fr $(INITRAMFS_FOLDER)
