@@ -80,8 +80,17 @@ install:
 	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/postinst -d
 	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/postinst/bin -d
 	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/bin/mountwin $(VARDIR)/postinst/bin
+	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/build/chntpw.static $(VARDIR)/postinst/bin
+	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/build/fusermount $(VARDIR)/postinst/bin
+	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/build/ntfs-3g $(VARDIR)/postinst/bin
+	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/build/parted $(VARDIR)/postinst/bin
+	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/build/ntfsresize $(VARDIR)/postinst/bin
+	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/build/dd_rescue.bin $(VARDIR)/postinst/bin/dd_rescue
 	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(VARDIR)/postinst/lib -d
 	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/lib/libpostinst.sh $(VARDIR)/postinst/lib
+	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/build/libntfs-3g.so* $(VARDIR)/postinst/lib
+	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/build/libparted.so* $(VARDIR)/postinst/lib
+	$(INSTALL) -m 555 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) $(FOLDER_POSTINST)/build/libntfs.so* $(VARDIR)/postinst/lib
 
 prebuild:
 	@echo This will updated binaries in $(PREBUILD_FOLDER), based on binaries in $(BUILD_FOLDER), at revision $(SVNREV), kernel at version $(VERSION_LINUXKERNEL)
