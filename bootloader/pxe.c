@@ -540,7 +540,7 @@ extern void print_network_configuration
 P ((void))
 {
 
-  static void sprint_ip_addr (char *buf, unsigned long addr)
+  void sprint_ip_addr (char *buf, unsigned long addr)
   {
     sprintf (buf, "%d.%d.%d.%d",
              addr & 0xFF, (addr >> 8) & 0xFF,

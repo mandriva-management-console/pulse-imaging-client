@@ -22,7 +22,7 @@
 #
 
 SVNREV:=$(shell echo $Rev: 4491 $ | tr -cd [[:digit:]])
-CC	:= gcc-3.4
+CC	:= gcc
 
 SRCS 	= bios.c boot.c pci.c char_io.c builtins.c common.c stage2.c cmdline.c disk_io.c graphics.c console.c fsys_fat.c fsys_ext2fs.c builtins_pulse2.c pxe.c udp.c
 OBJS	= asm.o $(subst .c,.o, $(SRCS))
@@ -31,7 +31,7 @@ OBJS	= asm.o $(subst .c,.o, $(SRCS))
 # remove -DQUIET to recover the original Grub behavior
 DEFINES 	= -DHELP_ON -DNO_DECOMPRESSION -DSUPPORT_NETBOOT -DSUPPORT_DISKLESS -DFSYS_TFTP -DFSYS_EXT2FS -DFSYS_FAT -DNO_INT13_FALLBACK -DSUPPORT_GRAPHICS=1 -DQUIET
 ARCH		= i386
-# don't f****g know why, but with -Os (legacy) instalead of -O2 I got a really strange behavior
+# don't f****g know why, but with -Os (legacy) instead of -O2 I got a really strange behavior
 # note : -Os perfectly works under gcc 3.3.x and earlier
 # TODO : FIND OUT WHY !
 CFLAGS		= -I. -O2 -Wall $(DEFINES) -nostdinc -falign-jumps -falign-loops -falign-functions -march=$(ARCH) -m32

@@ -296,8 +296,8 @@ int partcopy_func(char *arg, int flags) {
 
     /* Convert a LBA address to a CHS address in the INT 13 format.  */
     auto void lba_to_chs(int lba, int *cl, int *ch, int *dh);
-    static void lba_to_chs(int lba, int *cl, int *ch, int *dh) {
-	int cylinder, head, sector;
+    void lba_to_chs(int lba, int *cl, int *ch, int *dh) {
+        int cylinder, head, sector;
 
         sector = lba % buf_geom.sectors + 1;
         head = (lba / buf_geom.sectors) % buf_geom.heads;

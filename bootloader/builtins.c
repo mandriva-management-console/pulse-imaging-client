@@ -368,7 +368,7 @@ color_func (char *arg, int flags)
   };
 
   /* Convert the color name STR into the magical number.  */
-  static int color_number (char *str)
+  int color_number (char *str)
   {
     char *ptr;
     int i;
