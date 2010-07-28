@@ -43,14 +43,14 @@ BUILD_FOLDER		:= build
 PREBUILD_FOLDER		= prebuild-binaries
 PREBUILD_BINARIES	= \
 			revoboot.pxe-$(SVNREV) 					pxe_boot		\
-			pxe_bootstage2_eltorito-$(SVNREV)			cdrom_boot		\
+			stage2_eltorito-$(SVNREV)				cdrom_boot		\
 			bzImage-$(VERSION_LINUXKERNEL)-$(SVNREV) 		kernel			\
 			initrd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz		initrd			\
 			initrdcd-$(VERSION_LINUXKERNEL)-$(SVNREV).img.gz	initrdcd		\
 			memtest-$(SVNREV)					memtest			\
 			chntpw-$(SVNREV)					chntpw			\
 			fusermount-$(SVNREV)					fusermount		\
-			ntfs-3g-$(SVNREV)					ntfs-3g-$		\
+			ntfs-3g-$(SVNREV)					ntfs-3g			\
 			parted-$(SVNREV)					parted			\
 			ntfsresize-$(SVNREV)					ntfsresize		\
 			dd_rescue-$(SVNREV)					dd_rescue		\
