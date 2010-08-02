@@ -7,6 +7,7 @@ The following packages are required:
  - wget
  - gcc
  - make
+ - patch
  - libnewt-dev
  - zlib1g-dev
  - e2fslibs-dev
