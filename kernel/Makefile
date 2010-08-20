@@ -63,6 +63,7 @@ kernel: rdev
 	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/fuse/fuse.ko			$(BUILD_FOLDER)/modules/fs
 	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/ext2/ext2.ko			$(BUILD_FOLDER)/modules/fs
 	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/ext3/ext3.ko			$(BUILD_FOLDER)/modules/fs
+	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/ext4/ext4.ko			$(BUILD_FOLDER)/modules/fs
 	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/xfs/xfs.ko			$(BUILD_FOLDER)/modules/fs
 	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/reiserfs/reiserfs.ko		$(BUILD_FOLDER)/modules/fs
 	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/jbd/jbd.ko			$(BUILD_FOLDER)/modules/fs
