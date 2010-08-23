@@ -62,7 +62,16 @@ PREBUILD_BINARIES	= \
 			libntfs.so.10.0.0-$(SVNREV)				libntfs.so.10.0.0	\
 			libparted.so-$(SVNREV)					libparted.so		\
 			libparted.so.0-$(SVNREV)				libparted.so.0		\
-			libparted.so.0.0.1-$(SVNREV)				libparted.so.0.0.1
+			libparted.so.0.0.1-$(SVNREV)				libparted.so.0.0.1	\
+			exportfs.ko-$(SVNREV)					exportfs.ko		\
+			ext2.ko-$(SVNREV)					ext2.ko			\
+			ext3.ko-$(SVNREV)					ext3.ko			\
+			ext4.ko-$(SVNREV)					ext4.ko			\
+			fuse.ko-$(SVNREV)					fuse.ko			\
+			jbd.ko-$(SVNREV)					jbd.ko			\
+			mbcache.ko-$(SVNREV) 					mbcache.ko		\
+			reiserfs.ko-$(SVNREV)					reiserfs.ko		\
+			xfs.ko-$(SVNREV) 					xfs.ko
 
 INITRAMFS_FOLDER	= $(BUILD_FOLDER)/initramfs
 INITCDFS_FOLDER		= $(BUILD_FOLDER)/initcdfs
@@ -116,6 +125,17 @@ install:
 		$(BUILD_FOLDER)/libntfs.so		\
 		$(BUILD_FOLDER)/libntfs.so.10		\
 		$(BUILD_FOLDER)/libntfs.so.10.0.0
+	$(INSTALL) -m 770 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -d $(VARDIR)/postinst/lib/modules
+	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -t $(VARDIR)/postinst/lib/modules \
+		$(BUILD_FOLDER)/exportfs.ko	\
+		$(BUILD_FOLDER)/ext2.ko		\
+		$(BUILD_FOLDER)/ext3.ko		\
+		$(BUILD_FOLDER)/ext4.ko		\
+		$(BUILD_FOLDER)/fuse.ko		\
+		$(BUILD_FOLDER)/jbd.ko		\
+		$(BUILD_FOLDER)/mbcache.ko	\
+		$(BUILD_FOLDER)/reiserfs.ko	\
+		$(BUILD_FOLDER)/xfs.ko
 
 prebuild:
 	@echo This will updated binaries in $(PREBUILD_FOLDER), based on binaries in $(BUILD_FOLDER), at revision $(SVNREV), kernel at version $(VERSION_LINUXKERNEL)
@@ -188,38 +208,56 @@ eltorito:
 	cp -a $(FOLDER_ELTORITO)/stage2_eltorito-$(SVNREV) $(BUILD_FOLDER)/stage2_eltorito-$(SVNREV)
 	ln -sf stage2_eltorito-$(SVNREV) $(BUILD_FOLDER)/cdrom_boot
 
-postinst:
+postinst: kernel
 	$(MAKE) -C $(FOLDER_POSTINST) SVNREV=$(SVNREV)
-	cp -a $(FOLDER_POSTINST)/build/chntpw.static $(BUILD_FOLDER)/chntpw-$(SVNREV)
+	cp -a $(FOLDER_POSTINST)/$(BUILD_FOLDER)/chntpw.static $(BUILD_FOLDER)/chntpw-$(SVNREV)
 	ln -sf chntpw-$(SVNREV) $(BUILD_FOLDER)/chntpw
-	cp -a $(FOLDER_POSTINST)/build/fusermount $(BUILD_FOLDER)/fusermount-$(SVNREV)
+	cp -a $(FOLDER_POSTINST)/$(BUILD_FOLDER)/fusermount $(BUILD_FOLDER)/fusermount-$(SVNREV)
 	ln -sf fusermount-$(SVNREV) $(BUILD_FOLDER)/fusermount
-	cp -a $(FOLDER_POSTINST)/build/ntfs-3g $(BUILD_FOLDER)/ntfs-3g-$(SVNREV)
+	cp -a $(FOLDER_POSTINST)/$(BUILD_FOLDER)/ntfs-3g $(BUILD_FOLDER)/ntfs-3g-$(SVNREV)
 	ln -sf ntfs-3g-$(SVNREV) $(BUILD_FOLDER)/ntfs-3g
-	cp -a $(FOLDER_POSTINST)/build/parted $(BUILD_FOLDER)/parted-$(SVNREV)
+	cp -a $(FOLDER_POSTINST)/$(BUILD_FOLDER)/parted $(BUILD_FOLDER)/parted-$(SVNREV)
 	ln -sf parted-$(SVNREV) $(BUILD_FOLDER)/parted
-	cp -a $(FOLDER_POSTINST)/build/ntfsresize $(BUILD_FOLDER)/ntfsresize-$(SVNREV)
+	cp -a $(FOLDER_POSTINST)/$(BUILD_FOLDER)/ntfsresize $(BUILD_FOLDER)/ntfsresize-$(SVNREV)
 	ln -sf ntfsresize-$(SVNREV) $(BUILD_FOLDER)/ntfsresize
-	cp -a $(FOLDER_POSTINST)/build/dd_rescue.bin $(BUILD_FOLDER)/dd_rescue-$(SVNREV)
+	cp -a $(FOLDER_POSTINST)/$(BUILD_FOLDER)/dd_rescue.bin $(BUILD_FOLDER)/dd_rescue-$(SVNREV)
 	ln -sf dd_rescue-$(SVNREV) $(BUILD_FOLDER)/dd_rescue
-	cp -a $(FOLDER_POSTINST)/build/libntfs-3g.so $(BUILD_FOLDER)/libntfs-3g.so-$(SVNREV)
+	cp -a $(FOLDER_POSTINST)/$(BUILD_FOLDER)/libntfs-3g.so $(BUILD_FOLDER)/libntfs-3g.so-$(SVNREV)
 	ln -sf libntfs-3g.so-$(SVNREV) $(BUILD_FOLDER)/libntfs-3g.so
-	cp -a $(FOLDER_POSTINST)/build/libntfs-3g.so.76 $(BUILD_FOLDER)/libntfs-3g.so.76-$(SVNREV)
+	cp -a $(FOLDER_POSTINST)/$(BUILD_FOLDER)/libntfs-3g.so.76 $(BUILD_FOLDER)/libntfs-3g.so.76-$(SVNREV)
 	ln -sf libntfs-3g.so.76-$(SVNREV) $(BUILD_FOLDER)/libntfs-3g.so.76
-	cp -a $(FOLDER_POSTINST)/build/libntfs-3g.so.76.0.0 $(BUILD_FOLDER)/libntfs-3g.so.76.0.0-$(SVNREV)
+	cp -a $(FOLDER_POSTINST)/$(BUILD_FOLDER)/libntfs-3g.so.76.0.0 $(BUILD_FOLDER)/libntfs-3g.so.76.0.0-$(SVNREV)
 	ln -sf libntfs-3g.so.76.0.0-$(SVNREV) $(BUILD_FOLDER)/libntfs-3g.so.76.0.0
-	cp -a $(FOLDER_POSTINST)/build/libparted.so $(BUILD_FOLDER)/libparted.so-$(SVNREV)
+	cp -a $(FOLDER_POSTINST)/$(BUILD_FOLDER)/libparted.so $(BUILD_FOLDER)/libparted.so-$(SVNREV)
 	ln -sf libparted.so-$(SVNREV) $(BUILD_FOLDER)/libparted.so
-	cp -a $(FOLDER_POSTINST)/build/libparted.so.0 $(BUILD_FOLDER)/libparted.so.0-$(SVNREV)
+	cp -a $(FOLDER_POSTINST)/$(BUILD_FOLDER)/libparted.so.0 $(BUILD_FOLDER)/libparted.so.0-$(SVNREV)
 	ln -sf libparted.so.0-$(SVNREV) $(BUILD_FOLDER)/libparted.so.0
-	cp -a $(FOLDER_POSTINST)/build/libparted.so.0.0.1 $(BUILD_FOLDER)/libparted.so.0.0.1-$(SVNREV)
+	cp -a $(FOLDER_POSTINST)/$(BUILD_FOLDER)/libparted.so.0.0.1 $(BUILD_FOLDER)/libparted.so.0.0.1-$(SVNREV)
 	ln -sf libparted.so.0.0.1-$(SVNREV) $(BUILD_FOLDER)/libparted.so.0.0.1
-	cp -a $(FOLDER_POSTINST)/build/libntfs.so $(BUILD_FOLDER)/libntfs.so-$(SVNREV)
+	cp -a $(FOLDER_POSTINST)/$(BUILD_FOLDER)/libntfs.so $(BUILD_FOLDER)/libntfs.so-$(SVNREV)
 	ln -sf libntfs.so-$(SVNREV) $(BUILD_FOLDER)/libntfs.so
-	cp -a $(FOLDER_POSTINST)/build/libntfs.so.10 $(BUILD_FOLDER)/libntfs.so.10-$(SVNREV)
+	cp -a $(FOLDER_POSTINST)/$(BUILD_FOLDER)/libntfs.so.10 $(BUILD_FOLDER)/libntfs.so.10-$(SVNREV)
 	ln -sf libntfs.so.10-$(SVNREV) $(BUILD_FOLDER)/libntfs.so.10
-	cp -a $(FOLDER_POSTINST)/build/libntfs.so.10.0.0 $(BUILD_FOLDER)/libntfs.so.10.0.0-$(SVNREV)
+	cp -a $(FOLDER_POSTINST)/$(BUILD_FOLDER)/libntfs.so.10.0.0 $(BUILD_FOLDER)/libntfs.so.10.0.0-$(SVNREV)
 	ln -sf libntfs.so.10.0.0-$(SVNREV) $(BUILD_FOLDER)/libntfs.so.10.0.0
+	cp -a $(FOLDER_KERNEL)/$(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/mbcache.ko $(BUILD_FOLDER)/mbcache.ko-$(SVNREV)
+	ln -sf mbcache.ko-$(SVNREV) $(BUILD_FOLDER)/mbcache.ko
+	cp -a $(FOLDER_KERNEL)/$(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/fuse/fuse.ko $(BUILD_FOLDER)/fuse.ko-$(SVNREV)
+	ln -sf fuse.ko-$(SVNREV) $(BUILD_FOLDER)/fuse.ko
+	cp -a $(FOLDER_KERNEL)/$(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/ext2/ext2.ko $(BUILD_FOLDER)/ext2.ko-$(SVNREV)
+	ln -sf ext2.ko-$(SVNREV) $(BUILD_FOLDER)/ext2.ko
+	cp -a $(FOLDER_KERNEL)/$(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/ext3/ext3.ko $(BUILD_FOLDER)/ext3.ko-$(SVNREV)
+	ln -sf ext3.ko-$(SVNREV) $(BUILD_FOLDER)/ext3.ko
+	cp -a $(FOLDER_KERNEL)/$(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/ext4/ext4.ko $(BUILD_FOLDER)/ext4.ko-$(SVNREV)
+	ln -sf ext4.ko-$(SVNREV) $(BUILD_FOLDER)/ext4.ko
+	cp -a $(FOLDER_KERNEL)/$(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/xfs/xfs.ko $(BUILD_FOLDER)/xfs.ko-$(SVNREV)
+	ln -sf xfs.ko-$(SVNREV) $(BUILD_FOLDER)/xfs.ko
+	cp -a $(FOLDER_KERNEL)/$(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/reiserfs/reiserfs.ko $(BUILD_FOLDER)/reiserfs.ko-$(SVNREV)
+	ln -sf reiserfs.ko-$(SVNREV) $(BUILD_FOLDER)/reiserfs.ko
+	cp -a $(FOLDER_KERNEL)/$(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/jbd/jbd.ko $(BUILD_FOLDER)/jbd.ko-$(SVNREV)
+	ln -sf jbd.ko-$(SVNREV) $(BUILD_FOLDER)/jbd.ko
+	cp -a $(FOLDER_KERNEL)/$(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/exportfs/exportfs.ko $(BUILD_FOLDER)/exportfs.ko-$(SVNREV)
+	ln -sf exportfs.ko-$(SVNREV) $(BUILD_FOLDER)/exportfs.ko
 
 target-clean:
 	rm -fr $(INITRAMFS_FOLDER)
