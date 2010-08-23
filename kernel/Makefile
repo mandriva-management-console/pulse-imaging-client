@@ -58,7 +58,7 @@ kernel: rdev
 	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/scsi/sr_mod.ko		$(BUILD_FOLDER)/modules/cd
 	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/usb/storage/usb-storage.ko 	$(BUILD_FOLDER)/modules/cd
 
-	# filesystems
+	# Filesystems
 	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/mbcache.ko			$(BUILD_FOLDER)/modules/fs
 	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/fuse/fuse.ko			$(BUILD_FOLDER)/modules/fs
 	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/ext2/ext2.ko			$(BUILD_FOLDER)/modules/fs
