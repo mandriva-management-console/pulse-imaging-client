@@ -114,7 +114,7 @@ then
 	pretty_info "Not mounting /revosave"
     fi
 
-    if ! [ "$OPTDIR" == "/" ]
+    if postinst_enabled
     then
 	if ! grep -q " /opt " /proc/mounts
 	then
@@ -135,28 +135,39 @@ else
     pretty_info "Using Option 177 as backup dir :"
     pretty_blue "$Option_177\n"
 
-    if ! grep -q " /revoinfo " /proc/mounts
+    if ! [ "$INFODIR" == '/' ]
     then
-	pretty_try "Mounting /revoinfo"
-	if mount -t nfs $Option_177$INFODIR /revoinfo -o $NFSOPT 2>/dev/null
+	if ! grep -q " /revoinfo " /proc/mounts
 	then
-	    pretty_success
-	else
-	    pretty_failure
-	    exit 1
+	    pretty_try "Mounting /revoinfo"
+	    if mount -t nfs $Option_177$INFODIR /revoinfo -o $NFSOPT 2>/dev/null
+	    then
+		pretty_success
+	    else
+		pretty_failure
+		exit 1
+	    fi
 	fi
+    else
+	pretty_warn "Can't find /revoinfo"
+	exit 1
     fi
 
-    if ! grep -q " /revosave " /proc/mounts
+    if ! [ "$SAVEDIR" == '/' ]
     then
-	pretty_try "Mounting /revosave"
-	if mount -t nfs $Option_177$SAVEDIR /revosave -o $NFSOPT 2>/dev/null
+	if ! grep -q " /revosave " /proc/mounts
 	then
-	    pretty_success
-	else
-	    pretty_failure
-	    exit 1
+	    pretty_try "Mounting /revosave"
+	    if mount -t nfs $Option_177$SAVEDIR /revosave -o $NFSOPT 2>/dev/null
+	    then
+		pretty_success
+	    else
+		pretty_failure
+		exit 1
+	    fi
 	fi
+    else # not mandatory, only useful in restore mode
+	pretty_info "Not mounting /revosave"
     fi
 
     if postinst_enabled
@@ -172,7 +183,8 @@ else
 		exit 1
 	    fi
 	fi
-    else
+    else # not mandatory, only useful in postinst mode
 	pretty_info "Not mounting /opt"
     fi
+
 fi
