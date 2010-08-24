@@ -46,7 +46,7 @@ fuse:
 ntfs3g:
 	[ -e $(3RDPARTY_FOLDER)/$(NTFS3G_TARBALL) ] || wget $(NTFS3G_URI)/$(NTFS3G_TARBALL) -P $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(NTFS3G_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(NTFS3G_TARBALL) -C $(BUILD_FOLDER)
-	[ -f $(BUILD_FOLDER)/$(NTFS3G_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(NTFS3G_FOLDER) && CC="$(CC)" ./configure)
+	[ -f $(BUILD_FOLDER)/$(NTFS3G_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(NTFS3G_FOLDER) && CC="$(CC)" ./configure --enable-mtab=no)
 	$(MAKE) -C $(BUILD_FOLDER)/$(NTFS3G_FOLDER) CC="$(CC)"
 	cp -a $(BUILD_FOLDER)/$(NTFS3G_FOLDER)/src/.libs/ntfs-3g $(BUILD_FOLDER)/
 	cp -a $(BUILD_FOLDER)/$(NTFS3G_FOLDER)/libntfs-3g/.libs/libntfs-3g.so* $(BUILD_FOLDER)/
