@@ -234,21 +234,21 @@ check_nfs() {
 }
 
 lrs () {
-    grep -vq " revobase=" /proc/cmdline
+    grep -vq "revobase=" /proc/cmdline
 }
 
 standalone() {
-    grep -q " revosavedir=/cdrom " /proc/cmdline
+    grep -q "revosavedir=/cdrom" /proc/cmdline
 }
 
 # postinst enabled if revopost keyword is found
 postinst_enabled() {
-    grep -q " revopost " /proc/cmdline
+    grep -q "revopost" /proc/cmdline
 }
 
 # restore mode if revorestoreXXX on command line
 restore_mode() {
-    grep -q " revorestore" /proc/cmdline
+    grep -q "revorestore" /proc/cmdline
 }
 
 # backup mode if no restore mode and postinst disabled
@@ -258,7 +258,7 @@ backup_mode() {
 }
 
 dev_mode() {
-    grep -q revodebug /etc/cmdline
+    grep -q "revodebug" /etc/cmdline
 }
 
 getmac() {
