@@ -48,10 +48,10 @@ if grep -q 'revoproto=nfsudp' /etc/cmdline; then
     pretty_info "Using NFS over UDP"
 else
     if echo "$RPCINFO" | grep nfs | grep -q tcp; then
-        NFSOPT="$NFSOPT,proto=tcp"
+	NFSOPT="$NFSOPT,proto=tcp"
 	pretty_info "Using NFS over TCP"
     else
-        NFSOPT="$NFSOPT,proto=udp"
+	NFSOPT="$NFSOPT,proto=udp"
 	pretty_info "Using NFS over UDP"
     fi
 fi
@@ -79,28 +79,39 @@ then
     pretty_try "Using as backup dir"
     pretty_blue "$SIP:$PREFIX\n"
 
-    if ! grep -q " /revoinfo " /proc/mounts
+    if ! [ "$INFODIR" == '/' ]
     then
-	pretty_try "Mounting /revoinfo"
-	if mount -t nfs $SIP:$PREFIX$INFODIR /revoinfo -o $NFSOPT 2>/dev/null
+	if ! grep -q " /revoinfo " /proc/mounts
 	then
-	    pretty_success
-	else
-	    pretty_failure
-	    exit 1
+	    pretty_try "Mounting /revoinfo"
+	    if mount -t nfs $SIP:$PREFIX$INFODIR /revoinfo -o $NFSOPT 2>/dev/null
+	    then
+		pretty_success
+	    else
+		pretty_failure
+		exit 1
+	    fi
 	fi
+    else
+	pretty_warn "Can't find /revoinfo"
+	exit 1
     fi
 
-    if ! grep -q " /revosave " /proc/mounts
+    if ! [ "$SAVEDIR" == '/' ]
     then
-	pretty_try "Mounting /revosave"
-	if mount -t nfs $SIP:$PREFIX$SAVEDIR /revosave -o $NFSOPT 2>/dev/null
+	if ! grep -q " /revosave " /proc/mounts
 	then
-	    pretty_success
-	else
-	    pretty_failure
-	    exit 1
+	    pretty_try "Mounting /revosave"
+	    if mount -t nfs $SIP:$PREFIX$SAVEDIR /revosave -o $NFSOPT 2>/dev/null
+	    then
+		pretty_success
+	    else
+		pretty_failure
+		exit 1
+	    fi
 	fi
+    else # not mandatory, only useful in restore mode
+	pretty_info "Not mounting /revosave"
     fi
 
     if ! [ "$OPTDIR" == "/" ]
@@ -116,7 +127,7 @@ then
 		exit 1
 	    fi
 	fi
-    else
+    else # not mandatory, only useful in postinst mode
 	pretty_info "Not mounting /opt"
     fi
 

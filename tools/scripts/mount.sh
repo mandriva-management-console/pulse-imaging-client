@@ -83,6 +83,8 @@ then
 
     # directories below the NFS prefix
     SAVEDIR=`grep revosavedir /etc/cmdline | sed 's|.*revosavedir=\([^ ]*\).*|\1|'`
+    [ -z "$SAVEDIR" ] && SAVEDIR='/'
+
     INFODIR="/images/$MAC"
     OPTDIR="/lib/util"
 fi
