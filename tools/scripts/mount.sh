@@ -88,8 +88,6 @@ then
     getmac
     INFODIR="/images"
     grep -q /imgbase /etc/cmdline && INFODIR="/images/$MAC"
-fi
-
 
     OPTDIR="/lib/util"
 fi
