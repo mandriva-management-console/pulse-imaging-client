@@ -155,6 +155,7 @@ do_postinst()
 
     pretty_warn "Running Post Installation Phase"
 
+    rm -f $logfile
     echo -e "\n=== `date` ===" >> $logfile
     /bin/postinst.sh 2>&1 | tee -a $logfile
 }
