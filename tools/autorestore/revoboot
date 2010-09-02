@@ -150,9 +150,13 @@ do_backup()
 # Post-install
 do_postinst()
 {
+    logfile=/revoinfo/$MAC/postinst.log
+    touch $logfile 2>/dev/null || logfile=/revoinfo/postinst.log
+
     pretty_warn "Running Post Installation Phase"
-    echo -e "\n=== `date` ===" >> /revoinfo/postinst.log
-    /bin/postinst.sh 2>&1 | tee -a /revoinfo/postinst.log
+
+    echo -e "\n=== `date` ===" >> $logfile
+    /bin/postinst.sh 2>&1 | tee -a $logfile
 }
 
 # whiptail echo
