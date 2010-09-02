@@ -85,7 +85,12 @@ then
     SAVEDIR=`grep revosavedir /etc/cmdline | sed 's|.*revosavedir=\([^ ]*\).*|\1|'`
     [ -z "$SAVEDIR" ] && SAVEDIR='/'
 
-    INFODIR="/images/$MAC"
+    getmac
+    INFODIR="/images"
+    grep -q /imgbase /etc/cmdline && INFODIR="/images/$MAC"
+fi
+
+
     OPTDIR="/lib/util"
 fi
 
