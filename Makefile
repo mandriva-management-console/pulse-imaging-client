@@ -87,16 +87,16 @@ install-prebuild:
 install:
 	# bootloader stuff (revoboot + grub/eltorito)
 	# everything is set RO
-	$(INSTALL) -m 770 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -d $(VARDIR)/bootloader
-	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -t $(VARDIR)/bootloader \
+	$(INSTALL) -m 770 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -d $(DESTDIR)/$(VARDIR)/bootloader
+	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -t $(DESTDIR)/$(VARDIR)/bootloader \
 		$(BUILD_FOLDER)/pxe_boot		\
 		$(BUILD_FOLDER)/cdrom_boot		\
 		contrib/bootsplash/bootsplash.xpm
 
 	# diskless stuff (kernel, initramfs, memtest)
 	# everything is set RO
-	$(INSTALL) -m 770 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -d $(VARDIR)/diskless
-	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -t $(VARDIR)/diskless \
+	$(INSTALL) -m 770 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -d $(DESTDIR)/$(VARDIR)/diskless
+	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -t $(DESTDIR)/$(VARDIR)/diskless \
 		$(BUILD_FOLDER)/kernel		\
 		$(BUILD_FOLDER)/initrd		\
 		$(BUILD_FOLDER)/initrdcd	\
@@ -104,8 +104,8 @@ install:
 
 	# postinstall related stuff
 	# everything is set RO
-	$(INSTALL) -m 770 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -d $(VARDIR)/postinst/bin
-	$(INSTALL) -m 550 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -t $(VARDIR)/postinst/bin \
+	$(INSTALL) -m 770 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -d $(DESTDIR)/$(VARDIR)/postinst/bin
+	$(INSTALL) -m 550 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -t $(DESTDIR)/$(VARDIR)/postinst/bin \
 		$(FOLDER_POSTINST)/bin/mountwin	\
 		$(BUILD_FOLDER)/chntpw		\
 		$(BUILD_FOLDER)/fusermount	\
@@ -113,8 +113,8 @@ install:
 		$(BUILD_FOLDER)/parted		\
 		$(BUILD_FOLDER)/ntfsresize	\
 		$(BUILD_FOLDER)/dd_rescue
-	$(INSTALL) -m 770 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -d $(VARDIR)/postinst/lib
-	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -t $(VARDIR)/postinst/lib \
+	$(INSTALL) -m 770 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -d $(DESTDIR)/$(VARDIR)/postinst/lib
+	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -t $(DESTDIR)/$(VARDIR)/postinst/lib \
 		$(FOLDER_POSTINST)/lib/libpostinst.sh	\
 		$(BUILD_FOLDER)/libntfs-3g.so		\
 		$(BUILD_FOLDER)/libntfs-3g.so.76	\
@@ -125,8 +125,8 @@ install:
 		$(BUILD_FOLDER)/libntfs.so		\
 		$(BUILD_FOLDER)/libntfs.so.10		\
 		$(BUILD_FOLDER)/libntfs.so.10.0.0
-	$(INSTALL) -m 770 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -d $(VARDIR)/postinst/lib/modules
-	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -t $(VARDIR)/postinst/lib/modules \
+	$(INSTALL) -m 770 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -d $(DESTDIR)/$(VARDIR)/postinst/lib/modules
+	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -t $(DESTDIR)/$(VARDIR)/postinst/lib/modules \
 		$(BUILD_FOLDER)/exportfs.ko	\
 		$(BUILD_FOLDER)/ext2.ko		\
 		$(BUILD_FOLDER)/ext3.ko		\
