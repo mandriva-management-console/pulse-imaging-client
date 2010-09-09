@@ -77,7 +77,7 @@ static int cdrom = 0;
 /* mtftp restoration ? */
 static int mtftp = 0;
 /* do not run LRS specific code */
-static int nolrs = 0;
+static int standalone = 0;
 
 static unsigned char buf[512];
 
@@ -203,7 +203,7 @@ static char *tmprintf(const char *format_str, ...)
  */
 static void fatal(void)
 {
-    if (!nolrs)
+    if (!standalone)
         return;
     system("revosendlog 8");
     exit(EXIT_FAILURE);
@@ -687,7 +687,7 @@ static void setdefault(char *v)
 {
     char buf[256];
 
-    if (nolrs)
+    if (standalone)
         return;
 
     sprintf(buf, "revosetdefault %s", v != NULL ? v : "0");
@@ -808,7 +808,7 @@ static void checkhdspace(__u32 major, __u32 minor, __u32 sect)
     fscanf(f, "%u", &orig);
     if (orig > sect) {
         /* problem : the disk seems to be too small */
-        if (!nolrs)
+        if (!standalone)
             system("revosendlog 8");
         sprintf(command, "Your hard disk seems to be to small to restore this image (%u vs %u KB).\n\nIf you want to restore anyway, you can disable the disk space checks in the client's options panel.", sect, orig);
         ui_send("misc_error", 2, "Error", command);
@@ -907,7 +907,8 @@ static void commandline(int argc, char *argv[])
             {"nospc", no_argument, &revonospc, 1},
             {"ntblfix", no_argument, &revontblfix, 1},
             {"mtftp", no_argument, &mtftp, 1},
-            {"nolrs", no_argument, &nolrs, 1},
+            {"standalone", no_argument, &standalone, 1},
+            {"nolrs", no_argument, &standalone, 1},
             /* These options don't set a flag.
                We distinguish them by their indices. */
             {"save", required_argument, 0, 's'},
@@ -941,7 +942,7 @@ static void commandline(int argc, char *argv[])
             break;
         case '?':
             printf
-                ("usage: autorestore [--nospc] [--nolrs] [--ntblfix] [--mtftp]\n"
+                ("usage: autorestore [--nospc] [--standalone] [--ntblfix] [--mtftp]\n"
                  "      [--save /revosave] [--info /revoinfo] [--bin /revobin]\n"
                  "      [--outdir restore_dir]\n");
             exit(1);
@@ -1020,7 +1021,7 @@ int main(int argc, char *argv[])
     snprintf(todos, 32, "%u", todo);
 
     ui_send("init_restore", 4, servip, servprefix, hostname, todos);
-    if (!nolrs)
+    if (!standalone)
         system("revosendlog 2");
 
     system(tmprintf("echo \"\">%s/progress.txt", revoinfo));
@@ -1028,7 +1029,7 @@ int main(int argc, char *argv[])
 
     ui_send("close", 0);
 
-    if (!nolrs)
+    if (!standalone)
         system("revosendlog 3");
 
     system(tmprintf("echo \"\">%s/progress.txt", revoinfo));
