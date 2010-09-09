@@ -687,6 +687,9 @@ static void setdefault(char *v)
 {
     char buf[256];
 
+    if (nolrs)
+        return;
+
     sprintf(buf, "revosetdefault %s", v != NULL ? v : "0");
     system(buf);
 }
@@ -775,10 +778,10 @@ static void restoreimage(void)
                         }
                     }
                 }
-            } else if (!strcmp("setdefault", buf2) && !nolrs) {
+            } else if (!strcmp("setdefault", buf2)) {
                 strtok(buf, " ");
                 setdefault(strtok(NULL, " "));
-            } else if (!strcmp("chainloader", buf2) && !nolrs) {
+            } else if (!strcmp("chainloader", buf2)) {
                 setdefault("0");
             }
         }
