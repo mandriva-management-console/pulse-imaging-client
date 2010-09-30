@@ -327,6 +327,8 @@ SRV=$Next_server
 if [ "$SRV" = "0.0.0.0" ]; then
     whiptail --title "DHCP problem" --backtitle "Pulse 2" --inputbox "Possible DHCP server configuration problem !\nGot $SRV as the LRS server !\n\n`cat /etc/netinfo.log`\n\nPlease enter the LRS IP address below:" 22 70 2>/tmp/res
     SRV=`cat /tmp/res`
+    sed -i s/Next_server=0.0.0.0/Next_server=$SRV/ /etc/netinfo.sh
+    chmod +x /etc/netinfo.sh
 fi
 
 # Debug ?
