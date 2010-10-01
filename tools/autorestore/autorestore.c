@@ -367,9 +367,15 @@ static int tftp_get(char *fname, int filenum)
     /* get files */
     do {
         system("rm * >/dev/null 2>&1");
-        sprintf(cmd,
-                "atftp --tftp-timeout 10 --option \"blksize 4096\" --option multicast -g -r %s/%s/%s %s 69 2>/tmp/atftp.log",
-                servprefix, storagedir, f, servip);
+        if (!mode_lrs) {
+            sprintf(cmd,
+                    "atftp --tftp-timeout 10 --option \"blksize 4096\" --option multicast -g -r %s/%s/%s %s 69 2>/tmp/atftp.log",
+                    storagedir, imagename, f, servip);
+        } else {
+            sprintf(cmd,
+                    "atftp --tftp-timeout 10 --option \"blksize 4096\" --option multicast -g -r %s/%s/%s %s 69 2>/tmp/atftp.log",
+                    servprefix, storagedir, f, servip);
+        }
     } while (system(cmd));
 
     return (stat(f, &st));
