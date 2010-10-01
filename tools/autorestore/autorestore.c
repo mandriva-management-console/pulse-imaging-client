@@ -78,6 +78,8 @@ static int cdrom = 0;
 static int mtftp = 0;
 /* do not run LRS specific code */
 static int standalone = 0;
+/* use LRS behavior regarding TFTP path */
+static int mode_lrs = 1;
 
 static unsigned char buf[512];
 
@@ -915,6 +917,7 @@ static void commandline(int argc, char *argv[])
             {"info", required_argument, 0, 'i'},
             {"bin", required_argument, 0, 'b'},
             {"outdir", required_argument, 0, 'o'},
+            {"mode", required_argument, 0, 'm'},
             {0, 0, 0, 0}
         };
         /* getopt_long stores the option index here. */
@@ -940,11 +943,22 @@ static void commandline(int argc, char *argv[])
             outdir = optarg;
             revonospc = 1;
             break;
+        case 'm':
+            if (strcasecmp(optarg, "lrs") == 0) {
+                mode_lrs = 1;
+            } else if ((strcasecmp(optarg, "pulse") == 0) ||
+                       (strcasecmp(optarg, "pulse2") == 0)) {
+                mode_lrs = 0;
+            } else {
+                fprintf(stderr, "Invalid mode '%s' requested\n", optarg);
+                exit(1);
+            }
+            break;
         case '?':
             printf
                 ("usage: autorestore [--nospc] [--standalone] [--ntblfix] [--mtftp]\n"
                  "      [--save /revosave] [--info /revoinfo] [--bin /revobin]\n"
-                 "      [--outdir restore_dir]\n");
+                 "      [--outdir restore_dir] [--mode lrs|pulse2]\n");
             exit(1);
         }
     }
