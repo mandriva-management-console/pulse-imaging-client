@@ -79,7 +79,7 @@ static int mtftp = 0;
 /* do not run LRS specific code */
 static int standalone = 0;
 /* use LRS behavior regarding TFTP path */
-static int mode_lrs = 1;
+static int mode_lrs = 0;
 
 static unsigned char buf[512];
 
