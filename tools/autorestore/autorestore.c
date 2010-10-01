@@ -87,6 +87,7 @@ static unsigned char buf[512];
 static unsigned char servip[40] = "127.0.0.1";
 static unsigned char servprefix[80] = "/";
 static unsigned char storagedir[80] = "/";
+static char imagename[256] = "";
 static char hostname[32] = "";
 
 /* paths */
@@ -973,6 +974,16 @@ static void commandline(int argc, char *argv[])
         *ptr2 = 0;
         //printf ("*%s*\n", ptr);
         strcpy(storagedir, ptr);
+    }
+
+    /* search for image UUID on command line */
+    if ((ptr = find("revoimage=", "/etc/cmdline"))) {
+        ptr2 = ptr;
+        while (*ptr2 != ' ')
+            ptr2++;
+        *ptr2 = 0;
+        //printf ("*%s*\n", ptr);
+        strcpy(imagename, ptr);
     }
 
     /* default: mtftp restore */
