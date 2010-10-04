@@ -1051,7 +1051,12 @@ int main(int argc, char *argv[])
     todo = getbytes();
     snprintf(todos, 32, "%u", todo);
 
-    ui_send("init_restore", 4, servip, servprefix, hostname, todos);
+    if (!mode_lrs) {
+        ui_send("init_restore", 4, servip, storagedir, hostname, todos);
+    } else {
+        ui_send("init_restore", 4, servip, servprefix, hostname, todos);
+    }
+
     if (!standalone)
         system("revosendlog 2");
 
