@@ -25,5 +25,8 @@ CFLAGS=-Os -Wall
 autosave: autosave.c
 	$(CC) $(CFLAGS) -o $@ autosave.c -L$(LRS_DIR) -I$(LRS_DIR) -llrs
 
+check-syntax:
+	$(CC) $(CFLAGS) -pedantic -fsyntax-only autosave.c
+
 clean:
 	rm -f autosave
