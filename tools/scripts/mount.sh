@@ -86,7 +86,11 @@ then
     [ -z "$SAVEDIR" ] && SAVEDIR='/'
 
     getmac
+    # by default, /revoinfo is /tftpboot/revoboot/images
     INFODIR="/images"
+    # excepted when we are backuping stuff
+    grep -qv revorestore /etc/cmdline && INFODIR="/images/$MAC"
+    # or when we are doing stuff on a shared image
     grep -q /imgbase /etc/cmdline && INFODIR="/images/$MAC"
 
     OPTDIR="/lib/util"
