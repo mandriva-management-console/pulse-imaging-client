@@ -9,7 +9,9 @@
 
 MAC=`cat /etc/shortmac`
 HOSTNAME="unknown_host"
+# LRS
 [ -f /revoinfo/$MAC/hostname ] && HOSTNAME=`cat /revoinfo/$MAC/hostname | tr : /`
+# Pulse 2
 [ -f /revoinfo/hostname ] && HOSTNAME=`cat /revoinfo/hostname | tr : /`
 # FIXME : should also try using network stack (get_hostname)
 HOSTNAME=`basename $HOSTNAME`
@@ -154,7 +156,7 @@ RegistryAddRunServicesOnce ()
 
 #
 # Copy a sysprep.inf to file and substitute the hostname
-# Example: CopySysprepInf /revoinfo/$MAC/mysysprep.inf
+# Example: CopySysprepInf /revoinfo/mysysprep.inf
 #
 CopySysprepInf ()
 {
