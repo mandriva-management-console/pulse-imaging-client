@@ -1,0 +1,7 @@
+The idea come from https://bugs.launchpad.net/ubuntu/+source/linux/+bug/546091
+
+1. go to http://kb.lsi.com/Download15861.aspx
+2. download ftp://tsupport:tsupport@ftp0.lsil.com/private/MegaRAID/downloads/Linux_driver_4.30-1_or_4.31.zip
+3. extract /RH5_4.31/megaraid_sas-v00.00.04.31-ieee-src.tgz
+4. keep only megarai_sas.(c|h)
+5. diff/patch against stock kernel
