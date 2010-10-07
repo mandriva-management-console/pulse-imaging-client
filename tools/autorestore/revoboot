@@ -89,18 +89,20 @@ What should I do ?" 20 70 4 1 "Retry to configure the NIC via DHCP" 2 "Manualy s
 staticip() {
     IP=192.168.0.100
     NM=255.255.255.0
+    GW=192.168.0.1
+    LRS=192.168.0.1
     while true; do
-        whiptail --title "Static IP" --backtitle "Pulse 2" --inputbox "Please enter the IP address:" 10 70 "$IP" 2>/tmp/res
+        whiptail --title "Static IP" --backtitle "Pulse 2" --inputbox "Please enter this client IP address:" 10 70 "$IP" 2>/tmp/res
         IP=`cat /tmp/res`
 
-        whiptail --title "Static IP" --backtitle "Pulse 2" --inputbox "Please enter the netmask:" 10 70 "$NM" 2>/tmp/res
+        whiptail --title "Static IP" --backtitle "Pulse 2" --inputbox "Please enter this client netmask:" 10 70 "$NM" 2>/tmp/res
         NM=`cat /tmp/res`
         DEFGW=`echo $IP|cut -d. -f1-3`".1"
 
-        whiptail --title "Static IP" --backtitle "Pulse 2" --inputbox "Please enter the default gateway:" 10 70 "$DEFGW" 2>/tmp/res
+        whiptail --title "Static IP" --backtitle "Pulse 2" --inputbox "Please enter this client default gateway:" 10 70 "$GW" 2>/tmp/res
         GW=`cat /tmp/res`
 
-        whiptail --title "Static IP" --backtitle "Pulse 2" --inputbox "Please enter the LRS IP address:" 10 70 "$DEFGW" 2>/tmp/res
+        whiptail --title "Static IP" --backtitle "Pulse 2" --inputbox "Please enter the server IP address:" 10 70 "$LRS" 2>/tmp/res
         LRS=`cat /tmp/res`
 
         ifconfig $ETH $IP netmask $NM
@@ -132,6 +134,7 @@ do_restore()
 {
     pretty_warn "Running Restoration Phase"
     OPTS=
+
     grep -q revorestorenfs /etc/cmdline || OPTS="--mtftp"
     grep -q revontblfix /etc/cmdline && OPTS="--ntblfix $OPTS"
     grep -q revonospc /etc/cmdline && OPTS="--nospc $OPTS"
@@ -143,6 +146,8 @@ do_restore()
 do_backup()
 {
     pretty_warn "Running Backup Phase"
+    grep -q /imgbase /etc/cmdline && INFODIR="/images/$MAC"
+
     grep -q revoraw /etc/cmdline && OPTS=--raw
     /bin/autosave $OPTS
 }
