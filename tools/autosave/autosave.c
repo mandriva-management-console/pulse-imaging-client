@@ -636,6 +636,26 @@ int save(void)
                     }
                 }
 
+                if (
+                    (ttype[i] == 0x00 && poff[i] == 2 && (tmax[i] - tmax[i] + 1 == 262144)) // 128 MB, type 0, second part => MRP on a > 16 GB disk without OEM part
+                     ||
+                    (ttype[i] == 0x00 && poff[i] == 3 && (tmax[i] - tmax[i] + 1 == 262144)) // 128 MB, type 0, third part => MRP on a > 16 GB disk with OEM part
+                     ||
+                    (ttype[i] == 0x00 && poff[i] == 2 && (tmax[i] - tmax[i] + 1 == 65536)) // 32 MB, type 0, second part => MRP on a < 16 GB disk without OEM part
+                     ||
+                    (ttype[i] == 0x00 && poff[i] == 3 && (tmax[i] - tmax[i] + 1 == 65536)) // 32 MB, type 0, third part => MRP on a > 16 GB disk with OEM part
+                    ) {
+                    /*  save as raw : Microsoft Reserved Partition (http://en.wikipedia.org/wiki/Microsoft_Reserved_Partition) */
+                    myprintf("Microsoft Reserved Partition spotted\n");
+                    tmprintf("%s/image_raw %s ?", revobin, device);
+                    if (mysystem(tmppath) == 0) {
+                        tmprintf("%s/image_raw %s %s", revobin, device, destfile);
+                        mysystem(tmppath);
+                        continue;
+                    }
+                }
+
+                //
                 if ((foerr = fopen(logtxt, "a"))) {
                     fprintf(foerr,
                             "\n\nERROR: Unsupported or corrupted FS...(disk %d, part %d, type %x)\n",
