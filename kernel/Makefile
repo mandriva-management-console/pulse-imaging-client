@@ -34,7 +34,7 @@ kernel: rdev
 	# preparation
 	[ -e $(3RDPARTY_FOLDER)/$(TARBALL_LINUXKERNEL) ] || wget $(URI_LINUXKERNEL)/$(TARBALL_LINUXKERNEL) -P $(3RDPARTY_FOLDER)
 	[ -d $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) ] || tar jxf $(3RDPARTY_FOLDER)/$(TARBALL_LINUXKERNEL) -C $(BUILD_FOLDER)
-	cat $(3RDPARTY_FOLDER)/001-megaraid_sas_v00.00.04.31-for_2.6.32.24.diff | patch -N -p1 -d $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/scsi/megaraid < 
+	cat $(3RDPARTY_FOLDER)/001-megaraid_sas_v00.00.04.31-for_2.6.32.24.diff | patch -N -p1 -d $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/drivers/scsi/megaraid
 	[ -f $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/.config ] || cp -a $(CONFIGS_LINUXKERNEL)/dot-config-$(VERSION_LINUXKERNEL) $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/.config && $(MAKE) -C $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL) ARCH=$(ARCHITECTURE) silentoldconfig
 
 	# kernel build
