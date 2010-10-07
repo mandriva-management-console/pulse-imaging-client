@@ -134,8 +134,9 @@ do_restore()
 {
     pretty_warn "Running Restoration Phase"
     OPTS=
-
-    grep -q revorestorenfs /etc/cmdline || OPTS="--mtftp"
+    lrs && OPTS="--mode lrs"
+    lrs || OPTS="--mode pulse2"
+    grep -q revorestorenfs /etc/cmdline || OPTS="--mtftp $OPTS"
     grep -q revontblfix /etc/cmdline && OPTS="--ntblfix $OPTS"
     grep -q revonospc /etc/cmdline && OPTS="--nospc $OPTS"
 
