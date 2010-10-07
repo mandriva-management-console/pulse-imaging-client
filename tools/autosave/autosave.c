@@ -660,15 +660,21 @@ int save(void)
                 }
 
                 if (
-                    (ttype[i] == 0x00 && poff[i] == 2 && (tmax[i] - tmax[i] + 1 == 262144)) // 128 MB, type 0, second part => MRP on a > 16 GB disk without OEM part
+                    (ttype[i] == 0x00 && poff[i] == 2 && (tmax[i] - tmax[i] + 1 == 262144)) // 128 MB, type 0, second part => MSR on a >= 16 GB disk without OEM part
                      ||
-                    (ttype[i] == 0x00 && poff[i] == 3 && (tmax[i] - tmax[i] + 1 == 262144)) // 128 MB, type 0, third part => MRP on a > 16 GB disk with OEM part
+                    (ttype[i] == 0x00 && poff[i] == 3 && (tmax[i] - tmax[i] + 1 == 262144)) // 128 MB, type 0, third part => MSR on a >= 16 GB disk with OEM part
                      ||
-                    (ttype[i] == 0x00 && poff[i] == 2 && (tmax[i] - tmax[i] + 1 == 65536)) // 32 MB, type 0, second part => MRP on a < 16 GB disk without OEM part
+                    (ttype[i] == 0x00 && poff[i] == 2 && (tmax[i] - tmax[i] + 1 == 65536)) // 32 MB, type 0, second part => MSR on a < 16 GB disk without OEM part
                      ||
-                    (ttype[i] == 0x00 && poff[i] == 3 && (tmax[i] - tmax[i] + 1 == 65536)) // 32 MB, type 0, third part => MRP on a > 16 GB disk with OEM part
+                    (ttype[i] == 0x00 && poff[i] == 3 && (tmax[i] - tmax[i] + 1 == 65536)) // 32 MB, type 0, third part => MSR on a < 16 GB disk with OEM part
                     ) {
-                    /*  save as raw : Microsoft Reserved Partition (http://en.wikipedia.org/wiki/Microsoft_Reserved_Partition) */
+                    /*  save as raw :
+                        Microsoft Reserved Partition
+                        http://www.microsoft.com/whdc/device/storage/GPT_FAQ.mspx
+                        http://en.wikipedia.org/wiki/Microsoft_Reserved_Partition
+                        FIXME : as told in the FAQ: "As the MSR is divided into other partitions, it becomes smaller.", maybe we should only check if (tmax[i] - tmax[i] + 1 <= 262144)) ?
+                    */
+
                     myprintf("Microsoft Reserved Partition spotted\n");
                     tmprintf("%s/image_raw %s ?", revobin, device);
                     if (mysystem(tmppath) == 0) {
@@ -678,7 +684,6 @@ int save(void)
                     }
                 }
 
-                //
                 if ((foerr = fopen(logtxt, "a"))) {
                     fprintf(foerr,
                             "\n\nERROR: Unsupported or corrupted FS...(disk %d, part %d, type %x)\n",
