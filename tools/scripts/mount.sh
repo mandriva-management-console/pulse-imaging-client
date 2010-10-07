@@ -38,12 +38,13 @@ MAC=`cat /etc/shortmac`
 # get server IP address
 SRV=$Next_server
 
+
+# prefix is not empty : Pulse 2 mode, else LRS mode
+lrs && MODE="lrs"
+lrs || MODE="pulse2"
+
 # get mount prefix on server
 PREFIX=`grep revobase /etc/cmdline | sed 's|.*revobase=\([^ ]*\).*|\1|'`
-# prefix is not empty : Pulse 2 mode, else LRS mode
-MODE="lrs"
-[ -n "$PREFIX" ] && MODE="pulse2"
-
 # default values : everything is initialized at '/', then mount-$TYPE.sh will do some cleanup
 SAVEDIR='/'  # the folder which contains the image itself
 INFODIR='/'  # the folder which contains target-related files
