@@ -229,7 +229,7 @@ print_border (int y, int size)
   grub_putchar (DISP_LR);
 
   s = strlen(pulse2name);
-  if (s) {
+  if (s && strcmp(pulse2name, "ERROR") != 0) {
     gotoxy((80-s-2)/2, 3);
     grub_printf(" %s ", pulse2name);
     gotoxy (18, y + size + 1);
