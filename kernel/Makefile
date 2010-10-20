@@ -68,6 +68,7 @@ kernel: rdev
 	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/xfs/xfs.ko			$(BUILD_FOLDER)/modules/fs
 	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/reiserfs/reiserfs.ko		$(BUILD_FOLDER)/modules/fs
 	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/jbd/jbd.ko			$(BUILD_FOLDER)/modules/fs
+	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/jbd2/jbd2.ko			$(BUILD_FOLDER)/modules/fs
 	cp -a $(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/exportfs/exportfs.ko		$(BUILD_FOLDER)/modules/fs
 
 modules: module_r8101 module_r8168 module_r8169 module_atl1e module_e1000 module_e1000e module_igb module_nxii module_570x
