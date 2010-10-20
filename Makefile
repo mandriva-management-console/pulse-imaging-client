@@ -138,6 +138,10 @@ install:
 		$(BUILD_FOLDER)/mbcache.ko	\
 		$(BUILD_FOLDER)/reiserfs.ko	\
 		$(BUILD_FOLDER)/xfs.ko
+	# Install win32 utilities
+	$(INSTALL) -m 770 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -d $(DESTDIR)/$(VARDIR)/postinst/winutils
+	$(INSTALL) -m 440 -o $(PULSE2_OWNER) -g $(PULSE2_GROUP) -t $(DESTDIR)/$(VARDIR)/postinst/winutils \
+		$(FOLDER_POSTINST)/winutils/newsid.exe
 
 prebuild:
 	@echo This will updated binaries in $(PREBUILD_FOLDER), based on binaries in $(BUILD_FOLDER), at revision $(SVNREV), kernel at version $(VERSION_LINUXKERNEL)
