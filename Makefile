@@ -262,7 +262,7 @@ postinst: kernel
 	ln -sf reiserfs.ko-$(SVNREV) $(BUILD_FOLDER)/reiserfs.ko
 	cp -a $(FOLDER_KERNEL)/$(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/jbd/jbd.ko $(BUILD_FOLDER)/jbd.ko-$(SVNREV)
 	ln -sf jbd.ko-$(SVNREV) $(BUILD_FOLDER)/jbd.ko
-	cp -a $(FOLDER_KERNEL)/$(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/jbd/jbd2.ko $(BUILD_FOLDER)/jbd2.ko-$(SVNREV)
+	cp -a $(FOLDER_KERNEL)/$(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/jbd2/jbd2.ko $(BUILD_FOLDER)/jbd2.ko-$(SVNREV)
 	ln -sf jbd2.ko-$(SVNREV) $(BUILD_FOLDER)/jbd2.ko
 	cp -a $(FOLDER_KERNEL)/$(BUILD_FOLDER)/$(FOLDER_LINUXKERNEL)/fs/exportfs/exportfs.ko $(BUILD_FOLDER)/exportfs.ko-$(SVNREV)
 	ln -sf exportfs.ko-$(SVNREV) $(BUILD_FOLDER)/exportfs.ko
