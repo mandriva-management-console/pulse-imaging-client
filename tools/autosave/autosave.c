@@ -660,13 +660,13 @@ int save(void)
                 }
 
                 if (
-                    (ttype[i] == 0x00 && poff[i] == 2 && (tmax[i] - tmax[i] + 1 == 262144)) // 128 MB, type 0, second part => MSR on a >= 16 GB disk without OEM part
+                    (ttype[i] == 0x00 && poff[i] == 2 && (tmax[i] - tmin[i] + 1 == 262144)) // 128 MB, type 0, second part => MSR on a >= 16 GB disk without OEM part
                      ||
-                    (ttype[i] == 0x00 && poff[i] == 3 && (tmax[i] - tmax[i] + 1 == 262144)) // 128 MB, type 0, third part => MSR on a >= 16 GB disk with OEM part
+                    (ttype[i] == 0x00 && poff[i] == 3 && (tmax[i] - tmin[i] + 1 == 262144)) // 128 MB, type 0, third part => MSR on a >= 16 GB disk with OEM part
                      ||
-                    (ttype[i] == 0x00 && poff[i] == 2 && (tmax[i] - tmax[i] + 1 == 65536)) // 32 MB, type 0, second part => MSR on a < 16 GB disk without OEM part
+                    (ttype[i] == 0x00 && poff[i] == 2 && (tmax[i] - tmin[i] + 1 == 65536)) // 32 MB, type 0, second part => MSR on a < 16 GB disk without OEM part
                      ||
-                    (ttype[i] == 0x00 && poff[i] == 3 && (tmax[i] - tmax[i] + 1 == 65536)) // 32 MB, type 0, third part => MSR on a < 16 GB disk with OEM part
+                    (ttype[i] == 0x00 && poff[i] == 3 && (tmax[i] - tmin[i] + 1 == 65536)) // 32 MB, type 0, third part => MSR on a < 16 GB disk with OEM part
                     ) {
                     /*  save as raw :
                         Microsoft Reserved Partition
