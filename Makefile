@@ -286,7 +286,7 @@ dist-clean:
 	$(MAKE) dist-clean -C $(FOLDER_INITRD)
 	$(MAKE) dist-clean -C $(FOLDER_ELTORITO)
 
-export PROJECT_NAME = pulse2-imaging-server
+export PROJECT_NAME = pulse2-imaging-client
 export VERSION = 1.3.0
 
 export TARBALL = $(PROJECT_NAME)-$(VERSION)
@@ -295,7 +295,7 @@ export TARBALL_GZ = $(TARBALL).tar.gz
 export EXCLUDE_FILES = --exclude .svn
 export CPA = cp -af
 
-tarball: $(RELEASES_DIR)/$(TARBALL_GZ):
+tarball: $(RELEASES_DIR)/$(TARBALL_GZ)
 $(RELEASES_DIR)/$(TARBALL_GZ):
 	mkdir -p $(RELEASES_DIR)/$(TARBALL)
 	$(CPA) bootloader build BUILD contrib eltorito initrd INSTALL kernel Makefile postinstall prebuild-binaries tests tools $(RELEASES_DIR)/$(TARBALL)
