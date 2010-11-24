@@ -26,12 +26,13 @@ export LC_ALL=C
 echo "Pulse 2 Imaging client basic auto-installation script"
 echo
 
-if [ ! -f "/bin/lsb_release" ];
+if [ ! -f `which lsb_release` ];
 then
     echo "Please install lsb_release."
     echo "urpmi lsb-release"
+    echo "apt-get install lsb-release"
     exit 1
-fi	
+fi
 
 if [ -z $TMPCO ];
     then
