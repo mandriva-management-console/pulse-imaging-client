@@ -25,7 +25,7 @@
 ARCH	= i386
 SRC     = adler32.c inflate.c infblock.c infcodes.c inftrees.c inffast.c infutil.c zfunc.c
 OBJ     = $(SRC:.c=.o)
-CFLAGS  = -I. -DMAX_WBITS=14 -DMAX_MEM_LEVEL=7 -DMY_ZCALLOC -DNO_ERRNO_H -O9 -march=$(ARCH) -m32
+CFLAGS  = -I. -DMY_ZCALLOC -DNO_ERRNO_H -O9 -march=$(ARCH) -m32
 
 all: $(OBJ)
 
