@@ -7,17 +7,17 @@ FOLDER_LINUXKERNEL  		= linux-$(VERSION_LINUXKERNEL)
 TARBALL_LINUXKERNEL		= linux-$(VERSION_LINUXKERNEL).tar.bz2
 CONFIGS_LINUXKERNEL		= dot-configs
 
-VERSION_E1000			= 8.0.19
+VERSION_E1000			= 8.0.25
 URI_E1000			= http://downloadmirror.intel.com/9180/eng
 FOLDER_E1000			= e1000-$(VERSION_E1000)/src
 TARBALL_E1000			= e1000-$(VERSION_E1000).tar.gz
 
-VERSION_E1000e			= 1.1.19
+VERSION_E1000e			= 1.2.20
 URI_E1000e			= http://downloadmirror.intel.com/15817/eng
 FOLDER_E1000e			= e1000e-$(VERSION_E1000e)/src
 TARBALL_E1000e			= e1000e-$(VERSION_E1000e).tar.gz
 
-VERSION_IGB			= 2.2.9
+VERSION_IGB			= 2.4.12
 URI_IGB				= http://downloadmirror.intel.com/13663/eng
 FOLDER_IGB			= igb-$(VERSION_IGB)/src
 TARBALL_IGB			= igb-$(VERSION_IGB).tar.gz
