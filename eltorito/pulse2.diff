@@ -146,7 +146,7 @@ diff -Nru grub-0.95.dist/stage2/Makefile.am grub-0.95/stage2/Makefile.am
 -pre_stage2_exec_CFLAGS = $(STAGE2_COMPILE) $(FSYS_CFLAGS)
 +	hercules.c md5.c serial.c smp-imps.c stage2.c terminfo.c tparm.c \
 +	zlib/adler32.c zlib/inflate.c zlib/infblock.c zlib/infcodes.c zlib/inftrees.c zlib/inffast.c zlib/infutil.c zlib/zfunc.c
-+pre_stage2_exec_CFLAGS = $(STAGE2_COMPILE) $(FSYS_CFLAGS)  -DMAX_WBITS=14 -DMAX_MEM_LEVEL=7 -DMY_ZCALLOC 
++pre_stage2_exec_CFLAGS = $(STAGE2_COMPILE) $(FSYS_CFLAGS) -DMY_ZCALLOC 
  pre_stage2_exec_CCASFLAGS = $(STAGE2_COMPILE) $(FSYS_CFLAGS)
  pre_stage2_exec_LDFLAGS = $(PRE_STAGE2_LINK)
  
@@ -218,7 +218,7 @@ diff -Nru grub-0.95.dist/stage2/Makefile.in grub-0.95/stage2/Makefile.in
 -pre_stage2_exec_CFLAGS = $(STAGE2_COMPILE) $(FSYS_CFLAGS)
 +	hercules.c md5.c serial.c smp-imps.c stage2.c terminfo.c tparm.c \
 +	zlib/adler32.c zlib/inflate.c zlib/infblock.c zlib/infcodes.c zlib/inftrees.c zlib/inffast.c zlib/infutil.c zlib/zfunc.c
-+pre_stage2_exec_CFLAGS = $(STAGE2_COMPILE) $(FSYS_CFLAGS)  -DMAX_WBITS=14 -DMAX_MEM_LEVEL=7 -DMY_ZCALLOC
++pre_stage2_exec_CFLAGS = $(STAGE2_COMPILE) $(FSYS_CFLAGS) -DMY_ZCALLOC
  pre_stage2_exec_CCASFLAGS = $(STAGE2_COMPILE) $(FSYS_CFLAGS)
  pre_stage2_exec_LDFLAGS = $(PRE_STAGE2_LINK)
  @NETBOOT_SUPPORT_TRUE@pre_stage2_exec_LDADD = ../netboot/libdrivers.a
