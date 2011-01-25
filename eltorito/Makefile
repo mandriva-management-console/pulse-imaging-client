@@ -21,15 +21,15 @@
 # MA 02110-1301, USA.
 #
 
-CC				:= gcc-3.4
-SVNREV			:=$(shell echo $Rev: 4491 $ | tr -cd [[:digit:]])
+# CC		:= gcc-3.4
+SVNREV		:=$(shell echo $Rev: 4491 $ | tr -cd [[:digit:]])
 
 BUILD_FOLDER	= $(shell pwd)/build
 3RDPARTY_FOLDER	= $(shell pwd)/3rd_party
 
 GRUB_VERSION	= 0.95
-GRUB_URI		= ftp://alpha.gnu.org/gnu/grub/
-GRUB_FOLDER		= grub-$(GRUB_VERSION)
+GRUB_URI	= ftp://alpha.gnu.org/gnu/grub/
+GRUB_FOLDER	= grub-$(GRUB_VERSION)
 GRUB_TARBALL	= grub-$(GRUB_VERSION).tar.gz
 
 all:
@@ -47,6 +47,7 @@ all:
 
 clean:
 	$(MAKE) clean -C $(GRUB_FOLDER)
+	rm -fr $(GRUB_FOLDER)
 	rm -f stage2_eltorito-*
 
 distclean:
