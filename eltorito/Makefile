@@ -46,7 +46,6 @@ all:
 	cp -a $(GRUB_FOLDER)/stage2/stage2_eltorito stage2_eltorito-$(SVNREV)
 
 clean:
-	$(MAKE) clean -C $(GRUB_FOLDER)
 	rm -fr $(GRUB_FOLDER)
 	rm -f stage2_eltorito-*
 
