@@ -684,6 +684,19 @@ int save(void)
                     }
                 }
 
+                if (
+                    (ttype[i] == 0x0c && poff[i] == 2 && (tmax[i] - tmin[i] + 1 <= 16384)) // on some asus laptops, diag part are tagged as type c (FAT32, LBA-mapped) but formated as fat12, so save type c AND size <= 2 MB (the bigger I saw) in raw mode
+                    ) {
+                    myprintf("Asus diagnostic spotted\n");
+                    tmprintf("%s/image_raw %s ?", revobin, device);
+                    if (mysystem(tmppath) == 0) {
+                        tmprintf("%s/image_raw %s %s", revobin, device, destfile);
+                        mysystem(tmppath);
+                        continue;
+                    }
+                }
+
+
                 if ((foerr = fopen(logtxt, "a"))) {
                     fprintf(foerr,
                             "\n\nERROR: Unsupported or corrupted FS...(disk %d, part %d, type %x)\n",
