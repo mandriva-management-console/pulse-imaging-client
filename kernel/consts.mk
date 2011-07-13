@@ -1,8 +1,8 @@
 ARCHITECTURE			= i386
 CC				= gcc
 
-VERSION_LINUXKERNEL		= 2.6.32.27
-URI_LINUXKERNEL     		= http://www.kernel.org/pub/linux/kernel/v2.6
+VERSION_LINUXKERNEL		= 2.6.32.43
+URI_LINUXKERNEL     		= http://www.kernel.org/pub/linux/kernel/v2.6/longterm/v2.6.32/
 FOLDER_LINUXKERNEL  		= linux-$(VERSION_LINUXKERNEL)
 TARBALL_LINUXKERNEL		= linux-$(VERSION_LINUXKERNEL).tar.bz2
 CONFIGS_LINUXKERNEL		= dot-configs
