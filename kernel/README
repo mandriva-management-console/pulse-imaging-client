@@ -1,1 +1,4 @@
-
+To bump the kernel version :
+ - update VERSION_LINUXKERNEL in consts.mk
+ - in dot-configs, create a new config using the above version
+ - run "make"
