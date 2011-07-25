@@ -1,0 +1,4439 @@
+--- sysvinit-2.84.orig/debian/postinst
++++ sysvinit-2.84/debian/postinst
+@@ -0,0 +1,270 @@
++#! /bin/sh
++#
++# debian.postinst
++#		Creates /dev/initctl if not already there.
++#		Also checks /etc/inittab for single user entry.
++#
++# Version:	debian.postinst  2.83-2  01-Oct-2001  miquels@cistron.nl
++#
++
++
++case "$1" in
++	configure)
++		oldver=$2
++		;;
++	abort-upgrade|abort-remove|abort-deconfigure)
++		exit 0
++		;;
++esac
++umask 022
++
++# Compatibility symlinks into /usr/doc
++if [ -d /usr/doc -a ! -e /usr/doc/sysvinit \
++	-a -d /usr/share/doc/sysvinit ]
++then
++	ln -sf ../share/doc/sysvinit /usr/doc/sysvinit
++fi
++
++#
++#	Check /dev/initctl
++#
++if [ ! -p /dev/initctl ]
++then
++	echo "sysvinit: creating /dev/initctl"
++	rm -f /dev/initctl
++	mknod -m 600 /dev/initctl p
++fi
++
++#
++#	Restore network and inittab files.
++#	Should be taken out for woody, I guess as this is for
++#	backwards compat with Debian 1.1 (see preinst as well)
++#
++if [ ! -f /etc/init.d/network ]
++then
++	if [ -f /etc/init.d/network.saved ]
++	then
++		cp -a /etc/init.d/network.saved /etc/init.d/network
++	fi
++fi
++rm -f /etc/init.d/network.saved
++if [ ! -f /etc/inittab ]
++then
++	if [ -f /etc/inittab.saved ]
++	then
++		cp -a /etc/inittab.saved /etc/inittab
++	else
++		# Prefer arch-specific inittab.
++		arch=`dpkg --print-installation-architecture`
++		expl=/usr/share/doc/sysvinit/examples
++		if [ -f $expl/inittab.$arch ]; then
++			inittab=$expl/inittab.$arch
++		else
++			inittab=$expl/inittab
++		fi
++		cp -a $inittab /etc/inittab
++	fi
++fi
++rm -f /etc/inittab.saved
++if [ ! -f /etc/default/rcS ]
++then
++	#
++	#	Install sample rcS file.
++	#
++	cp /usr/share/doc/sysvinit/examples/default.rcS /etc/default/rcS
++else
++	#
++	#	Change GMT=-u to UTC=yes etc in existing rcS file.
++	#
++	if grep -q ^GMT /etc/default/rcS
++	then
++		cp /etc/default/rcS /etc/default/rcS.TMP
++		sed	-e "s/^GMT=.*\(-u\|--utc\).*/UTC=yes/" \
++			-e "s/^GMT=.*/UTC=no/" \
++			-e 's/# Set GMT="-u".*/# Set UTC to yes or no/' \
++			< /etc/default/rcS.TMP > /etc/default/rcS
++		if [ -s /etc/default/rcS ]
++		then
++			rm -f /etc/default/rcS.TMP
++		fi
++	fi
++fi
++
++#
++#	See if there were saved variables.
++#
++if [ -f /etc/default/rcS.sed ]
++then
++	cp /etc/default/rcS /etc/default/rcS.TMP
++	sed -f /etc/default/rcS.sed < /etc/default/rcS.TMP > /etc/default/rcS
++	if [ -s /etc/default/rcS ]
++	then
++		rm -f /etc/default/rcS.TMP
++	fi
++	rm -f /etc/default/rcS.sed
++fi
++
++#
++#	Check single user entry in /etc/inittab
++#
++if ! grep -q '^[^:]\{1,4\}:S:' /etc/inittab
++then
++	cat <<EOF
++
++WARNING: you don't have a single user entry in /etc/inittab. Consider
++         adding an entry like this after installation:
++
++         ~~:S:wait:/sbin/sulogin
++
++EOF
++	echo -n "Hit Enter key to continue...."
++	read junk
++fi
++
++#
++#	Fix up /etc/inittab for the new rcS
++#
++if grep -q '/etc/init.d/boot$' /etc/inittab
++then
++	sed -e 's!^.*\(sysinit\|boot\|bootwait\):/etc/init.d/boot.*$!si::sysinit:/etc/init.d/rcS!' < /etc/inittab > /etc/inittab.tmp
++	if [ ! -s /etc/inittab.tmp ]
++	then
++		echo "$0: installation severely fubared !! HELP" >&2
++		exit 1
++	fi
++	mv /etc/inittab.tmp /etc/inittab
++fi
++
++#
++#	Fix the call to shutdown in /etc/inittab (add -a).
++#
++if grep -q 'ca:12345:ctrlaltdel:/sbin/shutdown -t1 -r now$' /etc/inittab
++then
++	sed -e 's!ca:12345:ctrlaltdel:/sbin/shutdown -t1 -r now$!ca:12345:ctrlaltdel:/sbin/shutdown -t1 -a -r now!' < /etc/inittab > /etc/inittab.tmp
++	if [ ! -s /etc/inittab.tmp ]
++	then
++		echo "$0: installation severely fubared !! HELP" >&2
++		exit 1
++	fi
++	mv /etc/inittab.tmp /etc/inittab
++fi
++
++#
++# Bugs 2.72 -> 2.73
++# 1. mv settime.sh hwclock.sh
++# 2. mv mdinit.sh mdutils.sh
++#
++rm -f /etc/init.d/settime.sh /etc/rcS.d/S??settime.sh
++rm -f /etc/init.d/mdinit.sh /etc/rcS.d/S??mdinit.sh
++#
++#	Remove the old S20halt and S20 reboot links.
++#
++rm -f /etc/rc0.d/S20halt   /etc/rc0.d/S05halt
++rm -f /etc/rc6.d/S20reboot /etc/rc6.d/S05reboot
++
++#
++#	Function like update-rc.d but simpler & faster.
++#	Usage: updatercd basename start|stop NN runlevel .
++#
++#	Uses the real update-rc.d if file-rc is detected.
++#
++updatercd() {
++
++	if [ ! -f /etc/init.d/$1 ]
++	then
++		return
++	fi
++
++	if [ -d /usr/lib/file-rc/. ]
++	then
++		update-rc.d "$@" > /dev/null
++		return $?
++	fi
++
++	base=$1
++	shift
++	while [ "$1" != "" ]
++	do
++		if [ "$1" = stop ]
++		then
++			tlet=K
++		else
++			tlet=S
++		fi
++		lev=$2
++		shift 2
++		while [ "$1" != "." ]
++		do
++			cd /etc/rc$1.d
++			tmp="`echo $tlet??$base`"
++			case "$tmp" in
++				"$tlet??$base")
++					# Not present yet.
++					ln -s ../init.d/$base $tlet$lev$base
++					;;
++				*)
++					# Already present.
++					;;
++			esac
++			shift
++		done
++		shift
++	done
++}
++
++#
++#	Okay, we could do this with update-rc.d, but that would probably
++#	be pretty slow. This way we win some speed.
++#	DO NOT FOLLOW THIS EXAMPLE IN OTHER PACKAGES.
++#
++#updatercd bootlogd	start 5 S .
++updatercd checkroot.sh	start 10 S .
++updatercd modutils	start 20 S .
++updatercd checkfs.sh	start 30 S .
++updatercd mountall.sh	start 35 S .
++updatercd hostname.sh	start 40 S .
++updatercd network	start 40 S .
++updatercd mountnfs.sh	start 45 S .
++updatercd bootmisc.sh	start 55 S .
++updatercd urandom	start 55 S . start 30 0 6 .
++
++#
++#	Links in "normal" runlevels.
++#
++updatercd sendsigs	start 20 0 6 .
++updatercd umountnfs.sh	start 31 0 6 .
++updatercd umountfs	start 40 0 6 .
++updatercd halt		start 90 0 .
++updatercd reboot	start 90 6 .
++updatercd rmnologin	start 99 2 3 4 5 .
++updatercd single        start 20 1 .
++#updatercd stop-bootlogd	start 99 2 3 4 5 .
++
++#
++#	Upgrade init if possible. There was a bug in all versions
++#	up to and including 2.75-4, which didn't affect i386 but
++#	did affect most other architectures.
++#
++case "`uname -m`" in
++	i?86)
++		badver="2.[0-6]*|2.7[0-3]*"
++		;;
++	*)
++		badver="2.[0-6]*|2.7[0-4]*|2.75-*"
++		;;
++esac
++eval "case \"$oldver\" in
++	$badver)
++		;;
++	*)
++		init u
++		sleep 1
++esac"
++
++#
++#	Tell init to re-read inittab.
++#
++init q
++
++exit 0
++
+--- sysvinit-2.84.orig/debian/etc/init.d/halt
++++ sysvinit-2.84/debian/etc/init.d/halt
+@@ -0,0 +1,25 @@
++#! /bin/sh
++#
++# halt		Execute the halt command.
++#
++# Version:      @(#)halt  2.84-2  07-Jan-2002  miquels@cistron.nl
++#
++
++PATH=/sbin:/bin:/usr/sbin:/usr/bin
++
++# See if we need to cut the power.
++if [ -x /etc/init.d/ups-monitor ]
++then
++	/etc/init.d/ups-monitor poweroff
++fi
++
++# Don't shut down drives if we're using RAID.
++hddown="-h"
++if grep -qs '^md.*active' /proc/mdstat
++then
++	hddown=""
++fi
++
++halt -d -f -i -p $hddown
++
++: exit 0
+--- sysvinit-2.84.orig/debian/etc/init.d/rc
++++ sysvinit-2.84/debian/etc/init.d/rc
+@@ -0,0 +1,102 @@
++#! /bin/sh
++#
++# rc		This file is responsible for starting/stopping
++#		services when the runlevel changes.
++#
++#		Optimization feature:
++#		A startup script is _not_ run when the service was
++#		running in the previous runlevel and it wasn't stopped
++#		in the runlevel transition (most Debian services don't
++#		have K?? links in rc{1,2,3,4,5} )
++#
++# Author:	Miquel van Smoorenburg <miquels@cistron.nl>
++#		Bruce Perens <Bruce@Pixar.com>
++#
++# Version:	@(#)rc  2.78  07-Nov-1999  miquels@cistron.nl
++#
++
++# Un-comment the following for debugging.
++# debug=echo
++
++#
++# Start script or program.
++#
++startup() {
++  case "$1" in
++	*.sh)
++		$debug sh "$@"
++		;;
++	*)
++		$debug "$@"
++		;;
++  esac
++}
++
++  # Ignore CTRL-C only in this shell, so we can interrupt subprocesses.
++  trap ":" INT QUIT TSTP
++
++  # Set onlcr to avoid staircase effect.
++  stty onlcr 0>&1
++
++  # Now find out what the current and what the previous runlevel are.
++
++  runlevel=$RUNLEVEL
++  # Get first argument. Set new runlevel to this argument.
++  [ "$1" != "" ] && runlevel=$1
++  if [ "$runlevel" = "" ]
++  then
++	echo "Usage: $0 <runlevel>" >&2
++	exit 1
++  fi
++  previous=$PREVLEVEL
++  [ "$previous" = "" ] && previous=N
++
++  export runlevel previous
++
++  # Is there an rc directory for this new runlevel?
++  if [ -d /etc/rc$runlevel.d ]
++  then
++	# First, run the KILL scripts.
++	if [ $previous != N ]
++	then
++		for i in /etc/rc$runlevel.d/K[0-9][0-9]*
++		do
++			# Check if the script is there.
++			[ ! -f $i ] && continue
++
++			# Stop the service.
++			startup $i stop
++		done
++	fi
++	# Now run the START scripts for this runlevel.
++	for i in /etc/rc$runlevel.d/S*
++	do
++		[ ! -f $i ] && continue
++
++		if [ $previous != N ] && [ $previous != S ]
++		then
++			#
++			# Find start script in previous runlevel and
++			# stop script in this runlevel.
++			#
++			suffix=${i#/etc/rc$runlevel.d/S[0-9][0-9]}
++			stop=/etc/rc$runlevel.d/K[0-9][0-9]$suffix
++			previous_start=/etc/rc$previous.d/S[0-9][0-9]$suffix
++			#
++			# If there is a start script in the previous level
++			# and _no_ stop script in this level, we don't
++			# have to re-start the service.
++			#
++			[ -f $previous_start ] && [ ! -f $stop ] && continue
++		fi
++		case "$runlevel" in
++			0|6)
++				startup $i stop
++				;;
++			*)
++				startup $i start
++				;;
++		esac
++	done
++  fi
++# eof /etc/init.d/rc
+--- sysvinit-2.84.orig/debian/etc/init.d/reboot
++++ sysvinit-2.84/debian/etc/init.d/reboot
+@@ -0,0 +1,11 @@
++#! /bin/sh
++#
++# reboot	Execute the reboot command.
++#
++# Version:      @(#)reboot  2.75  22-Jun-1998  miquels@cistron.nl
++#
++
++PATH=/sbin:/bin:/usr/sbin:/usr/bin
++
++echo -n "Rebooting... "
++reboot -d -f -i
+--- sysvinit-2.84.orig/debian/etc/init.d/single
++++ sysvinit-2.84/debian/etc/init.d/single
+@@ -0,0 +1,23 @@
++#! /bin/sh
++#
++# single	executed by init(8) upon entering runlevel 1 (single).
++#
++# Version:	@(#)single  1.20  26-Geb-2001  miquels@cistron.nl
++#
++
++PATH="/sbin:/bin:/usr/sbin:/usr/bin"
++
++# Kill all processes.
++echo -n "Sending all processes the TERM signal... "
++killall5 -15
++echo "done."
++sleep 5
++echo -n "Sending all processes the KILL signal... "
++killall5 -9
++echo "done."
++
++# We start update here, since we just killed it.
++[ -x /sbin/update ] && update
++
++echo "Entering single-user mode..."
++exec init -t1 S
+--- sysvinit-2.84.orig/debian/etc/init.d/skeleton
++++ sysvinit-2.84/debian/etc/init.d/skeleton
+@@ -0,0 +1,70 @@
++#! /bin/sh
++#
++# skeleton	example file to build /etc/init.d/ scripts.
++#		This file should be used to construct scripts for /etc/init.d.
++#
++#		Written by Miquel van Smoorenburg <miquels@cistron.nl>.
++#		Modified for Debian GNU/Linux
++#		by Ian Murdock <imurdock@gnu.ai.mit.edu>.
++#
++# Version:	@(#)skeleton  1.9.1  08-Apr-2002  miquels@cistron.nl
++#
++
++PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
++DAEMON=/usr/sbin/daemon
++NAME=daemon
++DESC="some daemon"
++
++test -x $DAEMON || exit 0
++
++set -e
++
++case "$1" in
++  start)
++	echo -n "Starting $DESC: $NAME"
++	start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid \
++		--exec $DAEMON
++	echo "."
++	;;
++  stop)
++	echo -n "Stopping $DESC: $NAME "
++	start-stop-daemon --stop --quiet --pidfile /var/run/$NAME.pid \
++		--exec $DAEMON
++	echo "."
++	;;
++  #reload)
++	#
++	#	If the daemon can reload its config files on the fly
++	#	for example by sending it SIGHUP, do it here.
++	#
++	#	If the daemon responds to changes in its config file
++	#	directly anyway, make this a do-nothing entry.
++	#
++	# echo -n "Reloading $DESC configuration..."
++	# start-stop-daemon --stop --signal 1 --quiet --pidfile \
++	#	/var/run/$NAME.pid --exec $DAEMON
++	# echo "done."
++  #;;
++  restart|force-reload)
++	#
++	#	If the "reload" option is implemented, move the "force-reload"
++	#	option to the "reload" entry above. If not, "force-reload" is
++	#	just the same as "restart".
++	#
++	echo -n "Restarting $DESC: $NAME"
++	start-stop-daemon --stop --quiet --pidfile \
++		/var/run/$NAME.pid --exec $DAEMON
++	sleep 1
++	start-stop-daemon --start --quiet --pidfile \
++		/var/run/$NAME.pid --exec $DAEMON
++	echo "."
++	;;
++  *)
++	N=/etc/init.d/$NAME
++	# echo "Usage: $N {start|stop|restart|reload|force-reload}" >&2
++	echo "Usage: $N {start|stop|restart|force-reload}" >&2
++	exit 1
++	;;
++esac
++
++exit 0
+--- sysvinit-2.84.orig/debian/etc/init.d/README
++++ sysvinit-2.84/debian/etc/init.d/README
+@@ -0,0 +1,21 @@
++
++	Configuration of Init under Debian GNU/Linux
++
++Most Unix versions have a file here that describes how the scripts
++in this directory work, and how the links in the /etc/rc?.d/ directories
++influence system startup/shutdown.
++
++For Debian, this information is contained in the policy manual, chapter 10.3:
++system run levels.  The home site for the Debian Policy Manual is at
++
++http://www.debian.org/doc/debian-policy/
++
++The Debian Policy Manual is also available in the Debian package
++`debian-policy'.  When this package is installed, the policy manual can be
++found in directory /usr/share/doc/debian-policy. If you have a web server
++and a browser installed you can probably read it at
++http://localhost/doc/debian-policy/
++
++Make sure you have at least version 3.5.4.0 of the policy manual.
++
++Some more detailed info can also be found in /usr/share/doc/sysvinit.
+--- sysvinit-2.84.orig/debian/etc/init.d/rmnologin
++++ sysvinit-2.84/debian/etc/init.d/rmnologin
+@@ -0,0 +1,14 @@
++#! /bin/sh
++#
++# rmnologin	This script removes the /etc/nologin file as the last
++#		step in the boot process.
++#
++# Version:	@(#)rmnologin  1.00  22-Jun-1998  miquels@cistron.nl
++#
++
++if [ -f /etc/nologin.boot ]
++then
++	rm -f /etc/nologin /etc/nologin.boot
++fi
++
++: exit 0
+--- sysvinit-2.84.orig/debian/etc/init.d/urandom
++++ sysvinit-2.84/debian/etc/init.d/urandom
+@@ -0,0 +1,47 @@
++#! /bin/sh
++#
++# urandom	This script saves the random seed between reboots.
++#		It is called from the boot, halt and reboot scripts.
++#
++# Version:	@(#)urandom  1.33  22-Jun-1998  miquels@cistron.nl
++#
++
++[ -c /dev/urandom ] || exit 0
++. /etc/default/rcS
++
++case "$1" in
++	start|"")
++		if [ "$VERBOSE" != no ]
++		then
++			echo -n "Initializing random number generator... "
++		fi
++		# Load and then save 512 bytes,
++		# which is the size of the entropy pool
++		if [ -f /var/lib/urandom/random-seed ]
++		then
++			cat /var/lib/urandom/random-seed >/dev/urandom
++		fi
++		rm -f /var/lib/urandom/random-seed
++		umask 077
++		dd if=/dev/urandom of=/var/lib/urandom/random-seed count=1 \
++			>/dev/null 2>&1 || echo "urandom start: failed."
++		umask 022
++		[ "$VERBOSE" != no ] && echo "done."
++		;;
++	stop)
++		# Carry a random seed from shut-down to start-up;
++		# see documentation in linux/drivers/char/random.c
++		[ "$VERBOSE" != no ] && echo -n "Saving random seed... "
++		umask 077
++		dd if=/dev/urandom of=/var/lib/urandom/random-seed count=1 \
++			>/dev/null 2>&1 || echo "urandom stop: failed."
++		[ "$VERBOSE" != no ] && echo "done."
++		;;
++	*)
++		echo "Usage: urandom {start|stop}" >&2
++		exit 1
++		;;
++esac
++
++exit 0
++
+--- sysvinit-2.84.orig/debian/etc/init.d/rcS
++++ sysvinit-2.84/debian/etc/init.d/rcS
+@@ -0,0 +1,72 @@
++#! /bin/sh
++#
++# rcS		Call all S??* scripts in /etc/rcS.d in
++#		numerical/alphabetical order.
++#
++# Version:	@(#)/etc/init.d/rcS  2.76  19-Apr-1999  miquels@cistron.nl
++#
++
++PATH=/sbin:/bin:/usr/sbin:/usr/bin
++runlevel=S
++prevlevel=N
++umask 022
++export PATH runlevel prevlevel
++
++#
++#	See if system needs to be setup. This is ONLY meant to
++#	be used for the initial setup after a fresh installation!
++#
++if [ -x /sbin/unconfigured.sh ]
++then
++  /sbin/unconfigured.sh
++fi
++
++#
++#	Source defaults.
++#
++. /etc/default/rcS
++export VERBOSE
++
++#
++#	Trap CTRL-C &c only in this shell so we can interrupt subprocesses.
++#
++trap ":" INT QUIT TSTP
++
++#
++#	Call all parts in order.
++#
++for i in /etc/rcS.d/S??*
++do
++	# Ignore dangling symlinks for now.
++	[ ! -f "$i" ] && continue
++
++	case "$i" in
++		*.sh)
++			# Source shell script for speed.
++			(
++				trap - INT QUIT TSTP
++				set start
++				. $i
++			)
++			;;
++		*)
++			# No sh extension, so fork subprocess.
++			$i start
++			;;
++	esac
++done
++
++#
++#	For compatibility, run the files in /etc/rc.boot too.
++#
++[ -d /etc/rc.boot ] && run-parts /etc/rc.boot
++
++#
++#	Finish setup if needed. The comment above about
++#	/sbin/unconfigured.sh applies here as well!
++#
++if [ -x /sbin/setup.sh ]
++then
++  /sbin/setup.sh
++fi
++
+--- sysvinit-2.84.orig/debian/etc/init.d/bootmisc.sh
++++ sysvinit-2.84/debian/etc/init.d/bootmisc.sh
+@@ -0,0 +1,89 @@
++#
++# bootmisc.sh	Miscellaneous things to be done during bootup.
++#
++# Version:	@(#)bootmisc.sh  2.83  02-Oct-2001  miquels@cistron.nl
++#
++
++. /etc/default/rcS
++#
++# Put a nologin file in /etc to prevent people from logging in before
++# system startup is complete.
++#
++if [ "$DELAYLOGIN" = yes ]
++then
++  echo "System bootup in progress - please wait" > /etc/nologin
++  cp /etc/nologin /etc/nologin.boot
++fi
++
++#
++# Wipe /tmp (and don't erase `lost+found', `quota.user' or `quota.group')!
++# Note that files _in_ lost+found _are_ deleted.
++#
++[ "$VERBOSE" != no ] && echo -n "Cleaning: /tmp "
++#
++#	If $TMPTIME is set to 0, we do not use any ctime expression
++#	at all, so we can also delete files with timestamps
++#	in the future!
++#
++if [ "$TMPTIME" = 0 ]
++then
++	TEXPR=""
++else
++	TEXPR="! -ctime -$TMPTIME"
++fi
++( cd /tmp && \
++  find . -xdev \
++  $TEXPR \
++  ! -name . \
++  ! \( -name lost+found -uid 0 \) \
++  ! \( -name quota.user -uid 0 \) \
++  ! \( -name quota.group -uid 0 \) \
++  ! \( -name .journal -uid 0 \) \
++    -depth -exec rm -rf -- {} \; )
++rm -f /tmp/.X*-lock
++#
++# Clean up any stale locks.
++#
++[ "$VERBOSE" != no ] && echo -n "/var/lock "
++( cd /var/lock && find . -type f ! -newer /etc/mtab -exec rm -f -- {} \; )
++#
++# Clean up /var/run and create /var/run/utmp so that we can login.
++#
++[ "$VERBOSE" != no ] && echo -n "/var/run"
++( cd /var/run && \
++	find . ! -type d ! -name utmp ! -name innd.pid \
++	! -newer /etc/mtab -exec rm -f -- {} \; )
++: > /var/run/utmp
++if grep -q ^utmp: /etc/group
++then
++	chmod 664 /var/run/utmp
++	chgrp utmp /var/run/utmp
++fi
++[ "$VERBOSE" != no ] && echo "."
++
++#
++# Set pseudo-terminal access permissions.
++#
++if [ ! -c /dev/.devfsd ] && [ -c /dev/ttyp0 ]
++then
++	chmod 666 /dev/tty[p-za-e][0-9a-f]
++	chown root:tty /dev/tty[p-za-e][0-9a-f]
++fi
++
++#
++# Update /etc/motd.
++#
++if [ "$EDITMOTD" != no ]
++then
++	uname -a > /etc/motd.tmp
++	sed 1d /etc/motd >> /etc/motd.tmp
++	mv /etc/motd.tmp /etc/motd
++fi
++
++#
++# Save kernel messages in /var/log/dmesg
++#
++dmesg -s 65536 > /var/log/dmesg
++
++: exit 0
++
+--- sysvinit-2.84.orig/debian/etc/init.d/checkroot.sh
++++ sysvinit-2.84/debian/etc/init.d/checkroot.sh
+@@ -0,0 +1,180 @@
++#
++# checkroot.sh	Check to root file system.
++#
++# Version:	@(#)checkroot.sh  2.84-3  25-Jan-2002  miquels@cistron.nl
++#
++
++. /etc/default/rcS
++
++#
++# Set SULOGIN in /etc/default/rcS to yes if you want a sulogin to be spawned
++# from this script *before anything else* with a timeout, like SCO does.
++#
++[ "$SULOGIN" = yes ] && sulogin -t 30 $CONSOLE
++
++#
++# Ensure that bdflush (update) is running before any major I/O is
++# performed (the following fsck is a good example of such activity :).
++#
++[ -x /sbin/update ] && update
++
++#
++# Read /etc/fstab.
++#
++exec 9>&0 </etc/fstab
++rootmode=rw
++rootopts=rw
++rootcheck=yes
++swap_on_md=no
++devfs=
++while read fs mnt type opts dump pass junk
++do
++	case "$fs" in
++		""|\#*)
++			continue;
++			;;
++		/dev/md*)
++			# Swap on md device.
++			[ "$type" = swap ] && swap_on_md=yes
++			;;
++		/dev/*)
++			;;
++		*)
++			# Might be a swapfile.
++			[ "$type" = swap ] && swap_on_md=yes
++			;;
++	esac
++	[ "$type" = devfs ] && devfs="$fs"
++	[ "$mnt" != / ] && continue
++	rootopts="$opts"
++	[ "$pass" = 0 -o "$pass" = "" ] && rootcheck=no
++	case "$opts" in
++		ro|ro,*|*,ro|*,ro,*)
++			rootmode=ro
++			;;
++	esac
++done
++exec 0>&9 9>&-
++
++#
++# Mount /proc. If /proc/1 exists, but /proc is not mounted,
++# issue a warning so that the user knows something is wrong.
++#
++doproc=yes
++if [ -d /proc/1 ]
++then
++	rootino=`ls -lid /proc | sed -ne 's/^ *\([0-9]\+\).*$/\1/p'`
++	if [ "$rootino" -gt 2 ]
++	then
++		echo "WARNING: found junk under the /proc mountpoint"
++	else
++		doproc=no
++	fi
++fi
++[ "$doproc" = yes ] && mount -n /proc
++
++#
++# Activate the swap device(s) in /etc/fstab. This needs to be done
++# before fsck, since fsck can be quite memory-hungry.
++#
++doswap=no
++case "`uname -r`" in
++	2.[0123].*)
++		if [ $swap_on_md = yes ] && grep -qs resync /proc/mdstat
++		then
++			[ "$VERBOSE" != no ] &&
++			  echo "Not activating swap - RAID array resyncing"
++		else
++			doswap=yes
++		fi
++		;;
++	*)
++		doswap=yes
++		;;
++esac
++if [ $doswap = yes ]
++then
++	[ "$VERBOSE" != no ] && echo "Activating swap."
++	swapon -a 2> /dev/null
++fi
++
++#
++# Check the root file system.
++#
++if [ -f /fastboot ] || [ $rootcheck = no ]
++then
++  [ $rootcheck = yes ] && echo "Fast boot, no file system check"
++else
++  #
++  # Ensure that root is quiescent and read-only before fsck'ing.
++  #
++  mount -n -o remount,ro /
++  if [ $? = 0 ]
++  then
++    if [ -f /forcefsck ]
++    then
++	force="-f"
++    else
++	force=""
++    fi
++    if [ "$FSCKFIX" = yes ]
++    then
++	fix="-y"
++    else
++	fix="-a"
++    fi
++    spinner="-C"
++    case "$TERM" in
++        dumb|network|unknown|"") spinner="" ;;
++    esac
++    [ `uname -m` = s390 ] && spinner="" # This should go away
++    echo "Checking root file system..."
++    fsck $spinner $force $fix /
++    #
++    # If there was a failure, drop into single-user mode.
++    #
++    # NOTE: "failure" is defined as exiting with a return code of
++    # 2 or larger.  A return code of 1 indicates that file system
++    # errors were corrected but that the boot may proceed.
++    #
++    if [ $? -gt 1 ]
++    then
++      # Surprise! Re-directing from a HERE document (as in
++      # "cat << EOF") won't work, because the root is read-only.
++      echo
++      echo "fsck failed.  Please repair manually and reboot.  Please note"
++      echo "that the root file system is currently mounted read-only.  To"
++      echo "remount it read-write:"
++      echo
++      echo "   # mount -n -o remount,rw /"
++      echo
++      echo "CONTROL-D will exit from this shell and REBOOT the system."
++      echo
++      # Start a single user shell on the console
++      /sbin/sulogin $CONSOLE
++      reboot -f
++    fi
++  else
++    echo "*** ERROR!  Cannot fsck root fs because it is not mounted read-only!"
++    echo
++  fi
++fi
++
++#
++#	If the root filesystem was not marked as read-only in /etc/fstab,
++#	remount the rootfs rw but do not try to change mtab because it
++#	is on a ro fs until the remount succeeded. Then clean up old mtabs
++#	and finally write the new mtab.
++#
++mount -n -o remount,$rootmode /
++if [ "$rootmode" = rw ]
++then
++	rm -f /etc/mtab~ /etc/nologin
++	: > /etc/mtab
++	mount -f -o remount /
++	mount -f /proc
++	[ "$devfs" ] && grep -q '^devfs /dev' /proc/mounts && mount -f "$devfs"
++fi
++
++: exit 0
++
+--- sysvinit-2.84.orig/debian/etc/init.d/checkfs.sh
++++ sysvinit-2.84/debian/etc/init.d/checkfs.sh
+@@ -0,0 +1,46 @@
++#
++# checkfs.sh	Check all filesystems.
++#
++# Version:	@(#)checkfs  2.83  05-Oct-2001  miquels@cistron.nl
++#
++
++. /etc/default/rcS
++
++#
++# Check the rest of the file systems.
++#
++if [ ! -f /fastboot ]
++then
++    if [ -f /forcefsck ]
++    then
++        force="-f"
++    else
++        force=""
++    fi
++    if [ "$FSCKFIX"  = yes ]
++    then
++	fix="-y"
++    else
++	fix="-a"
++    fi
++    spinner="-C"
++    case "$TERM" in
++	dumb|network|unknown|"") spinner="" ;;
++    esac
++    [ `uname -m` = s390 ] && spinner="" # This should go away
++    echo "Checking all file systems..."
++    fsck $spinner -R -A $fix $force
++    if [ $? -gt 1 ]
++    then
++      echo
++      echo "fsck failed.  Please repair manually."
++      echo
++      echo "CONTROL-D will exit from this shell and continue system startup."
++      echo
++      # Start a single user shell on the console
++      /sbin/sulogin $CONSOLE
++    fi
++fi
++rm -f /fastboot /forcefsck
++
++: exit 0
+--- sysvinit-2.84.orig/debian/etc/init.d/mountall.sh
++++ sysvinit-2.84/debian/etc/init.d/mountall.sh
+@@ -0,0 +1,46 @@
++#
++# mountall.sh	Mount all filesystems.
++#
++# Version:	@(#)mountall.sh  2.83-2  01-Nov-2001  miquels@cistron.nl
++#
++. /etc/default/rcS
++
++#
++# Mount local file systems in /etc/fstab. For some reason, people
++# might want to mount "proc" several times, and mount -v complains
++# about this. So we mount "proc" filesystems without -v.
++#
++[ "$VERBOSE" != no ] && echo "Mounting local filesystems..."
++mount -avt nonfs,nosmbfs,noncpfs,noproc
++mount -at proc
++
++#
++# We might have mounted something over /dev, see if /dev/initctl is there.
++#
++if [ ! -p /dev/initctl ]
++then
++	rm -f /dev/initctl
++	mknod -m 600 /dev/initctl p
++fi
++kill -USR1 1
++
++#
++# Execute swapon command again, in case we want to swap to
++# a file on a now mounted filesystem.
++#
++doswap=yes
++case "`uname -r`" in
++	2.[0123].*)
++		if grep -qs resync /proc/mdstat
++		then
++			doswap=no
++		fi
++		;;
++esac
++if [ $doswap = yes ]
++then
++	swapon -a 2> /dev/null
++fi
++
++: exit 0
++
+--- sysvinit-2.84.orig/debian/etc/init.d/mountnfs.sh
++++ sysvinit-2.84/debian/etc/init.d/mountnfs.sh
+@@ -0,0 +1,87 @@
++#
++# mountnfs.sh	Now that TCP/IP is configured, mount the NFS file
++#		systems in /etc/fstab if needed. If possible,
++#		start the portmapper before mounting (this is needed for
++#		Linux 2.1.x and up).
++#
++#		Also mounts SMB filesystems now, so the name of
++#		this script is getting increasingly inaccurate.
++#
++# Version:	@(#)mountnfs.sh  2.84  08-Apr-2002  miquels@cistron.nl
++#
++
++. /etc/default/rcS
++
++#
++#	Run in a subshell because of I/O redirection.
++#
++test -f /etc/fstab && (
++
++#
++#	Read through fstab line by line. If it is NFS, set the flag
++#	for mounting NFS file systems. If any NFS partition is found and it
++#	not mounted with the nolock option, we start the portmapper.
++#
++portmap=no
++mount_nfs=no
++mount_smb=no
++mount_ncp=no
++while read device mountpt fstype options
++do
++	case "$device" in
++		""|\#*)
++			continue
++			;;
++	esac
++
++	case "$options" in
++		*noauto*)
++			continue
++			;;
++	esac
++
++	if [ "$fstype" = nfs ]
++	then
++		mount_nfs=yes
++		case "$options" in
++			*nolock*)
++				;;
++			*)
++				portmap=yes
++				;;
++		esac
++	fi
++	if [ "$fstype" = smbfs ]
++	then
++		mount_smb=yes
++	fi
++	if [ "$fstype" = ncpfs ]
++	then
++		mount_ncp=yes
++	fi
++done
++
++exec 0>&1
++
++if [ "$portmap" = yes ]
++then
++	if [ -x /sbin/portmap ]
++	then
++		echo -n "Starting portmapper... "
++		start-stop-daemon --start --quiet --exec /sbin/portmap
++		sleep 2
++	fi
++fi
++
++if [ "$mount_nfs" = yes ] || [ "$mount_smb" = yes ] || [ "$mount_ncp" = yes ]
++then
++	echo "Mounting remote filesystems..."
++	[ "$mount_nfs" = yes ] && mount -a -t nfs
++	[ "$mount_smb" = yes ] && mount -a -t smbfs
++	[ "$mount_ncp" = yes ] && mount -a -t ncpfs
++fi
++
++) < /etc/fstab
++
++: exit 0
++
+--- sysvinit-2.84.orig/debian/etc/init.d/hostname.sh
++++ sysvinit-2.84/debian/etc/init.d/hostname.sh
+@@ -0,0 +1,11 @@
++#
++# hostname.sh	Set hostname.
++#
++# Version:	@(#)hostname.sh  1.10  26-Feb-2001  miquels@cistron.nl
++#
++
++if [ -f /etc/hostname ]
++then
++	hostname --file /etc/hostname
++fi
++
+--- sysvinit-2.84.orig/debian/etc/init.d/sendsigs
++++ sysvinit-2.84/debian/etc/init.d/sendsigs
+@@ -0,0 +1,19 @@
++#! /bin/sh
++#
++# sendsigs	Kill all remaining processes.
++#
++# Version:      @(#)sendsigs  2.75  22-Jun-1998  miquels@cistron.nl
++#
++
++PATH=/sbin:/bin:/usr/sbin:/usr/bin
++
++# Kill all processes.
++echo -n "Sending all processes the TERM signal... "
++killall5 -15
++echo "done."
++sleep 5
++echo -n "Sending all processes the KILL signal... "
++killall5 -9
++echo "done."
++
++: exit 0
+--- sysvinit-2.84.orig/debian/etc/init.d/umountfs
++++ sysvinit-2.84/debian/etc/init.d/umountfs
+@@ -0,0 +1,28 @@
++#! /bin/sh
++#
++# umountfs	Turn off swap and unmount all local file systems.
++#
++# Version:      @(#)umountfs  2.83-3  31-Oct-2001  miquels@cistron.nl
++#
++
++PATH=/sbin:/bin:/usr/sbin:/usr/bin
++
++case "`uname -r`" in
++  1.*|2.[01].*) FORCE=""   ;;
++  *)            FORCE="-f" ;;
++esac
++
++umount -ttmpfs $FORCE -a -r
++
++echo -n "Deactivating swap... "
++swapoff -a
++echo "done."
++
++# We leave /proc mounted.
++echo -n "Unmounting local filesystems... "
++umount -tnoproc $FORCE -a -r
++echo "done."
++
++mount -n -o remount,ro /
++
++: exit 0
+--- sysvinit-2.84.orig/debian/etc/init.d/umountnfs.sh
++++ sysvinit-2.84/debian/etc/init.d/umountnfs.sh
+@@ -0,0 +1,23 @@
++#! /bin/sh
++#
++# umountnfs.sh	Unmount all network file systems.
++#
++# Version:      @(#)umountnfs.sh  2.78  05-Jun-2000  miquels@cistron.nl
++#
++
++PATH=/sbin:/bin:/usr/sbin:/usr/bin
++
++case "`uname -r`" in
++  1.*|2.[01].*) FORCE=""   ;;
++  *)            FORCE="-f" ;;
++esac
++
++# Write a reboot record to /var/log/wtmp before unmounting
++halt -w
++
++echo -n "Unmounting remote filesystems... "
++umount -tnfs,smbfs,ncpfs $FORCE -a -r
++echo "done."
++
++: exit 0
++
+--- sysvinit-2.84.orig/debian/etc/inittab
++++ sysvinit-2.84/debian/etc/inittab
+@@ -0,0 +1,69 @@
++# /etc/inittab: init(8) configuration.
++# $Id: inittab,v 1.91 2002/01/25 13:35:21 miquels Exp $
++
++# The default runlevel.
++id:2:initdefault:
++
++# Boot-time system configuration/initialization script.
++# This is run first except when booting in emergency (-b) mode.
++si::sysinit:/etc/init.d/rcS
++
++# What to do in single-user mode.
++~~:S:wait:/sbin/sulogin
++
++# /etc/init.d executes the S and K scripts upon change
++# of runlevel.
++#
++# Runlevel 0 is halt.
++# Runlevel 1 is single-user.
++# Runlevels 2-5 are multi-user.
++# Runlevel 6 is reboot.
++
++l0:0:wait:/etc/init.d/rc 0
++l1:1:wait:/etc/init.d/rc 1
++l2:2:wait:/etc/init.d/rc 2
++l3:3:wait:/etc/init.d/rc 3
++l4:4:wait:/etc/init.d/rc 4
++l5:5:wait:/etc/init.d/rc 5
++l6:6:wait:/etc/init.d/rc 6
++# Normally not reached, but fallthrough in case of emergency.
++z6:6:respawn:/sbin/sulogin
++
++# What to do when CTRL-ALT-DEL is pressed.
++ca:12345:ctrlaltdel:/sbin/shutdown -t1 -a -r now
++
++# Action on special keypress (ALT-UpArrow).
++#kb::kbrequest:/bin/echo "Keyboard Request--edit /etc/inittab to let this work."
++
++# What to do when the power fails/returns.
++pf::powerwait:/etc/init.d/powerfail start
++pn::powerfailnow:/etc/init.d/powerfail now
++po::powerokwait:/etc/init.d/powerfail stop
++
++# /sbin/getty invocations for the runlevels.
++#
++# The "id" field MUST be the same as the last
++# characters of the device (after "tty").
++#
++# Format:
++#  <id>:<runlevels>:<action>:<process>
++#
++# Note that on most Debian systems tty7 is used by the X Window System,
++# so if you want to add more getty's go ahead but skip tty7 if you run X.
++#
++1:2345:respawn:/sbin/getty 38400 tty1
++2:23:respawn:/sbin/getty 38400 tty2
++3:23:respawn:/sbin/getty 38400 tty3
++4:23:respawn:/sbin/getty 38400 tty4
++5:23:respawn:/sbin/getty 38400 tty5
++6:23:respawn:/sbin/getty 38400 tty6
++
++# Example how to put a getty on a serial line (for a terminal)
++#
++#T0:23:respawn:/sbin/getty -L ttyS0 9600 vt100
++#T1:23:respawn:/sbin/getty -L ttyS1 9600 vt100
++
++# Example how to put a getty on a modem line.
++#
++#T3:23:respawn:/sbin/mgetty -x0 -s 57600 ttyS3
++
+--- sysvinit-2.84.orig/debian/etc/rcS.d/README
++++ sysvinit-2.84/debian/etc/rcS.d/README
+@@ -0,0 +1,15 @@
++
++The scripts in this directory are executed once when booting the system,
++even when booting directly into single user mode. The files are all symbolic
++links, the real files are located in /etc/init.d/ . For a more general
++discussion of this technique, see /etc/init.d/README.
++
++The following sequence points are defined at this time:
++
++* After the S40 scripts have executed, all local file systems are mounted
++  and networking is available. All device drivers have been initialized.
++
++* After the S60 scripts have executed, the system clock has been set, NFS
++  filesystems have been mounted (unless the system depends on the automounter,
++  which is started later) and the filesystems have been cleaned.
++
+--- sysvinit-2.84.orig/debian/etc/inittab.s390
++++ sysvinit-2.84/debian/etc/inittab.s390
+@@ -0,0 +1,63 @@
++# /etc/inittab: init(8) configuration.
++# $Id: inittab.s390,v 1.9 2000/01/10 10:15:30 miquels Exp $
++
++# The default runlevel.
++id:2:initdefault:
++
++# Boot-time system configuration/initialization script.
++# This is run first except when booting in emergency (-b) mode.
++si::sysinit:/etc/init.d/rcS
++
++# What to do in single-user mode.
++~~:S:wait:/sbin/sulogin
++
++# /etc/init.d executes the S and K scripts upon change
++# of runlevel.
++#
++# Runlevel 0 is halt.
++# Runlevel 1 is single-user.
++# Runlevels 2-5 are multi-user.
++# Runlevel 6 is reboot.
++
++l0:0:wait:/etc/init.d/rc 0
++l1:1:wait:/etc/init.d/rc 1
++l2:2:wait:/etc/init.d/rc 2
++l3:3:wait:/etc/init.d/rc 3
++l4:4:wait:/etc/init.d/rc 4
++l5:5:wait:/etc/init.d/rc 5
++l6:6:wait:/etc/init.d/rc 6
++# Normally not reached, but fallthrough in case of emergency.
++z6:6:respawn:/sbin/sulogin
++
++# What to do when CTRL-ALT-DEL is pressed.
++ca:12345:ctrlaltdel:/sbin/shutdown -t1 -a -r now
++
++# Action on special keypress (ALT-UpArrow).
++kb::kbrequest:/bin/echo "Keyboard Request--edit /etc/inittab to let this work."
++
++# What to do when the power fails/returns.
++pf::powerwait:/etc/init.d/powerfail start
++pn::powerfailnow:/etc/init.d/powerfail now
++po::powerokwait:/etc/init.d/powerfail stop
++
++# /sbin/getty invocations for the runlevels.
++#
++# The "id" field MUST be the same as the last
++# characters of the device (after "tty").
++#
++# Format:
++#  <id>:<runlevels>:<action>:<process>
++#
++# The s390 only has a dumb terminal on /dev/console.
++#
++1:2345:respawn:/sbin/getty 38400 console dumb
++
++# Example how to put a getty on a serial line (for a terminal)
++#
++#T0:23:respawn:/sbin/getty -L ttyS0 9600 vt100
++#T1:23:respawn:/sbin/getty -L ttyS1 9600 vt100
++
++# Example how to put a getty on a modem line.
++#
++#T3:23:respawn:/sbin/mgetty -x0 -s 57600 ttyS3
++
+--- sysvinit-2.84.orig/debian/control
++++ sysvinit-2.84/debian/control
+@@ -0,0 +1,19 @@
++Source: sysvinit
++Section: base
++Priority: required
++Maintainer: Miquel van Smoorenburg <miquels@cistron.nl>
++Standards-Version: 3.5.2.0
++
++Package: sysvinit
++Essential: yes
++Architecture: any
++Pre-depends: ${shlibs:Depends}
++Conflicts: last, file-rc (<= 0.5.7), kbd (<< 0.95-2), mdutils (<< 0.35-9)
++Depends: dpkg (>= 1.4.0.21), mount (>= 2.7i-1), util-linux (>= 2.9t-2), e2fsprogs (>= 1.15-1)
++Replaces: last, bsdutils (<=2.0-2), dpkg (<< 1.9.17)
++Description: System-V like init.
++ Init is the first program to run after your system is booted, and
++ continues to run as process number 1 until your system halts. Init's
++ job is to start other programs that are essential to the operation of
++ your system. All processes are descended from init. For more information,
++ see the manual page init(8).
+--- sysvinit-2.84.orig/debian/preinst
++++ sysvinit-2.84/debian/preinst
+@@ -0,0 +1,85 @@
++#! /bin/sh
++#
++# debian.preinst
++#		Saves the GMT setting from /etc/init.d/boot.
++#		This should really be set from a seperate
++#		configfile, like /etc/sysconfig.
++#
++# Version:	debian.preinst  2.74  16-Mar-1998  miquels@cistron.nl
++#
++
++case "$1" in
++	install|upgrade)
++		;;
++	abort-upgrade)
++		exit 0
++		;;
++esac
++
++umask 022
++
++# First see if we have a new enough version of dpkg.
++dpkg --assert-support-predepends >/dev/null 2>&1
++if [ $? != 0 ]
++then
++	cat <<EOF
++Your dpkg version does not support the "Pre-depends" field. Upgrade your
++version of dpkg first (to 1.1.0 or later) and reinstall.
++EOF
++	exit 1
++fi
++
++
++#
++#	Save /etc/init.d/network if needed. This file has been removed from
++#	sysvinit but we don't want it to be _actually_ removed.
++#
++#	(For compat with sysvinit <= 2.66, Debian 1.1)
++#
++if [ -f /etc/init.d/network ]
++then
++	cp -a /etc/init.d/network /etc/init.d/network.saved
++fi
++#	Inittab - same story.
++if [ -f /etc/inittab ]
++then
++	cp -a /etc/inittab /etc/inittab.saved
++fi
++
++#
++#	If there's an /etc/init.d/boot file, extract the variables from
++#	it and rename it.
++#
++#	(Started in 2.72-1, Debian 2.0 unstable)
++#
++if [ -f /etc/init.d/boot ]
++then
++	echo "Saving variables from /etc/init.d/boot .."
++	[ ! -d /etc/default ] && mkdir /etc/default
++	rm -f /etc/default/rcS.sed
++	grep '^[A-Z]*=' /etc/init.d/boot | (
++		while read line
++		do
++			var=`echo $line | sed 's/=.*$//'`
++			echo "s!^$var=.*\$!$line!" >> /etc/default/rcS.sed
++		done
++	)
++	mv /etc/init.d/boot /etc/init.d/boot.OLD
++	cat <<EOF
++
++The file /etc/init.d/boot has been replaced with a collection of smaller files
++located in /etc/init.d and linked into /etc/rc.S. The customization variables
++are now located in the file /etc/default/rcS.
++
++EOF
++fi
++
++cat <<EOF
++
++  The package manager might ask you if you want to install new versions
++  of the /etc/init.d/whatever files. This is generally a good idea
++  (so reply with \`\`y'') unless you really changed any of these files.
++
++EOF
++
++exit 0
+--- sysvinit-2.84.orig/debian/README
++++ sysvinit-2.84/debian/README
+@@ -0,0 +1,13 @@
++This is the Debian GNU/Linux prepackaged version of System V Init.  Init
++was written by Miquel van Smoorenburg <miquels@cistron.nl>.
++
++This package was put together by Bruce Perens <Bruce@Pixar.com> from pre-
++distribution sources. Ian Murdock <imurdock@debian.org> integrated it into
++the base system maintained it until the end of 1995. Miquel van Smoorenburg
++<miquels@cistron.nl> has integrated debian support into the base package.
++
++Since version 2.80, debian support was taken out of the upstream package
++and is now only present in the Debian prepackaged version. This is so
++that debian support can be more easily split up into several seperate
++packages (sysvinit, sysvinit-rc, sysvinit-scripts) later on.
++
+--- sysvinit-2.84.orig/debian/conffiles
++++ sysvinit-2.84/debian/conffiles
+@@ -0,0 +1,14 @@
++/etc/init.d/bootmisc.sh
++/etc/init.d/checkfs.sh
++/etc/init.d/checkroot.sh
++/etc/init.d/halt
++/etc/init.d/hostname.sh
++/etc/init.d/mountall.sh
++/etc/init.d/mountnfs.sh
++/etc/init.d/reboot
++/etc/init.d/rmnologin
++/etc/init.d/sendsigs
++/etc/init.d/single
++/etc/init.d/umountfs
++/etc/init.d/umountnfs.sh
++/etc/init.d/urandom
+--- sysvinit-2.84.orig/debian/rc.boot.5
++++ sysvinit-2.84/debian/rc.boot.5
+@@ -0,0 +1,15 @@
++.TH RC.BOOT 5 "December 26, 1997" "" "Debian GNU/Linux Manual"
++.SH NAME
++/etc/rc.boot \- directory for local or per-package boot scripts.
++.SH DESCRIPTION
++The /etc/rc.boot directory is obsolete. It has been superseded by the
++/etc/rcS.d directory. At boot time, first the /etc/rcS.d directory is scanned
++and then, for backwards compatibility, the /etc/rc.boot directory.
++.PP
++The directory \fI/etc/rc.boot\fP is scanned by the program
++\fBrun-parts\fP(8). The scripts found that have valid filenames for
++the \fBrun-parts\fP program will be run in lexical sort order of the
++filenames.
++.SH "SEE ALSO"
++run-parts(8), init(1).
++
+--- sysvinit-2.84.orig/debian/examples/powerfail
++++ sysvinit-2.84/debian/examples/powerfail
+@@ -0,0 +1,108 @@
++#! /bin/sh
++#
++# powerfail	This script is run when the UPS tells the system the power has
++#		gone. Tell everybody and start the shutdown based on the failure
++#		type.  This script will also being run when the power comes up
++#		again.
++#
++# Version:	/etc/init.d/powerfail (v1.1)
++#
++# Author:	Tom Webster <webster@kaiwan.com>
++# Modified-By:	Brian White <bcwhite@verisim.com>
++#
++
++
++
++failtime=+5	# shutdown delay from initial power failure
++btrytime=now	# shutdown delay from low-battery warning
++
++failmsg="LINE POWER FAILURE -- SWITCHED TO BATTERY BACKUP"
++btrymsg="BACKUP BATTERY LOW -- EMERGENCY SHUTDOWN"
++cablmsg="BAD UPS CABLE -- SYSTEM MAY BE UNRELIABLE"
++othrmsg="LINE POWER FAILURE -- SHUTTING DOWN SYSTEM"
++okaymsg="LINE POWER RESTORED -- RESUMING NORMAL OPERATION"
++
++
++
++# Set the path.
++PATH=/sbin:/etc:/bin:/usr/bin
++
++# Set location of upsstatus file
++statpath="/etc/upsstatus"
++
++# Set location of file containing PID of running shutdowns
++spidpath="/var/run/shutdown.pid"
++
++
++
++# See what happened.
++case "$1" in
++
++    start)
++	# Called with a powerfail event, check to see if a shutdown is running
++	if [ -f $spidpath ]
++	then
++	    # Shutdown is running, kill it to process the new event
++	    shutdown -c >/dev/null 2>&1
++	fi
++
++	# Get power problem and act on it
++	if [ -r $statpath ]
++	then
++	    stats=`head -1 $statpath`
++	    case "$stats" in
++		FAIL)  # Power is down
++			shutdown -h $failtime "$failmsg" &
++			;;
++		SCRAM) # Battery is low
++			shutdown -h $btrytime "$btrymsg" &
++			;;
++		CABLE) # Possible bad cable
++			echo "$cablmsg" | wall
++			;;
++		*)     # Unknown message, assume power is down
++			shutdown -h $btrytime "$othrmsg" &
++			;;
++	    esac
++
++	else
++	    # powerfail called, and upsstatus dosen't exist.
++	    # Assume user is using powerd, and shutdown.
++	    shutdown -h $failtime "$othrmsg" &
++ 
++	fi
++	;;
++
++
++    now)
++	# Called with a powerfail event, check to see if a shutdown is running
++	if [ -f $spidpath ]
++	then
++	    # Shutdown is running, kill it to process the new event
++	    shutdown -c >/dev/null 2>&1
++	fi
++
++	# Power is going down _now_
++	shutdown -h $btrytime "$btrymsg" &
++	;;
++
++
++    stop)
++	# Ok, power is good again. Say so on the console.
++	if [ -f $spidpath ]
++	then
++	    # Only cancel if shutdown is running (system boot will call this)
++	    shutdown -c "$okaymsg"
++	fi
++	;;
++
++
++    *)
++	echo "Usage: /etc/init.d/powerfail {start|now|stop}" >&2
++	exit 1
++	;;
++
++esac
++
++
++exit 0
+--- sysvinit-2.84.orig/debian/examples/network
++++ sysvinit-2.84/debian/examples/network
+@@ -0,0 +1,27 @@
++#! /bin/sh
++#
++# network	Establish the network connection.
++#
++# Version:	@(#)network  2.2  19-Apr-1999 miquels@cistron.nl
++#
++
++case "`uname -r`" in
++        2.0.*) ADDROUTE="yes" ;;
++        *)     ADDROUTE="" ;;
++esac
++
++# Configure the loopback device.
++ifconfig lo 127.0.0.1
++[ "$ADDROUTE" ] && route add -net 127.0.0.0 dev lo
++
++# Configure the ethernet device or start SLIP/PPP below.
++IPADDR="192.168.1.1"		# Your IP address.
++NETMASK="255.255.255.0"		# Your netmask.
++NETWORK="192.168.1.0"		# Your network address.
++BROADCAST="192.168.1.255"	# Your broadcast address (blank if none).
++GATEWAY=""			# Your gateway address.
++
++ifconfig eth0 ${IPADDR} netmask ${NETMASK} broadcast ${BROADCAST}
++[ "$ADDROUTE" ] && route add -net ${NETWORK}
++[ "$GATEWAY" ]  && route add default gw ${GATEWAY} 
++
+--- sysvinit-2.84.orig/debian/examples/README
++++ sysvinit-2.84/debian/examples/README
+@@ -0,0 +1,10 @@
++
++These are examples, templates etc. for some scripts in /etc/init.d/
++
++Some of them are not really "examples" but I had to stuff some default
++scripts somewhere..
++
++Concerning the powerfail and powerd stuff,
++it is best if you install the "genpower" package maintained by
++Brian C. White <bcwhite@verisim.com> if you want to use a UPS.
++
+--- sysvinit-2.84.orig/debian/examples/default.rcS
++++ sysvinit-2.84/debian/examples/default.rcS
+@@ -0,0 +1,19 @@
++#
++#	Defaults for the boot scripts in /etc/rcS.d
++#
++
++# Time files in /tmp are kept in days.
++TMPTIME=0
++# Set to yes if you want sulogin to be spawned on bootup
++SULOGIN=no
++# Set to no if you want to be able to login over telnet/rlogin
++# before system startup is complete (as soon as inetd is started)
++DELAYLOGIN=yes
++# Set UTC=yes if your system clock is set to UTC (GMT), and UTC=no if not.
++UTC=yes
++# Set VERBOSE to "no" if you would like a more quiet bootup.
++VERBOSE=yes
++# Set EDITMOTD to "no" if you don't want /etc/motd to be editted automatically
++EDITMOTD=yes
++# Set FSCKFIX to "yes" if you want to add "-y" to the fsck at startup.
++FSCKFIX=no
+--- sysvinit-2.84.orig/debian/examples/bootlogd
++++ sysvinit-2.84/debian/examples/bootlogd
+@@ -0,0 +1,67 @@
++#! /bin/sh
++#
++# bootlogd	One of the first scripts to be executed. Starts or stops
++#		the bootlogd log program. If this script is called as
++#		"stop-bootlogd", it will stop the daemon instead of
++#		starting it even when called with the "start" argument.
++#
++# Version:	@(#)bootlogd  2.77  24-Aug-1999  miquels@cistron.nl
++#
++
++PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
++DAEMON=/sbin/bootlogd
++NAME=bootlogd
++DESC="Bootlog daemon"
++PIDFILE=/var/run/$NAME.pid
++
++test -f $DAEMON || exit 0
++
++## set -e # not needed
++
++. /etc/default/rcS
++
++case "$0" in
++	*stop-bootlog*)
++		stopper=yes
++		;;
++esac
++
++case "$1" in
++	start|stop)
++		if [ "$stopper" ] || [ "$1" = "stop" ]
++		then
++			echo -n "Stopping $DESC: "
++			start-stop-daemon --stop --quiet --exec $DAEMON
++		else
++			echo -n "Starting $DESC: "
++			start-stop-daemon --start --quiet --exec $DAEMON -- -r
++		fi
++		if [ "$stopper" ] && [ -f /var/log/boot.log ] && \
++		   [ -f /var/log/boot.log~ ]
++		then
++			cd /var/log
++			savelog -p -c 5 boot.log > /dev/null 2>&1
++			mv boot.log.0 boot.log
++			mv boot.log~ boot.log.0
++		fi
++		echo "$NAME."
++		;;
++	 restart|force-reload)
++		echo -n "Restarting $DESC: "
++		start-stop-daemon --stop --quiet --pidfile \
++                	$PIDFILE --exec $DAEMON -- -p $PIDFILE
++		sleep 1
++		start-stop-daemon --start --quiet --pidfile \
++			$PIDFILE --exec $DAEMON -- -p $PIDFILE
++		echo "$NAME."
++		;;
++	*)
++		N=${0##*/}
++		N=${N#[SK]??}
++		echo "Usage: $N {start|stop|restart|force-reload}" >&2
++		exit 1
++		;;
++esac
++
++exit 0
++
+--- sysvinit-2.84.orig/debian/rules
++++ sysvinit-2.84/debian/rules
+@@ -0,0 +1,98 @@
++#! /usr/bin/make -f
++#
++#	debian/rules file for sysvinit
++#
++
++# Name.
++package = sysvinit
++tmp     = $(shell pwd)/debian/tmp
++doc	= /usr/share/doc/$(package)
++
++SHELL	= /bin/bash
++LC_ALL	= POSIX
++
++define checkdir
++	test -f src/init.c
++endef
++
++build:
++# Builds the binary package.
++	$(checkdir)
++	(cd src; make DEBIAN=cool)
++	touch build
++
++# Architecture independant files.
++binary-indep:   build
++	$(checkdir)
++
++# Make a binary package (.deb file)
++binary-arch:	build checkroot
++	-rm -rf $(tmp)
++	install -d -g root -m 755 -o root $(tmp)
++	install -d -g root -m 755 -o root $(tmp)/{DEBIAN,etc,usr}
++	install -d -g root -m 755 -o root $(tmp)/usr/share
++	install -d -g root -m 755 -o root $(tmp)/usr/include
++	install -d -g root -m 755 -o root $(tmp)$(doc)
++	install -g root -m 644 doc/Changelog $(tmp)$(doc)/changelog
++	install -g root -m 644 debian/changelog $(tmp)$(doc)/changelog.Debian
++	install -g root -m 644 debian/README.runlevels $(tmp)$(doc)
++	gzip -9f $(tmp)$(doc)/{changelog,changelog.Debian,README.runlevels}
++	install -d -g root -m 755 -o root $(tmp)$(doc)/examples
++	cp -af debian/examples/* $(tmp)$(doc)/examples
++	cp -af debian/etc/* $(tmp)/etc
++	chmod 755 $(tmp)/etc/init.d/[a-z]*
++	mv $(tmp)/etc/inittab* $(tmp)$(doc)/examples
++	chmod -R g-w $(tmp)
++	chown -R root.root $(tmp)
++	install -d -g root -m 755 -o root $(tmp)/etc/rc{S,0,1,2,3,4,5,6}.d
++	install -d -g root -m 755 -o root $(tmp)/etc/rc.boot
++	install -d -g root -m 755 -o root $(tmp)/etc/default
++	install -d -g root -m 755 -o root $(tmp)/bin
++	install -d -g root -m 755 -o root $(tmp)/sbin
++	install -d -g root -m 755 -o root $(tmp)/usr/bin
++	install -d -g root -m 755 -o root $(tmp)/usr/sbin
++	install -d -g root -m 755 -o root $(tmp)/usr/share/man
++	install -d -g root -m 755 -o root $(tmp)/usr/share/man/man{1,5,8}
++	install -d -g root -m 755 -o root $(tmp)/usr/share/man/ja/man8
++	install -d -g root -m 755 -o root $(tmp)/usr/share/man/fr/man8
++	install -d -g root -m 755 -o root $(tmp)/var/lib/urandom
++	install -g root -m 755 debian/fsck.nfs $(tmp)/sbin/fsck.nfs
++	(cd src; make ROOT=$(tmp) DEBIAN=cool install )
++	install -g root -m 644 debian/rc.boot.5 $(tmp)/usr/share/man/man5
++	install -g root -m 644 debian/rcS.5 $(tmp)/usr/share/man/man5
++	install -g root -m 644 debian/extra/*.8 \
++		$(tmp)/usr/share/man/man8
++	install -g root -m 644 debian/extra/ja/*.8 \
++		$(tmp)/usr/share/man/ja/man8
++	install -g root -m 644 debian/extra/fr/*.8 \
++		$(tmp)/usr/share/man/fr/man8
++	install -g root -m 755 debian/extra/invoke-rc.d $(tmp)/usr/sbin
++	install -g root -m 755 debian/extra/update-rc.d $(tmp)/usr/sbin
++	gzip -9f $(tmp)/usr/share/man/man*/*.[0-9] \
++		 $(tmp)/usr/share/man/??/man*/*.[0-9]
++	install -g root -m 644 -o root debian/README \
++	  $(tmp)$(doc)/copyright
++	cat COPYRIGHT >> $(tmp)$(doc)/copyright
++	install -g root -m 755 debian/preinst  $(tmp)/DEBIAN/preinst
++	install -g root -m 755 debian/prerm    $(tmp)/DEBIAN/prerm
++	install -g root -m 755 debian/postinst $(tmp)/DEBIAN/postinst
++	install -g root -m 644 -o root debian/conffiles \
++	  $(tmp)/DEBIAN/conffiles
++	dpkg-shlibdeps src/init
++	dpkg-gencontrol
++	dpkg --build $(tmp) ..
++	rm -rf $(tmp)
++
++clean:	checkroot
++	(cd src; make clobber )
++	rm -f build debian/files debian/substvars
++	rm -rf $(tmp)
++	find . -name '*.bak' -o -name '*~' | xargs -r rm -f --
++
++binary: binary-indep binary-arch
++
++checkroot:
++	$(checkdir)
++	test root = "`whoami`"
++
++.PHONY: binary binary-arch binary-indep clean checkroot
+--- sysvinit-2.84.orig/debian/fsck.nfs
++++ sysvinit-2.84/debian/fsck.nfs
+@@ -0,0 +1,25 @@
++#! /bin/sh
++#
++# fsck.nfs	Dummy fsck.nfs file that always returns success. We
++#		need this for when the root file system is on NFS:
++#		there is no way to find out if root is NFS mounted
++#		and we really want to do a "fsck -a /".
++#
++# Version:	@(#) fsck.nfs.sh  1.10  30-Nov-1996  miquels@cistron.nl
++#
++
++while :
++do
++	case "$1" in
++		-*)
++			shift
++			;;
++		*)
++			break
++			;;
++	esac
++done
++
++echo "$1: NFS file system."
++
++exit 0
+--- sysvinit-2.84.orig/debian/changelog
++++ sysvinit-2.84/debian/changelog
+@@ -0,0 +1,605 @@
++sysvinit (2.84-2woody1) woody-proposed-updates; urgency=high
++
++  * On some systems, /proc didn't get mounted because there is junk
++    under the /proc mountpoint, makeing the system unuseable. Fixed
++    by an extra check. Also warns the user. (closes: #134316)
++  * Fix typos in README.runlevels (closes: #94745)
++  * Update /etc/init.d/skeleton to comply with policy (closes: #96711,#121947)
++  * On some systems "init" might show up as "ini" in "ps" output
++    due to a off-by-one error in maxproclen calculation (closes: #132870)
++  * Fix typo (SBM - SMB) in /etc/init.d/mountnfs.sh (closes: #139251)
++  * Fix typo in debian/rules that installed prerm as preinst, and
++    preinst not at all (closes: #148174)
++  * Up severity to "high" since any program with write access to
++    /var/run/utmp (group utmp) could trick the "shutdown" command into
++    corrupting random files (note that currently there are no known
++    exploits for setgroup-id-utmp programs).
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Mon, 27 May 2002 22:37:23 +0200
++
++sysvinit (2.84-2) unstable; urgency=low
++
++  * modernized inittab manpage.
++  * Don't shut down IDE drives on halt if RAID is active (closes: #127635)
++  * Add /etc/init.d/umountnfs.sh to conffiles (closes: #122190)
++  * Only mount /proc in checkroot.sh if it's not mounted yet. This
++    gives earlier scripts the possibility to mount /proc and just
++    leave it mounted.
++  * Set maxproclen correctly on re-exec. Make sure setproctitle() leaves
++    at least two zeroes at the end of the argv array.
++  * Don't put IDE drives into standby mode at halt time if RAID is still
++    active, since the RAID halt/reboot/poweroff codepath in the kernel
++    still needs to flush the RAID metadata to disk. (closes: #127635)
++  * Use 'dmesg -s 65536' when writing /var/log/dmesg (closes: #128568)
++  * Mount /proc only if not mounted yet, don't unmount (closes: #118977)
++  * Commented out kb line in sample inittab (closes: #130126)
++  * Update /etc/rcS.d/README (closes: #130225)
++  * Don't duplicate options when remounting rootfs (closes: #119381)
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Fri, 25 Jan 2002 14:02:17 +0100
++
++sysvinit (2.84-1) unstable; urgency=high
++
++  * Don't use /etc/initlvl interface for telinit; only use /dev/initctl,
++    and give a clear error when that fails (closes: #116829)
++  * Add -i/--init command line flag to init - this tells init
++    'behave as system init even if you're not PID#1'. Useful for
++    testing in chroot/jail type environments.
++  * Use --print-installation-architecture in postinst instead of
++    --print-architecture.
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Tue, 27 Nov 2001 13:08:45 +0100
++
++sysvinit (2.83-3) unstable; urgency=low
++
++  * Don't disable write caching on IDE disks before unmounting file
++    systems, since that flag is kept over reboot. Instead the
++    halt program now has an extra -h switch that makes it send all
++    IDE drives a "standby" command that as a side effect flushes
++    the write-cache. That flag is used in /etc/init.d/halt
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Wed,  7 Nov 2001 16:11:28 +0100
++
++sysvinit (2.83-2) unstable; urgency=high
++
++  * Only disable write caching on disks, not on all IDE devices
++    such as CDROMs (closes: #115354,#115822,#117390)
++  * Mount verbose, except for proc (closes: #115362,#111481)
++  * Add comments about not using tty7 to default inittab (closes: #117618)
++  * Install inittab.$(arch) as default inittab in the installation
++    process, if it exists. Add inittab.s390 (closes: #113495)
++  * Appears that the 'shutdown to fast' bug is closed by
++    turning off the IDE write cache at shutdown (closes: #110804).
++    Only thing is that this should probably get in the kernel
++    somehow, as it's really a kernel bug.
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Thu,  1 Nov 2001 13:21:58 +0100
++
++sysvinit (2.83-1) unstable; urgency=high
++
++  * Upstream fix: race condiction in wait() [Andrea Arcangeli]
++  * shutdown.allow processing broke due to typo (closes: #111199)
++  * Call closelog() after openlog()/syslog() since recent libc's
++    keep the logging fd open and that is fd#0 aka stdin (closes: #111901)
++  * Typo in shutdown manpage fixed (closes: #112815)
++  * Don't remove .journal file during tmp cleanup (closes: #113564)
++  * Don't use '-v' flag to mount in mountall.sh (closes: 111481)
++  * Fix policy reference in README (closes: #97925)
++  * Treat 'ncpfs' as remote filesystem (closes: #94510)
++  * Don't do fsck -C if $TERM is unset or set to dumb|network|unknown.
++    Also don't do fsck -C if `uname -m` = s390
++  * Turn off write-caching on all IDE disks prior to unmounting
++    filesystems. On some systems that poweroff on halt the system
++    powers off before the IDE disk write cache is flushed. You do
++    need to have hdparm installed to get this to work.
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Fri,  5 Oct 2001 14:37:42 +0200
++
++sysvinit (2.82-1) unstable; urgency=low
++
++  * New upstream version.
++  * Now prints out correct version at startup (closes: #109558,#108377)
++  * Versioned replaces (dpkg << 1.9.17) (closes: #109557)
++  * Mount all proc filesystems in fstab (closes: #108109)
++  * Fix spelling of initttab in init(8) (closes: #100659)
++  * Clarify "usage" message of update-rc.d (closes: #108391)
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Thu, 23 Aug 2001 17:50:03 +0200
++
++sysvinit (2.81-1) unstable; urgency=low
++
++  * New upstream version.
++  * 'pidof' now finds processes that do weird stuff with their
++    name in 'ps' listings (i.e. use setproctitle()) (closes: #67021)
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Tue, 31 Jul 2001 18:25:11 +0200
++
++sysvinit (2.80-3) unstable; urgency=high
++
++  * The diff that dpkg-source builds doesn't include empty directories
++    so we now create them in the debian/rules file.
++  * Make /etc/init.d/* executable (closes: #107018)
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Mon, 30 Jul 2001 16:15:29 +0200
++
++sysvinit (2.80-2) unstable; urgency=high
++
++  * Use install -m 755 instead of copy for the pre/post install/remove
++    scripts (closes: #106730)
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Thu, 26 Jul 2001 22:46:52 +0200
++
++sysvinit (2.80-1) unstable; urgency=medium
++
++  * New upstream version
++  * Don't prevent raid-rebuild from activating swap on 2.4 and up
++    (closes: #80446, #83118).
++  * Document IO redirection in wall manpage (closes: #79491)
++  * Use -x in skeleton file (closes: #67143)
++  * Update README (closes: #85650)
++  * Unmount tmpfs before turining off swap (closes: #84782)
++  * Fix check for passno in checkroot.sh (closes:  #84035)
++  * Make sure scripts exit with code 0 if succesful (closes: #83410)
++  * Don't try to set hostname if /etc/hostname is not present (closes: #81711)
++  * Mount /proc early and keep it mounted (closes: #75936, #71433, #88352)
++  * Fix init.8 manpage (closes:  #75268)
++  * Small fix to rc script (closes: #72859)
++  * Optimize /tmp cleaning (closes: #71176)
++  * Check for update before executing it in "single" script
++    (closes: #68983, #103144)
++  * Build package with SHELL=/bin/bash (closes: #68623)
++  * Fix typo in halt(8) manpage (closes:  #67875)
++  * Check time argument of shutdown(8) for correctness (closes: #67825)
++  * Don't chown ptys on devfs system (closes: #88300)
++  * Check for stale sessions in last(1) (Chris Wolf <cwolf@starclass.com>)
++  * Include invoke-rc.d (closes: #94140). Conflicts: file-rc (<= 0.5.7)
++  * Move random-seed to /var/lib/urandom (closes: #102216)
++  * Moved update-rc.d from dpkg to sysvinit
++  * Didn't include the UPS changes yet, that will come in a later
++    2.80-xyz version -- needed to get 2.80 out of the door first.
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Thu, 26 Jul 2001 14:07:03 +0200
++
++sysvinit (2.78-4) frozen unstable; urgency=high
++
++  * In /etc/init.d/checkroot.sh, change 10>&0 into 9>&0, since
++    ash doesn't handle file descriptors > 9
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Sun, 25 Jun 2000 14:03:04 +0200
++
++sysvinit (2.78-3) frozen unstable; urgency=medium
++
++  * Fix critical bug #61227: Kernel panic/filesystem corruption if
++    swapping started while software RAID resyncing. As this doesn't
++    matter on 99% of the installs out there it's up to the release
++    manager to decide whether to put this in potato or not (closes: #61227).
++  * Fix up /etc/init.d/README paths (closes: #58935,#58595)
++  * Don't check root filesystem if "pass" in /etc/fstab is 0 (closes: #65125)
++  * Unmount remote filesystems before network is shut down
++    (closes: #60898,#61907). This also was a release-critical bug.
++  * Changed "file systems" to "filesystems".
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Tue,  6 Jun 2000 11:08:24 +0200
++
++sysvinit (2.78-2) frozen unstable; urgency=high
++
++  * Change "booting" to "reloading" message at reload
++  * Don't create /etc/init.d/network if missing (closes: #56373)
++  * Treat SMB filesystems like NFS ones in mountall.sh and
++    mountnfs.sh (fixes: #55414)
++  * bootmisc.sh: do not remove files in /var/run that are newer
++    than /etc/mtab. This should preserve pid files created before
++    this script ran (closes: #49816)
++  * Add "-z xxx" dummy command line argument (closes: #54717)
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Fri, 11 Feb 2000 12:17:54 +0100
++
++sysvinit (2.78-1) unstable; urgency=low
++
++  * 2.78 will be the new upstream version, I'm skipping 2.77
++  * Update /etc/init.d/rc (closes: #48764)
++  * Add -C argument to fck (closes: #47914, #53335)
++  * don't remove files in /var/run and /var/lock that are newer
++    than /etc/mtab (may fix the dhcpcd problems)
++  * Save kernel messages in /var/log/dmesg like RedHat does (closes: #47574)
++  * Shutdown now calls sync before switching the runlevel to 0 or 6,
++    or before unmounting filesystems if -n was used (closes: #46461)
++  * Call umount with -f option to force NFS umounts (closes: #45715)
++  * Fix TMPTIME documentation in rcS(5) (closes: #42570, #53224)
++  * Some cosmetic changes to init.c (closes: #32079)
++  * Move to /usr/share to comply with latest policy
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Thu, 30 Dec 1999 20:40:23 +0100
++
++sysvinit (2.77-3) unstable; urgency=low
++
++  * Remove hwclock.sh initialization and script itself (closes: #45164)
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Tue,  5 Oct 1999 21:52:02 +0200
++
++sysvinit (2.77-2) unstable; urgency=low
++
++  * Recompile against glibc 2.1 instead of 2.0
++  * Fix compilation problems with glibc 2.1
++  * Fix last -i option
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Tue,  5 Oct 1999 21:51:50 +0200
++
++sysvinit (2.77-1) unstable; urgency=low
++
++  * Write reboot record into utmp file as well to make rms happy
++  * Change GMT to UTC in /etc/default/rcS
++  * Change /var/run/utmp to mode 664 group utmp if utmp group exists
++  * Fork and dump core in / if SIGSEGV is received for debugging purposes
++  * Patch by Craig Sanders <cas@vicnet.net.au> for "last" -i option
++  * Fixes:
++    #35429: sysvinit: bad comments in /etc/defaults/rcS
++    #37807: mountnfs.sh should start rpc.statd if available
++    #38384: sysvinit: Slight gramitical error in /etc/init.d/README
++    #41660: [Patch] bootmisc.sh: Change /var/run/utmp ownership to [...]
++    #41458: mountnfs.sh: should ignore noauto
++    #40923: sysvinit: /etc/ioctl.save a state file?
++    #42183: util-linux: hwclock.sh depends on UTC which is not defined
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Wed,  4 Aug 1999 11:16:23 +0200
++
++sysvinit (2.76-4) unstable; urgency=low
++
++  * Change dowall.c to handle Unix98 ptys correctly
++  * Add comment in rcS about usage of setup.sh and unconfigured.sh
++  * Shutdown now removes nologin file just before calling telinit
++  * SEGV handler now tries to continue after sleep of 30 seconds.
++    On a 386-class processor it also prints out the value of EIP.
++  * Fix for racecondition in check_init_fifo() by Richard Gooch
++  * Fixes:
++    #32698: sysvinit: checkroot.sh: should add devfs entry to mtab
++    #35689: wall/shutdown cannot handle Unix98 PTYs
++    #30392: sysvinit scripts are not executable
++    #32699: bootmisc.sh: should check for existence of /dev/tty[p-za-e][0-9a-f]
++    #34062: mountnfs.sh: ignore comments in fstab [patch]
++    #34780: sysvinit: ignores most options for rootfs
++    #35017: sysvinit: nologin after sungle user mode [sic]
++    #36209: init: segmentation violation (possibly kernel)
++    #36294: sysvinit: sulogin does not appear to recognize shadow passwords
++    #36705: README in init.d has section number off by 0.1
++    #36849: sysvinit: shutdown doesn't send shutdown message to unix98 ptys
++    #36856: sysvinit: /etc/init.d/rc calls bash for no reason
++    #37265: sysvinit: devpts incompatibility?
++    #32698: sysvinit: checkroot.sh: should add devfs entry to mtab
++    #33954: sysvinit: [wishlist] bootmisc.sh: touch /var/run/utmpx
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Sat,  8 May 1999 17:22:57 +0200
++
++sysvinit (2.76-3) frozen unstable; urgency=high
++
++  * Small bugfix to last.c courtesy of Danek Duvall <duvall@emufarm.ml.org>
++  * Recompile with latest libs, so dependency on libc6 (>= 2.0.7u) is gone.
++  * Fixes bugs:
++    #31601: sysvinit: Doesn't wipe new files from /tmp
++    #28132: checkroot.sh parsing of /etc/fstab is incorrect.
++    #29729: sysvinit: references wrong policy homepage
++    #27949: last: should use down instead of crash
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Tue, 12 Jan 1999 12:12:44 +0100
++
++sysvinit (2.76-2) frozen unstable; urgency=high
++
++  * Minor fix in debian/rules for dependency problem on the Alpha.
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Thu,  5 Nov 1998 10:54:28 +0100
++
++sysvinit (2.76-1) frozen unstable; urgency=high
++
++  * Fix bug in check_pipe() which crashes init on the Alpha.
++  * Re-upload since this should go into frozen too, ofcourse.
++  * Changed the version number to 2.76, even though it's a minor
++    upgrade. I want to release this version outside Debian too.
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Tue,  3 Nov 1998 11:09:13 +0100
++
++sysvinit (2.75-4) unstable; urgency=low
++
++  * Change sulogin password buffer to 128 characters.
++  * Don't print control characters in dowall.c
++  * Try to open getenv ("CONSOLE"), /dev/console and /dev/tty0 in order.
++    For backwards compatibility when you try to boot a 2.0.x kernel
++    with a linux > 2.1.70 /dev/console device.
++  * Change src/Makefile for non-debian systems (mainly, RedHat)
++  * Try to create /dev/initctl if not present; check every time to see
++    if the dev/ino of /dev/initctl has changed and re-open it. This should
++    help devfs a bit.
++  * Send SIGUSR1 to init at bootup to let it re-open /dev/initctl;
++    again in support of devfs.
++  * Rewrite of mountnfs.sh by Chris Ulrich <cdulrich@ucdavis.edu>
++  * Moved pidof to /bin (it's only a link to killall5 anyway)
++  * Fixes bugs:
++    #11895: pidof exists, is unreliable, and is not deprecated
++    #23943: `"$FSCKFIX" = yes' needed in "checkroot.sh", too
++    #24190: sysvinit: postinst and telinit u
++    #25531: sysvinit: README refers to the fatman website
++    #26115: sysvinit: There is no support for a read only root
++    #26179: sysvinit: pidof in /sbin ? why ?
++    #26281: sysvinit: Obsolete location for Policy Manual in /etc/init.d/README
++    #15739: libc6: strange interferention between sleep() and fork()
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Mon,  5 Oct 1998 14:03:14 +0200
++
++sysvinit (2.75-3) frozen unstable; urgency=high
++
++  * Source /etc/default/rcS in all scripts, otherwise file-rc is broken.
++  * Do not call update-rc.d for isapnp
++  * Fixes:
++    #23556: sysvinit tries to install isapnp
++    #23270: sysvinit: /etc/default/rcS: comment should indicate time units
++    #23191: /etc/default/rcS
++    #23651: sysvinit: sysvinit fails to clean stale X locks in /tmp
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Mon, 22 Jun 1998 14:48:53 +0200
++
++sysvinit (2.75-2) frozen unstable; urgency=medium
++
++  * Fix last.c again.
++  * Add check to see if /dev/initctl is really a FIFO
++  * In ifdown.c first down all shaper devices then the real devices
++  * Fixes bugs:
++    #22840: sysvinit (2.75-1): patch request for sparc
++    #22965: rcS is not sh independent
++    #22945: Problems with last ( bug in sysvinit package)?
++    #23005: sysvinit: [patch] install initreq.h for `genpowerd' patch.
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Tue,  2 Jun 1998 22:43:01 +0200
++
++sysvinit (2.75-1) frozen unstable; urgency=low
++
++  * Rewrote last.c to be much more memory friendly and correct,
++    thanks to Nick Andrew <nick@zeta.org.au> and
++    David Parrish <dparrish@zeta.org.au>
++  * Fixes bugs:
++    #21616: sysvinit: sulogin thinks md5 root password is bad
++    #21765: sysvinit: Typo in `killall5.c'
++    #21775: sysvinit: sysvinit does not support MD5 hashed passwords
++    #21990: /usr/bin/last: unnecessary memset and off-by-one bug
++    #22023: sysvinit: nfs isn't mounted
++    #22084: sysvinit 2.74-4: SIGPWR missing on sparc
++    #21900: init, powerfail events, and shutdown.allow
++    #21702: init 0 does not work as expected...
++    #21728: sysvinit: Typo in `init.c'
++    #22363: sysvinit: discrepance btw. manpage and /sbin/init
++    #22579: power-off on halt
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Tue, 19 May 1998 11:02:29 +0200
++
++sysvinit (2.74-4) frozen unstable; urgency=medium
++
++  * Add -o option to last to process libc5 utmp files.
++  * Buffer overflow fixed in init.c (not very serious; only exploitable
++    by root). Thanks to Chris Evans <chris@ferret.lmh.ox.ac.uk>
++  * Fixes:
++    #20147: filesystems not unmounted on reboot
++    #20702: sysvinit: example inittab is broken
++    #20957: errors mounting remote filesystems
++    #20063: fsck is _always_ called with -y option
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Wed, 15 Apr 1998 17:04:33 +0200
++
++sysvinit (2.74-3) frozen unstable; urgency=high
++
++  * Install hwclock.sh (was missing!)
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Thu, 19 Mar 1998 20:15:06 +0100
++
++sysvinit (2.74-2) frozen unstable; urgency=high
++
++  * Fix problem with removing kbd startup file
++  * Fixes bugs;
++    #19711: sysvinit: postinst uses /tmp/*.$$
++    #14785: sysvinit: non executable scripts from examples
++    #17004: suggestion for raidtools
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Mon, 16 Mar 1998 12:56:10 +0100
++
++sysvinit (2.74-1) unstable; urgency=low
++
++  * Should compile with glibc 1.99 :)
++  * Now confirms to policy manual 2.4.0.0
++  * Change behaviour of reboot(1) and halt(1) so that the default when
++    the runlevel can't be determined is to call shutdown.
++  * Updated README and skeleton
++  * Depends on new dpkg for the new update-rc.d
++  * Added re-exec patch from Al Viro (21 Feb 1998):
++        'U' flag added to telinit. It forces init to re-exec itself
++        (passing its state through exec, certainly).
++        May be useful for smoother (heh) upgrades.
++        24 Feb 1998, AV:
++        did_boot made global and added to state - thanks, Miquel.
++        Yet another file descriptors leak - close state pipe if
++        re_exec fails.
++  * Now no longer contains mdutils.sh and conflicts with older mdutils
++  * /etc/rc.S/*.sh scripts that use set -e or exit no longer stop
++    the whole boot process.
++  * Fixes:
++    #16082: sysvinit: filesystems do not get unmounted properly on shutdown
++    #16977: sysvinit: libc6 twice into Pre-Depends
++    #17012: sysvinit: minor typo in install
++    #17084: /etc/rcS does not use a start arg
++    #17276: sysvinit: SIGUSR1 causes init to eat CPU
++    #18541: sysvinit: ^C aborts entire rcS script
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Thu, 12 Mar 1998 17:42:46 +0100
++
++sysvinit (2.73-2) unstable; urgency=low
++
++  * Change _NSIG to NSIG for 2.1.x kernel includes.
++  * Hopefully fixes bug 16082, but we'll see..
++  * Fixes bugs:
++     #16622 sysvinit: should not depend on kbd
++     #16807: /etc/init.d/mdutils.sh is started at bootup _and_ halt/reboot.
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Thu,  8 Jan 1998 16:01:02 +0100
++
++sysvinit (2.73-1) unstable; urgency=low
++
++  * Use siginterrupt, now that system calls are restarted by default.
++    Main symptom was that the sulogin timeout didn't work but there
++    might have been more hidden problems.
++  * Kill process immidiately if turned off in inittab
++  * Fixed sulogin check on tty arg.
++  * Use strerror() instead of sys_errlist
++  * Chop up the reboot and halt scripts into seperate scripts. I had to
++    take some liberties so they are called with the argument "stop" even
++    though the scripts are Sxx scripts .. (start scripts in runlevel 0&6
++    seem non-intuitive anyway)
++  * wall now supports a '-n' option to suppress [most of] the banner.
++    Debian doesn't use sysvinit's wall, but apparently Redhat does.
++  * Add '-F' (forcefsck) option to shutdown
++  * Depends on kbd_0.95-2 (or higher) package for /etc/rcS.d stuff.
++  * Close and reopen /dev/initctl on SIGUSR1 (mainly for a /dev in ram)
++  * Add FSCKFIX option to /etc/default/rcS
++  * Wrote rcS.5 manpage describing /etc/default/rcS
++  * Fixes bugs:
++    #13435: Could shutdown provide a way to force fsck?
++    #14108: sysvinit: sulogin's timeout does not work anymore
++    #14179: sysvinit: /etc/init.d/(halt|reboot) need to call mdstop
++    #14357: sysvinit: typo errors into script shells
++    #15010: shutdown is too fast
++    #15405: sysvinit: changelog uncompressed
++    #15751: "sulogin -t <timeout>" does not time out
++    #15758: Outdated reference in README
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Sat,  3 Jan 1998 16:32:39 +0100
++
++sysvinit (2.72-3) unstable; urgency=low
++
++  * Remove perl check from preinst
++  * Add extra fork() in dowall.c to avoid hanging in rare cases
++  * Conflict with file-rc (<= 0.4.1)
++  * The 2.72 series fix the following bugs:
++     #9819: sysvinit: Typo in `pidof` manual
++     #9820: sysvinit: Incorrect filenames in `shutdown` manual
++     #9821: sysvinit: `init` manual gives incorrect information
++     #9822: sysvinit: `inittab` manual
++     #10045: sysvinit: error message "no more processes..."
++     #10276: sysvinit has uncompressed manpages.
++     #11728: libc6
++     #11879: sysvinit: file in /tmp security hole
++     #12172: Sysvinit: Contains powerd manpage but not powerd
++     #12465: Trivial typos in killall5 man page
++     #12631: sysvinit: unchecked prompting in postinst
++     #13290: clock is now hwclock
++     #13300: patch to init.d/boot for compressed keymaps
++     #13344: sysvinit: command 'clock' not found
++     #13789: sysvinit: /etc/init.d/boot calls "clock", should call "hwclock"
++     #13830: sysvinit: Upgrading to new sysvinit left system unusable
++     #13838: sysvinit: gratuitous use of perl
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Wed, 22 Oct 1997 14:44:00 +0200
++
++sysvinit (2.72-2) unstable; urgency=high
++
++  * Don't use perl in postinst. Use more flexible regexp to match the
++    sysinit line.
++  * Remove /etc/default/boot from package
++  * Fix settime.sh for hwclock
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Tue, 14 Oct 1997 12:40:23 +0200
++
++sysvinit (2.72) unstable; urgency=low
++
++  * Applied manual page patches by Bill Hawes <whawes@star.net>.  Thanks Bill!
++  * Applied patches to the sample Slackware scripts by
++    "Jonathan I. Kamens" <jik@kamens.brookline.ma.us>
++  * Fix halt and reboot runlevels 0 & 6 check.
++  * Only say "no more processes left in runlevel x" once
++  * Fix race condition with SIGCHLD in spawn()
++    (thanks to Alon Ziv <alonz@CS.Technion.AC.IL>)
++  * Compress all manpages (missed 2)
++  * Compiled for libc6
++  * Split up /etc/init.d/boot into seperate files in /etc/rcS.d
++  * Remove powerd.8 from debian package
++  * Fix /etc/init.d/settime.sh to look for hwclock first
++  * Added poweroff patch by Roderich Schupp <rsch@ExperTeam.de>
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Sun, 12 Oct 1997 17:20:17 +0200
++
++sysvinit (2.71-2) frozen unstable; urgency=low
++
++  * Print 2.71 instead of 2.70 on startup :)
++  * Fix /etc/init.d/skeleton for new console messages standard.
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Mon, 5 May 1997 12:45:25 +0200
++
++sysvinit (2.71-1) frozen unstable; urgency=high
++
++  * Added code for updwtmp() in utmp.c for glibc (2.0.3)
++  * Fixed all programs to use functions from utmp.c and getutent()
++  * Do not try to clean up utmp in init itself (Bug#9022)
++  * Removed sync() from main loop.
++  * Fix bug #8739 (/fastboot)
++  * Hopefully fixes bug #8657 (shutdown signal handling)
++  * Mount /proc before modules are loaded
++  * Check on both /etc/init.d/modules and modutils (Bug#9058, #8398)
++  * Fix PATH order (Bug#8087)
++  * Fix console messages (Bug#8899)
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Sat, 26 Apr 1997 19:57:27 +0200
++
++sysvinit (2.70-1) unstable; urgency=low
++
++  * small fix for postinst (Bug#5866)
++  * Respawn fix
++  * Removed StUdLy CaPs from source code
++  * Moved files in source archive around
++  * Moved mdadd in "boot" script to get called after module loading
++  * Fixes for glibc (utmp handling, signal handling).
++  * Fixed '-d' option to last (now also works without '-a').
++  * Added extra checking in last.c to prevent showing dead entries
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Fri, 7 Feb 1997 15:31:30 +0100
++
++sysvinit (2.69-1) frozen unstable; urgency=medium
++
++  * Fixed bug that can throw X in a loop (or any other app that reads from
++    /dev/tty0)
++  * Moved inittab to /usr/doc/sysvinit/examples so that it is no longer
++    a config file.
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Sun, 1 Dec 1996 15:32:24 +0100
++
++sysvinit (2.68-1) frozen unstable; urgency=high
++
++  * Added dummy fsck.nfs [temporary] (Bug#5492)
++  * Changing /etc/motd optional (Bug#5493)
++  * Typo in /etc/init.d/urandom fixed (Bug#5556)
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Wed, 27 Nov 1996 17:30:36 +0100
++
++sysvinit (2.67-1) frozen unstable; urgency=high
++
++  * Fixes problem with /dev/console being controlling terminal of some
++    daemons
++  * Some fixes in debian bootup script "boot"
++  * Puts copyright file in the right place
++  * Move random-seed stuff to its own file
++  * Fix skeleton file (add set -e)
++  * Change preinst/postinst scripts to save all variables from "boot" file
++  * moved /etc/init.d/network to /usr/doc/examples/sysvinit
++  * Changed "rc" script slightly (potential recipy for disaster..)
++  * Various other fixes to close all outstanding bug reports.
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Fri, 15 Nov 1996 12:23:33 +0100
++
++sysvinit (2.66-1) unstable; urgency=medium
++
++  * Skipped 2.65. A development 2.65 got out by accident and is apparently
++    being used..
++  * New source format
++  * Also compiles and runs with GNU libc (and on the Alpha)
++  * Fixed dowall.c not to exit when getpwuid() fails and uid == 0.
++  * Fixed init panic'ing on empty lines in /etc/inittab
++  * Changed default PATH to include /usr/local/sbin
++  * Set /dev/console as controlling terminal for sysinit,bootwait,wait,powerwait
++    This allows using ^C to interrupt some parts of eg the boot process.
++  * Remove old symlink in /var/log/initlvl; let init check both
++    /var/log and /etc itself.
++
++ -- Miquel van Smoorenburg <miquels@cistron.nl>  Tue, 29 Oct 1996 13:46:54 +0100
+--- sysvinit-2.84.orig/debian/rcS.5
++++ sysvinit-2.84/debian/rcS.5
+@@ -0,0 +1,64 @@
++.TH rcS 5 "17 Nov 1999" "" "Debian Administrator's Manual"
++.SH NAME
++rcS -- defaults used at boot time
++.SH DESCRIPTION
++.I /etc/default/rcS
++contains information in the following format:
++.IP "" .5i
++name=value
++.PP
++Only one value per line is allowed. Comments are allowed too and must start
++with the ``#'' character.
++
++.SH OPTIONS
++The following options can be set, the defaults values are shown:
++
++.IP \fBTMPTIME=0\fP
++On bootup the files in /tmp will be cleaned up if their modification time
++was more than TMPTIME days ago. A value of zero means that all files
++are removed regardless of age. If you don't want the system to clean
++/tmp set TMPTIME to a large value like 9125 (25 years).
++
++.IP \fBSULOGIN=no\fB
++Setting this to
++.B yes
++causes init to spawn a sulogin on the console as one of the first things
++in the boot process. If the administrator does not login, the sulogin will
++timeout after 30 seconds and the boot process will continue.
++
++.IP \fBDELAYLOGIN=yes\fB
++Normally the system will not let anyone login until the boot process
++is complete and and the system has come up completely in the default runlevel
++(usually level 2). However theoretically it's possible to login a bit earlier,
++as soon as \fI/usr/sbin/inetd\fP is started. The default value of \fBno\fP
++prevents this, setting it to \fByes\fP allows it.
++
++.IP \fBUTC=\fP
++This is used to interpret the system (BIOS) clock. If this option is set
++to \fIno\fP the system clock is supposed to be set at local time. If this
++option is set to \fIyes\fP the system clock is supposed to be set at UTC
++(Universal Time, a.k.a. GMT).
++
++.IP \fBVERBOSE=yes\fP
++Setting this option to \fBno\fP will make the bootup a bit less verbose.
++
++.IP \fBEDITMOTD=yes\fP
++At boot time the system edits the first line of the file \fI/etc/motd\fP
++and replaces it with the output from the command \fIuname -a\fP. Setting
++this to \fBno\fP prohibits that.
++
++.IP \fBFSCKFIX=no\fP
++When the root and all other filesystems are checked, this happens with the
++\fB-a\fP flag which means \fIautorepair\fP. If there are really big
++inconsistencies, the fsck will bail out. The system will print a message
++asking the administrator to repair the filesystem maually and present a
++root shell prompt (actually a \fIsulogin\fP prompt) on the console. Setting
++this option to \fB\fP yes causes the fsck commands to be run with the
++\fB-y\fP option instead of the \fB-a\fP option. This will always repair
++the filesystems without any interaction but might irreversibly damage
++your file system(s).
++
++.SH AUTHOR
++Miquel van Smoorenburg <miquels@cistron.nl>
++.SH SEE ALSO
++init(8), inittab(5).
+--- sysvinit-2.84.orig/debian/shlibs.local.i386
++++ sysvinit-2.84/debian/shlibs.local.i386
+@@ -0,0 +1,4 @@
++libc		6	libc6 (>= 2.0.5c-0.1)
++/lib/ld-linux	2	libc6 (>= 2.0.5c-0.1)
++ld-linux	2       libc6 (>= 2.0.5c-0.1)
++/lib/nfslock	0	libc6 (>= 2.0.5c-0.1)
+--- sysvinit-2.84.orig/debian/README.runlevels
++++ sysvinit-2.84/debian/README.runlevels
+@@ -0,0 +1,104 @@
++
++		Order of scripts run in /etc/rc?.d
++		==================================
++
++0. Overview.
++
++   All scripts executed by the init system are located in /etc/init.d.
++   The directories /etc/rc?.d (? = S, 0 .. 6) contain relative links to
++   those scripts. These links are named S<2-digit-number><original-name>
++   or K<2-digit-number><original-name>.
++
++   If a scripts has the ".sh" suffix it is a bourne shell script and
++   MAY be handled in an optimized manner. The behaviour of executing the
++   script in an optimized way will not differ in any way from it being
++   forked and executed in the regular way.
++
++   The following runlevels are defined:
++
++   N       System bootup (NONE).
++   S       Single user mode (not to be switched to directly)
++   0       halt
++   1       single user mode
++   2 .. 5  multi user mode
++   6       reboot
++
++1. Boot.
++
++   When the systems boots, the /etc/init.d/rcS script is executed. It
++   in turn executes all the S* scripts in /etc/rcS.d in alphabetical
++   (and thus numerical) order. The first argument passed to the
++   executed scripts is "start". The runlevel at this point is "N" (none).
++
++   Only things that need to be run once to get the system in a consistent
++   state are to be run. The rcS.d directory is NOT meant to replace rc.local.
++   One should not start daemons in this runlevel unless absolutely
++   necessary. Eg, NFS might need the portmapper, so it is OK to start it
++   early in the bootprocess. But this is not the time to start the
++   squid proxy server.
++
++2. Going multiuser.
++
++   After the rcS.d scripts have been executed, init switches to the
++   default runlevel as specified in /etc/inittab, usually "2".
++
++   Init then executes the /etc/init.d/rc script which takes care of
++   starting the services in /etc/rc2.d.
++
++   Because the previous runlevel is "N" (none) the /etc/rc2.d/KXXxxxx
++   scripts will NOT be executed - there is nothing to stop yet,
++   the system is busy coming up.
++
++   If for example there is a service that wants to run in runlevel 4
++   and ONLY in that level, it will place a KXXxxxx script in
++   /etc/rc{2,3,5}.d to stop the service when switching out of runlevel 4.
++   We do not need to run that script at this point.
++   
++   The /etc.rc2.d/SXXxxxx scripts will be executed in alphabetical
++   order, with the first argument set to "start".
++
++3. Switching runlevels.
++
++   When one switches from (for example) runlevel 2 to runlevel 3,
++   /etc/init.d/rc will first execute in alphabetical order all K
++   scripts for runlevel 3 (/etc/rc3.d/KXXxxxx) with as first argument
++   "stop" and then all S scripts for runlevel 3 (/etc/rc3.d/SXXxxxx)
++   with as first argument "start".
++
++   As an optimization, a check is made for each "service" to see if
++   it was already running in the previous runlevel. If it was, and there
++   is no K (stop) script present for it in the new runlevel, there is
++   no need to start it a second time so that will not be done.
++
++   On the other hand, if there was a K script present, it is assumed the
++   service was stopped on purpose first and so needs to be restarted.
++
++   We MIGHT make the same optimization for stop scripts as well-
++   if no S script was present in the previous runlevel, we can assume
++   that service was not running and we don't need to stop it either.
++   In that case we can remove the "coming from level N" special case
++   mentioned above in 2). But right now that has not been implemented.
++
++4. Single user mode.
++
++   Switching to single user mode is done by switching to runlevel 1.
++   That will cause all services to be stopped (assuming they all have
++   a K script in /etc/rc1.d). The runlevel 1 scripts will then switch
++   to runlevel "S" which has no scripts - all it does is spawn
++   a shell directly on /dev/console for maintenance.
++
++5. Halt/reboot
++
++   Going to runlevel 0 or 6 will cause the system to be halted or rebooted,
++   respectively. For example, if we go to runlevel 6 (reboot) first
++   all /etc/rc6.d/KXXxxxx scripts will be executed alphabetically with
++   "stop" as the first argument.
++
++   Then the /etc/rc6.d/SXXxxxx scripts will be executed alphabetically
++   with "stop" as the first argument as well. The reason is that there
++   is nothing to start anymore at this point - all scripts that are
++   run are meant to bring the system down.
++
++   In the future, the /etc/rc6.d/SXXxxxx scripts MIGHT be moved to
++   /etc/rc6.d/K1XXxxxx for clarity.
++
+--- sysvinit-2.84.orig/debian/extra/invoke-rc.d
++++ sysvinit-2.84/debian/extra/invoke-rc.d
+@@ -0,0 +1,449 @@
++#!/bin/sh  
++#
++# invoke-rc.d.sysvinit - Executes initscript actions
++# $Id: invoke-rc.d,v 1.10 2001/02/27 02:33:53 hmh Exp $
++#
++# SysVinit /etc/rc?.d version for Debian's sysvinit package
++#
++# invoke-rc.d.sysvinit - Executes initscript actions
++# Copyright (C) 2000,2001 Henrique de Moraes Holschuh <hmh@debian.org>
++#
++# This program is free software; you can redistribute it and/or modify it
++# under the terms of the GNU General Public License as published by the Free
++# Software Foundation; either version 2 of the License, or (at your option)
++# any later version.
++#
++# This program is distributed in the hope that it will be useful, but
++# WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
++# or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
++# for more details.
++#
++# You should have received a copy of the GNU General Public License along
++# with this program; if not, write to the Free Software Foundation, Inc., 59
++# Temple Place, Suite 330, Boston, MA 02111-1307 USA
++
++# Constants
++RUNLEVEL=/sbin/runlevel
++POLICYHELPER=/usr/sbin/policy-rc.d
++INITDPREFIX=/etc/init.d/
++RCDPREFIX=/etc/rc
++
++# Options
++BEQUIET=
++MODE=
++ACTION=
++FALLBACK=
++NOFALLBACK=
++FORCE=
++RETRY=
++RETURNFAILURE=
++RC=
++
++# Shell options
++set +e
++
++dohelp () {
++ # 
++ # outputs help and usage
++ #
++cat <<EOF
++
++invoke-rc.d, Debian/SysVinit (/etc/rc?.d) initscript subsystem.
++Copyright (c) 2000,2001 Henrique de Moraes Holschuh <hmh@debian.org>
++
++Usage:
++  invoke-rc.d [options] <basename> <action> [extra parameters]
++
++  basename - Initscript ID, as per update-rc.d(8)
++  action   - Initscript action. Known actions are:
++                start, [force-]stop, restart,
++                [force-]reload, status
++  WARNING: not all initscripts implement all of the above actions.
++
++  extra parameters are passed as is to the initscript, following 
++  the action (first initscript parameter).
++
++Options:
++  --quiet
++     Quiet mode, no error messages are generated.
++  --force
++     Try to run the initscript regardless of policy and subsystem
++     non-fatal errors.
++  --try-anyway
++     Try to run init script even if a non-fatal error is found.
++  --disclose-deny
++     Return status code 101 instead of status code 0 if
++     initscript action is denied by local policy rules or
++     runlevel constrains.
++  --query
++     Returns one of status codes 100-106, does not run
++     the initscript. Implies --disclose-deny and --no-fallback.
++  --no-fallback
++     Ignores any fallback action requests by the policy layer.
++     Warning: this is usually a very *bad* idea for any actions
++     other than "start".
++  --help
++     Outputs help message to stdout
++
++EOF
++}
++
++printerror () {
++ #
++ # prints an error message
++ #  $* - error message
++ #
++if test x${BEQUIET} = x ; then
++    echo `basename $0`: "$*" >&2
++fi
++}
++
++formataction () {
++ #
++ # formats a list in $* into $printaction
++ # for human-friendly printing to stderr
++ # and sets $naction to action or actions
++ #
++printaction=`echo $* | sed 's/ /, /g'`
++if test $# -eq 1 ; then
++    naction=action
++else
++    naction=actions
++fi
++}
++
++querypolicy () {
++ #
++ # queries policy database
++ # returns: $RC = 104 - ok, run
++ #          $RC = 101 - ok, do not run
++ #        other - exit with status $RC, maybe run if $RETRY
++ #          initial status of $RC is taken into account.
++ #
++
++policyaction="${ACTION}"
++if test x${RC} = "x101" ; then
++    if test "${ACTION}" = "start" -o "${ACTION}" = "restart" ; then
++	policyaction="(${ACTION})"
++    fi
++fi
++
++if test "x${POLICYHELPER}" != x -a -x "${POLICYHELPER}" ; then
++    FALLBACK=`${POLICYHELPER} ${BEQUIET} ${INITSCRIPTID} "${policyaction}" ${RL}`
++    RC=$?
++    formataction ${ACTION}
++    case ${RC} in
++	0)   RC=104
++	     ;;
++	1)   RC=105
++	     ;;
++	101) if test x${FORCE} != x ; then
++		printerror Overriding policy-rc.d denied execution of ${printaction}.
++		RC=104
++	     fi
++	     ;;
++    esac
++    if test x${MODE} != xquery ; then
++      case ${RC} in
++	105) printerror policy-rc.d query returned \"behaviour undefined\",
++	     printerror assuming \"${printaction}\" is allowed.
++	     RC=104
++	     ;;
++	106) formataction ${FALLBACK}
++	     if test x${FORCE} = x ; then
++		 if test x${NOFALLBACK} = x ; then
++		     ACTION="${FALLBACK}"
++		     printerror executing ${naction} \"${printaction}\" instead due to policy-rc.d request.
++		     RC=104
++		 else
++		     printerror ignoring policy-rc.d fallback request: ${printaction}.
++		     RC=101
++		 fi
++	     else
++		 printerror ignoring policy-rc.d fallback request: ${printaction}.
++		 RC=104
++	     fi
++	     ;;
++      esac
++    fi
++    case ${RC} in
++      100|101|102|103|104|105|106) ;;
++      *) printerror WARNING: policy-rc.d returned unexpected error status ${RC}, 102 used instead.
++         RC=102
++	 ;;
++    esac
++else
++    if test x${RC} = x ; then 
++	RC=104
++    fi
++fi
++return
++}
++
++verifyparameter () {
++ #
++ # Verifies if $1 is not null, and $# = 1
++ #
++if test $# -eq 0 ; then
++    printerror syntax error: invalid empty parameter
++    exit 103
++elif test $# -ne 1 ; then
++    printerror syntax error: embedded blanks are not allowed in \"$*\"
++    exit 103
++fi
++return
++}
++
++##
++##  main
++##
++
++## Verifies command line arguments
++
++if test $# -eq 0 ; then
++  printerror syntax error: missing required parameter, --help assumed
++  dohelp
++  exit 103
++fi
++
++state=I
++while test $# -gt 0 -a ${state} != III ; do
++    case "$1" in
++      --help)   dohelp 
++		exit 0
++		;;
++      --quiet)  BEQUIET=--quiet
++		;;
++      --force)  FORCE=yes
++		RETRY=yes
++		;;
++      --try-anyway)
++	        RETRY=yes
++		;;
++      --disclose-deny)
++		RETURNFAILURE=yes
++		;;
++      --query)  MODE=query
++		RETURNFAILURE=yes
++		;;
++      --no-fallback)
++		NOFALLBACK=yes
++		;;
++      --*)	printerror syntax error: unknown option \"$1\"
++		exit 103
++		;;
++	*)      case ${state} in
++		I)  verifyparameter $1
++		    INITSCRIPTID=$1
++		    ;;
++		II) verifyparameter $1
++		    ACTION=$1
++		    ;;
++		esac
++		state=${state}I
++		;;
++    esac
++    shift
++done
++
++if test ${state} != III ; then
++    printerror syntax error: missing required parameter
++    exit 103
++fi
++
++#NOTE: It may not be obvious, but "$@" from this point on must expand
++#to the extra initscript parameters, except inside functions.
++
++## sanity checks and just-in-case warnings.
++case ${ACTION} in
++    start|stop|force-stop|restart|reload|force-reload|status)
++	;;
++    *)
++	if test "x${POLICYHELPER}" != x -a -x "${POLICYHELPER}" ; then
++	    printerror action ${ACTION} is unknown, but proceeding anyway.
++	fi
++	;;
++esac
++
++## Verifies if the given initscript ID is known
++## For sysvinit, this error is critical
++if test ! -f "${INITDPREFIX}${INITSCRIPTID}" ; then
++    printerror unknown initscript, ${INITDPREFIX}${INITSCRIPTID} not found.
++    exit 100
++fi
++
++## Queries sysvinit for the current runlevel
++RL=`${RUNLEVEL} | sed 's/.*\ //'`
++if test ! $? ; then
++    printerror "could not determine current runlevel"
++    if test x${RETRY} = x ; then
++	exit 102
++    fi
++    RL=
++fi
++
++## Handles shutdown sequences VERY safely
++## i.e.: forget about policy, and do all we can to run the script.
++## BTW, why the heck are we being run in a shutdown runlevel?!
++if test x${RL} = x0 -o x${RL} = x6 ; then
++    FORCE=yes
++    RETRY=yes
++    POLICYHELPER=
++    BEQUIET=
++    printerror ----------------------------------------------------
++    printerror WARNING: invoke-rc.d called during shutdown sequence
++    printerror enabling safe mode: initscript policy layer disabled
++    printerror ----------------------------------------------------
++fi
++
++## Verifies the existance of proper S??initscriptID and K??initscriptID 
++## *links* in the proper /etc/rc?.d/ directory
++verifyrclink () {
++  #
++  # verifies if parameters are non-dangling symlinks
++  # all parameters are verified
++  #
++  doexit=
++  while test $# -gt 0 ; do
++    if test ! -L "$1" ; then
++        printerror not a symlink: $1
++        doexit=102
++    fi
++    if test ! -f "$1" ; then
++        printerror dangling symlink: $1
++        doexit=102
++    fi
++    shift
++  done
++  if test x${doexit} != x -a x${RETRY} = x; then
++     exit ${doexit}
++  fi
++  return 0
++}
++
++# we do handle multiple links per runlevel
++# but we don't handle embedded blanks in link names :-(
++if test x${RL} != x ; then
++    SLINK=`ls -d -Q ${RCDPREFIX}${RL}.d/S[0-9][0-9]${INITSCRIPTID} 2>/dev/null | xargs`
++    KLINK=`ls -d -Q ${RCDPREFIX}${RL}.d/K[0-9][0-9]${INITSCRIPTID} 2>/dev/null | xargs`
++    SSLINK=`ls -d -Q ${RCDPREFIX}S.d/S[0-9][0-9]${INITSCRIPTID} 2>/dev/null | xargs`
++
++    verifyrclink ${SLINK} ${KLINK} ${SSLINK}
++fi
++
++testexec () {
++  #
++  # returns true if any of the parameters is
++  # executable (after following links)
++  #
++  while test $# -gt 0 ; do
++    if test -x "$1" ; then
++       return 0
++    fi
++    shift
++  done
++  return 1
++}
++
++RC=
++
++###
++### LOCAL INITSCRIPT POLICY: Enforce need of a start entry
++### in either runlevel S or current runlevel to allow start
++### or restart.
++###
++case ${ACTION} in
++  start|restart)
++    if testexec ${SLINK} ; then
++	RC=104
++    elif testexec ${KLINK} ; then
++	RC=101
++    elif testexec ${SSLINK} ; then
++	RC=104
++    fi
++  ;;
++esac
++
++# test if /etc/init.d/initscript is actually executable
++if testexec "${INITDPREFIX}${INITSCRIPTID}" ; then
++    if test x${RC} = x -a x${MODE} = xquery ; then
++        RC=105
++    fi
++
++    # call policy layer
++    querypolicy
++    case ${RC} in
++        101|104)
++           ;;
++        *) if test x${MODE} != xquery ; then
++	       printerror policy-rc.d returned error status ${RC}
++	       if test x${RETRY} = x ; then
++	           exit ${RC}
++               else
++    	           RC=102
++    	       fi
++           fi
++           ;;
++    esac
++else
++    ###
++    ### LOCAL INITSCRIPT POLICY: non-executable initscript; deny exec.
++    ### (this is common sense, actually :^P )
++    ###
++    RC=101
++fi
++
++## Handles --query
++if test x${MODE} = xquery ; then
++    exit ${RC}
++fi
++
++
++setechoactions () {
++    if test $# -gt 1 ; then
++	echoaction=true
++    else
++	echoaction=
++    fi
++}
++getnextaction () {
++    saction=$1
++    shift
++    ACTION="$@"
++}
++
++## Executes initscript
++## note that $ACTION is a space-separated list of actions
++## to be attempted in order until one suceeds.
++if test x${FORCE} != x -o ${RC} -eq 104 ; then
++    if testexec "${INITDPREFIX}${INITSCRIPTID}" ; then
++	RC=102
++	setechoactions ${ACTION}
++	while test ! -z "${ACTION}" ; do
++	    getnextaction ${ACTION}
++	    if test ! -z ${echoaction} ; then
++		printerror executing initscript action \"${saction}\"...
++	    fi
++
++	    "${INITDPREFIX}${INITSCRIPTID}" "${saction}" "$@" && exit 0
++	    RC=$?
++
++	    if test ! -z "${ACTION}" ; then
++		printerror action \"${saction}\" failed, trying next action...
++	    fi
++	done
++	printerror initscript ${INITSCRIPTID}, action \"${saction}\" failed.
++	exit ${RC}
++    fi
++    exit 102
++fi
++
++## Handles --disclose-deny
++if test ${RC} -eq 101 -a x${RETURNFAILURE} = x ; then
++    RC=0
++else
++    formataction ${ACTION}
++    printerror initscript ${naction} \"${printaction}\" not executed.
++fi
++
++exit ${RC}
+--- sysvinit-2.84.orig/debian/extra/invoke-rc.d.8
++++ sysvinit-2.84/debian/extra/invoke-rc.d.8
+@@ -0,0 +1,225 @@
++.\" Hey, Emacs!  This is an -*- nroff -*- source file.
++.\" Authors: Henrique Holschuh
++.TH INVOKE\-RC.D 8 "1 March 2001" "Debian Project" "Debian/GNU Linux"
++.SH NAME
++invoke\-rc.d \- executes System-V style init script actions
++.SH SYNOPSIS
++.B invoke\-rc.d
++.RI [ --quiet ]
++.RI [ --force ]
++.RI [ --try-anyway ]
++.RI [ --disclose-deny ]
++.RI [ --query ]
++.RI [ --no-fallback ]
++.I name
++.I action
++.RI [ init script\ parameters... ]
++.HP
++.B invoke\-rc.d
++.RI [ --help ]
++.HP
++.SH DESCRIPTION
++.B invoke\-rc.d
++is a generic interface to execute System V style init script
++.BI /etc/init.d/ name \fR 
++actions, obeying runlevel constraints as well as any local
++policies set by the system administrator.
++
++All access to the init scripts by Debian packages' maintainer 
++scripts should be done through
++.B invoke\-rc.d\fR.
++
++This manpage documents only the usage and behavior of
++.BR invoke\-rc.d .
++For a discussion of the System V style init script arrangements please
++see
++.BR init (8)
++and the
++.IR "dpkg programmers' manual" .
++
++A far more detailed description of the invoke-rc.d interface and the
++policy layer is available in the sysvinit package documentation.
++
++.SH INIT SCRIPT ACTIONS
++The standard actions are:
++.IR start ,
++.IR stop ,
++.IR force\-stop ,
++.IR restart ,
++.IR reload ,
++.IR force\-reload ,
++and
++.IR status .
++Other actions are accepted, but they can cause problems to
++.B policy\-rc.d
++(see the
++.B INIT SCRIPT POLICY
++section), so warnings are generated if the policy layer
++is active.
++
++Please note that not all init scripts will implement all
++the actions listed above, and that the policy layer may
++override an action to another action(s), or even deny it.
++
++Any extra init script parameters will be passed to the 
++init script(s) being executed.
++
++If an action must be carried out regardless of any local
++policies, use the
++.IR --force
++switch.
++
++.SH OPTIONS
++.TP
++.I --help
++Display usage help.
++.TP
++.I --quiet
++Quiet mode, no error messages are generated.
++.TP
++.I --force
++Tries to run the init script regardless of policy and
++init script subsystem errors.
++.B Use of this option in Debian maintainer scripts is severely discouraged.
++.TP
++.I --try-anyway
++Tries to run the init script if a non-fatal error is
++detected.
++.TP
++.I --disclose-deny
++Return status code 101 instead of status code 0 if
++the init script action is denied by the policy layer.
++.TP
++.I --query
++Returns one of the status codes 100-106. Does not
++run the init script, and implies
++.IR --disclose-deny
++and 
++.IR --no-fallback .
++.TP
++.I --no-fallback
++Ignores any fallback action requests by the policy
++layer.
++.B Warning:
++this is usually a very bad idea for any actions other
++than
++.RI start .
++.SH STATUS CODES
++Should an init script be executed, 
++.B invoke\-rc.d 
++always returns the status code
++returned by the init script. Init scripts should not return status codes in
++the 100+ range (which is reserved in Debian and by the LSB). The status codes
++returned by invoke\-rc.d proper are:
++.TP
++0
++.IR Success . 
++Either the init script was run and returned exit status 0 (note
++that a fallback action may have been run instead of the one given in the
++command line), or it was not run because of runlevel/local policy constrains
++and
++.B --disclose-deny 
++is not in effect.
++.TP
++1 - 99
++Reserved for init.d script, usually indicates a failure.
++.TP
++100
++.B Init script ID
++.BI ( name )
++.BR unknown .
++This means the init script was not registered successfully through
++.B update\-rc.d
++or that the init script does not exist.
++.TP
++101
++.B Action not allowed\fR.
++The requested action will not be performed because of runlevel or local
++policy constraints.
++.TP
++102
++.B Subsystem error\fR.
++Init script (or policy layer) subsystem malfunction. Also, forced
++init script execution due to 
++.I --try-anyway 
++or 
++.I --force
++failed\fR.
++.TP
++103
++.I Syntax error\fR.
++.TP
++104
++.I Action allowed\fR.
++Init script would be run, but 
++.B --query
++is in effect.
++.TP
++105
++.I Behavior uncertain\fR.
++It cannot be determined if action should be carried out or not, and 
++.B --query
++is in effect.
++.TP
++106
++.I Fallback action requested\fR.
++The policy layer denied the requested action, and
++supplied an allowed fallback action to be used instead.
++
++.SH INIT SCRIPT POLICY
++.B invoke\-rc.d
++introduces the concept of a policy layer which is used to verify if
++an init script should be run or not, or if something else should be
++done instead.  This layer has various uses, the most immediate ones
++being avoiding that package upgrades start daemons out-of-runlevel,
++and that a package starts or stops daemons while inside a chroot 
++jail.
++
++The policy layer has the following abilities: deny or approve the
++execution of an action; request that another action (called a
++.IR fallback )
++is to be taken, instead of the action requested in invoke\-rc.d's 
++command line; or request multiple actions to be tried in order, until
++one of them succeeds (a multiple
++.IR fallback ).
++
++.B invoke\-rc.d
++itself will only pay attention to the current runlevel, and block
++any tries to start an init script in a runlevel it is not configured
++to be started at.  Other policies are implemented with the use of
++the
++.B policy\-rc.d
++helper, and are only available if
++.B /usr/sbin/policy\-rc.d
++is installed in the system.
++
++.SH FILES
++.TP
++.BR /etc/init.d/* 
++System V init scripts.
++.TP
++.BR /usr/sbin/policy\-rc.d
++Init script policy layer helper (not required).
++.TP
++.BR /etc/runlevel.conf
++file-rc runlevel configuration (if the file-rc package is 
++being used).
++.TP
++.BR /etc/rc?.d/*
++System V runlevel configuration (if the file-rc package is
++not being used).
++
++.SH BUGS
++Please report any bugs using the Debian bug tracking system,
++http://bugs.debian.org/, packages file\-rc or sysvinit 
++(depending on which version of invoke\-rc.d you are using).
++.SH SEE ALSO
++.IR "dpkg programmers manual" ,
++.br
++.BR /etc/init.d/skeleton ,
++.br
++.BR update\-rc.d (8),
++.br
++.BR init (8),
++.br
++.BR policy\-rc.d (8).
+--- sysvinit-2.84.orig/debian/extra/ja/update-rc.d.8
++++ sysvinit-2.84/debian/extra/ja/update-rc.d.8
+@@ -0,0 +1,193 @@
++.\" Hey, Emacs!  This is an -*- nroff -*- source file.
++.\" Authors: Ian Jackson
++.\" Original manpage cvs revision 1.4
++.TH UPDATE\-RC.D 8 "2 March 1998" "Debian Project" "dpkg utilities"
++.SH Ì¾Á°
++update\-rc.d \- System-V ¥¹¥¿¥¤¥ë¤Î init ¥¹¥¯¥ê¥×¥ÈÍÑ¤Î¥ê¥ó¥¯¤ò¥¤¥ó¥¹¥È¡¼¥ë¡¢ºï½ü¤¹¤ë
++.SH ½ñ¼°
++.B update\-rc.d
++.RI [ -n ]
++.RI [ -f ]
++.IB name " remove"
++.HP
++.B update-rc.d
++.RI [ -n ]
++.RI [ -f ]
++.IB name " defaults"
++.RI [ NN " | " NN-start " " NN-stop ]
++.HP
++.B update-rc.d
++.RI [ -n ]
++.RI [ -f ]
++.I name
++.BR start | stop
++.IR "NN runlevel runlevel " ...
++.B .
++.BR start | stop
++.IR "NN runlevel runlevel " ...
++.BR . " ..."
++.SH ÀâÌÀ
++.B update-rc.d
++¤Ï¡¢
++¥¹¥¯¥ê¥×¥È
++.BI /etc/init.d/ name \fR
++¤Ø¤Î¥ê¥ó¥¯¤Ç¤¢¤ë
++.BI /etc/rc runlevel .d/ NNname
++¤ò¼«Æ°Åª¤ËºîÀ®¤¹¤ë¡£
++.BI /etc/rc runlevel .d/ NNname 
++¤Ï System V ¥¹¥¿¥¤¥ë¤Î init ¥¹¥¯¥ê¥×¥ÈÍÑ¤Î¥ê¥ó¥¯¤Ç¤¢¤ê¡¢
++¥é¥ó¥ì¥Ù¥ë¤òÊÑ¹¹¤¹¤ëºÝ¤Ë
++.B init
++¤Ë¤è¤Ã¤Æ¼Â¹Ô¤µ¤ì¡¢°ìÈÌ¤Ë¥Ç¡¼¥â¥ó¤Î¤è¤¦¤Ê¥·¥¹¥Æ¥à¥µ¡¼¥Ó¥¹¤Îµ¯Æ°¡¢
++Ää»ß¤Ë»ÈÍÑ¤µ¤ì¤ë¡£
++.I runlevel
++¤Ë¤Ï
++.BR init 
++¤¬¥µ¥Ý¡¼¥È¤¹¤ë¥é¥ó¥ì¥Ù¥ë¿ô
++.BR 0123456789S
++¤Î¤¦¤Á¤Î¤Ò¤È¤Ä¤ò»ØÄê¤¹¤ë¡£
++.I NN
++¤Ï 2 ·å¤Î¿ô»ú¤Ç¤¢¤ê¡¢
++.B init
++¤¬¥¹¥¯¥ê¥×¥È¤ò¼Â¹Ô¤¹¤ë½ç½ø¤ò·è¤á¤ë¤¿¤á¤Ë»ÈÍÑ¤¹¤ë¡£
++
++¤³¤Î¥Þ¥Ë¥å¥¢¥ë¤Ï
++.BR update-rc.d 
++¤Î»ÈÍÑË¡¤È¤½¤ÎÆ°ºî¤Ë¤Ä¤¤¤Æ¤Î¤ß¸ÀµÚ¤¹¤ë¡£
++System V ¥¹¥¿¥¤¥ë¤Î init ¥¹¥¯¥ê¥×¥È¤ÎÇÛÃÖ¤Ë¤Ä¤¤¤Æ¤ÎµÄÏÀ¤Ë¤Ï¡¢
++.BR init (8)
++¤È
++.IR "dpkg programmers' manual" 
++¤ò»²¾È¤¹¤ë¤³¤È¡£
++.SH INIT ¥¹¥¯¥ê¥×¥ÈÍÑ¤Î¥ê¥ó¥¯¤ò¥¤¥ó¥¹¥È¡¼¥ë¤¹¤ë
++.BR defaults ", " start ", " stop
++¥ª¥×¥·¥ç¥ó¤Î¤¤¤º¤ì¤«¤ò»È¤Ã¤Æ¼Â¹Ô¤·¤¿¾ì¹ç¡¢
++update-rc.d ¤Ï
++.BI /etc/rc runlevel .d/[SK] NNname
++¤ò¥¹¥¯¥ê¥×¥È
++.BI /etc/init.d/ name\fR
++¤Ë¥ê¥ó¥¯¤¹¤ë¡£
++
++¥Õ¥¡¥¤¥ë
++.BI /etc/rc runlevel .d/[SK]?? name
++¤¬¤¹¤Ç¤ËÂ¸ºß¤¹¤ë¾ì¹ç¤Ë¤Ï¡¢
++.B update-rc.d
++¤Ï²¿¤â¤·¤Ê¤¤¡£¤³¤ì¤Ï¡¢¥·¥¹¥Æ¥à´ÉÍý¼Ô¤¬¤Ò¤È¤Ä¤Ç¤â¥ê¥ó¥¯¤ò»Ä¤·¤Æ¤¤¤¿
++¾ì¹ç¤Ë¡¢¤½¤ÎÀßÄê¤ò¾å½ñ¤­¤µ¤ì¤ë¤³¤È¤¬¤Ê¤¯¡¢ÊÌ¤Î¾ì½ê¤Ë°ÜÆ°¤µ¤»¤ë¤³¤È
++¤¬¤Ç¤­¤ë¤è¤¦¤Ë¤¹¤ë¤¿¤á¤Ç¤¢¤ë¡£
++
++.B defaults
++¤¬»ÈÍÑ¤µ¤ì¤¿¾ì¹ç¡¢
++.B update-rc.d
++¤Ï¥é¥ó¥ì¥Ù¥ë
++.B 2345
++¤Ë¥µ¡¼¥Ó¥¹¤Îµ¯Æ°ÍÑ¥ê¥ó¥¯¤ò¡¢¥é¥ó¥ì¥Ù¥ë
++.BR 016
++¤Ë¥µ¡¼¥Ó¥¹¤ÎÄä»ßÍÑ¥ê¥ó¥¯¤òºîÀ®¤¹¤ë¡£¥Ç¥Õ¥©¥ë¥È¤Ç¤Ï¡¢¥ê¥ó¥¯¤Ï¤¹¤Ù¤Æ
++¤Î¥·¡¼¥±¥ó¥¹¥³¡¼¥É 20 ¤ò»ý¤Ä¤¬¡¢°ú¿ô
++.I NN
++¤ò¤Ò¤È¤Ä¡¢Ëô¤Ï¤Õ¤¿¤ÄÍ¿¤¨¤ë¤³¤È¤ÇÊÑ¹¹¤¹¤ë¤³¤È¤¬¤Ç¤­¤ë¡£°ú¿ô¤¬¤Ò¤È¤Ä
++¤Î¾ì¹ç¡¢µ¯Æ°ÍÑ¥ê¥ó¥¯¤ÈÄä»ßÍÑ¥ê¥ó¥¯¤ÎÎ¾Êý¤Î¥·¡¼¥±¥ó¥¹¥³¡¼¥É¤òÊÑ¹¹¤¹
++¤ë¡£°ìÊý¡¢°ú¿ô¤¬¤Õ¤¿¤ÄÍ¿¤¨¤é¤ì¤¿¾ì¹ç¡¢¤Ò¤È¤Ä¤á¤¬µ¯Æ°ÍÑ¥ê¥ó¥¯¤Î¥·¡¼
++¥±¥ó¥¹¥³¡¼¥É¤ò¡¢¤Õ¤¿¤Ä¤á¤¬Ää»ßÍÑ¥ê¥ó¥¯¤Î¥·¡¼¥±¥ó¥¹¥³¡¼¥É¤òÊÑ¹¹¤¹
++¤ë¡£
++
++.B defaults
++¤ò»ÈÍÑ¤¹¤ëÂå¤ï¤ê¤Ë¡¢°ú¿ô¥»¥Ã¥È¤òÍ¿¤¨¤ë¤³¤È¤Ç
++¥µ¡¼¥Ó¥¹¤òµ¯Æ°¡¢Ää»ß¤¹¤ë¥é¥ó¥ì¥Ù¥ë¤òÌÀ¼¨Åª¤Ë»ØÄê¤¹¤ë¤³¤È¤¬¤Ç¤­¤ë¡£
++
++°ú¿ô¥»¥Ã¥È¤Ï¤½¤ì¤¾¤ì°ú¿ô
++.BR start " ¤Þ¤¿¤Ï " stop
++¤Ç»Ï¤Þ¤ê¡¢¤³¤ì¤Ë¤è¤êµ¯Æ°ÍÑ¥ê¥ó¥¯¤Þ¤¿¤ÏÄä»ßÍÑ¥ê¥ó¥¯¤Î¤É¤Á¤é¤òºîÀ®¤¹
++¤ë¤«»ØÄê¤¹¤ë¡£¼¡¤Ë¡¢°ú¿ô¥»¥Ã¥È¤Î¥ê¥ó¥¯¤¹¤Ù¤Æ¤ËÂÐ¤¹¤ë¥·¡¼¥±¥ó¥¹¥³¡¼
++¥ÉÈÖ¹æ
++.IR NN
++¤ò»ØÄê¤·¡¢¹¹¤Ë¤Ò¤È¤Ä°Ê¾å¤Î¥é¥ó¥ì¥Ù¥ë¿ô¤ò¤½¤ì¤¾¤ì¤Ò¤È¤Ä¤Î°ú¿ô¤È¤·¤Æ
++Í¿¤¨¤ë¡£°ú¿ô¥»¥Ã¥È¤Ï°ú¿ô
++.B .
++(¥Ô¥ê¥ª¥É)¤Ë¤è¤ê½ªÎ»¤¹¤ë¡£
++
++.BR defaults
++¤ò»ÈÍÑ¤»¤ºÌÀ¼¨Åª¤Ë»ØÄê¤·¤¿¾ì¹ç¡¢ÄÌ¾ï
++.B start
++¥»¥Ã¥È¤È
++.B stop
++¥»¥Ã¥È¤¬¤Ò¤È¤Ä¤º¤ÄÂ¸ºß¤¹¤ë¡£
++
++¥é¥ó¥ì¥Ù¥ë¤´¤È¤Ë°Û¤Ê¤ë¥·¡¼¥±¥ó¥¹¥³¡¼¥É¤¬É¬Í×¤Ê¾ì¹ç¤Ï¡¢
++.B start
++¥»¥Ã¥È¤ä
++.B stop
++¥»¥Ã¥È¤òÊ£¿ô»ØÄê¤¹¤ë¡£
++
++.B update-rc.d
++¤¬¥ê¥ó¥¯¤òºîÀ®¤¹¤ëÁ°¤Ë¡¢
++¥¹¥¯¥ê¥×¥È
++.BI /etc/init.d/ name
++¤¬Â¸ºß¤·¤Æ¤¤¤Ê¤¯¤Æ¤Ï¤Ê¤é¤Ê¤¤¡£
++.SH ¥ê¥ó¥¯ºï½üÍÑ¤Î¥¹¥¯¥ê¥×¥È
++.I remove
++¥ª¥×¥·¥ç¥ó¤ò°ú¿ô¤ËÍ¿¤¨¤ë¤È¡¢
++.BI /etc/rc runlevel .d
++¥Ç¥£¥ì¥¯¥È¥ê¤Ë¤¢¤ë¥¹¥¯¥ê¥×¥È
++.BI /etc/init.d/ name\fR
++¤Ø¤Î¥ê¥ó¥¯¤ò¤¹¤Ù¤Æºï½ü¤¹¤ë¡£
++¥¹¥¯¥ê¥×¥È¤Ï¤¢¤é¤«¤¸¤áºï½ü¤µ¤ì¤Æ¤¤¤Ê¤¯¤Æ¤Ï¤Ê¤é¤Ê¤¤¡£
++.B update-rc.d
++¤Ï¤³¤ì¤ò¥Á¥§¥Ã¥¯¤¹¤ë¡£ÄÌ¾ï¡¢
++.B update-rc.d
++¤Ï¥Ñ¥Ã¥±¡¼¥¸¤Î postrm ¥¹¥¯¥ê¥×¥È¤«¤é¸Æ¤Ó½Ð¤µ¤ì¤ë¡£
++¤³¤ì¤¬¼Â¹Ô¤µ¤ì¤ë¤Î¤Ï¡¢postrm ¥¹¥¯¥ê¥×¥È¤ÎÂè1°ú¿ô¤È¤·¤Æ
++.BR purge
++¤¬Í¿¤¨¤é¤ì¤¿¾ì¹ç¤Ç¤¢¤ê¡¢¤³¤ì¤Ï¥æ¡¼¥¶¤¬¥Ñ¥Ã¥±¡¼¥¸¤ÎÀßÄê¤òºï½ü
++¤¹¤ë¤³¤È¤òÍ×µá¤·¤Æ¤¤¤ë¤³¤È¤òÉ½¤¹¡£
++.BI /etc/rc runlevel .d
++¥Ç¥£¥ì¥¯¥È¥ê¤Ë¤¢¤ë¤¬¥¹¥¯¥ê¥×¥È
++.BI /etc/init.d/ name
++¤Ë¥·¥ó¥Ü¥ê¥Ã¥¯¥ê¥ó¥¯¤µ¤ì¤Æ¤¤¤Ê¤¤¥Õ¥¡¥¤¥ë¤Ïºï½ü¤µ¤ì¤º¤Ë»Ä¤µ¤ì¤ë¡£
++.SH ¥ª¥×¥·¥ç¥ó
++.TP
++.I -n
++¼ÂºÝ¤ÎÆ°ºî¤òÉ½¼¨¤¹¤ë¤À¤±¤Ç¡¢²¿¤â¤·¤Ê¤¤¡£
++.TP
++.I -f
++.BI /etc/init.d/ name
++¤¬Â¸ºß¤·¤¤¤Æ¤â¡¢¶¯À©Åª¤Ë¥·¥ó¥Ü¥ê¥Ã¥¯¥ê¥ó¥¯¤òºï½ü¤¹¤ë¡£
++.SH »ÈÍÑÎã
++defaults ¤ò»ÈÍÑ¤·¤¿¥ê¥ó¥¯¤ÎºîÀ®
++.nf
++.B "   update-rc.d foobar defaults"
++.fi
++°ú¿ô¥»¥Ã¥È¤òÌÀ¼¨¤·¤¿Æ±Åù¤Î¥³¥Þ¥ó¥É
++.nf
++.B "   update-rc.d foobar start 20 2 3 4 5 . stop 20 0 1 6 ."
++.fi
++.SH ¥Ð¥°
++¥·¥¹¥Æ¥à´ÉÍý¼Ô¤Î¤¿¤á¤Ë¾¯¤Ê¤¯¤È¤â
++.B defaults
++¤Ç¤É¤Î¥é¥ó¥ì¥Ù¥ë¤ò start ¤Þ¤¿¤Ï stop ¤Ë¤¹¤ë¤«¤ò»ØÄê¤Ç¤­¤ëÊýË¡¤¬É¬Í×¤Ç¤¢¤ë¡£
++¤Þ¤¿¡¢²ÄÇ½¤Ê¤é¤Ð
++.B defaults
++°Ê³°¤Î¥ª¥×¥·¥ç¥ó¤Ç¤â´ÉÍý¼Ô¤Î»ØÄê¤òÍ¥Àè¤¹¤ëÊýË¡¤¬É¬Í×¡£
++.SH ¥Õ¥¡¥¤¥ë
++.TP
++.B /etc/init.d/
++init ¥¹¥¯¥ê¥×¥È¤¬¼ÂºÝ¤ËÃÖ¤¤¤Æ¤¢¤ë¥Ç¥£¥ì¥¯¥È¥ê
++.TP
++.B /etc/rc?.d/
++.BR update-rc.d
++¤¬¼è¤ê°·¤¦¥ê¥ó¥¯¤ò´Þ¤ó¤À¥Ç¥£¥ì¥¯¥È¥ê¡£
++.BR init
++¤Ë¤è¤ê»ÈÍÑ¤µ¤ì¤ë¡£
++.TP
++.B /etc/init.d/skeleton
++.B init.d
++¥¹¥¯¥ê¥×¥È¤ò½ñ¤¯¤¿¤á¤Ë»ÈÍÑ¤¹¤ë¿÷·¿
++.SH ´ØÏ¢¹àÌÜ
++.IR "dpkg programmers manual" ,
++.br
++.BR /etc/init.d/skeleton ,
++.br
++.BR init (8).
++.SH ËÝÌõ¼Ô
++ÆéÃ« ±ÉÅ¸ <nabetani@kern.phys.sci.osaka-u.ac.jp>
+--- sysvinit-2.84.orig/debian/extra/fr/update-rc.d.8
++++ sysvinit-2.84/debian/extra/fr/update-rc.d.8
+@@ -0,0 +1,192 @@
++.\" Hey, Emacs!  This is an -*- nroff -*- source file.
++.\" Authors: Ian Jackson
++.\" Traduction de la révision CVS 1.4
++.TH UPDATE\-RC.D 8 "2 March 1998" "Projet Debian " "Utilitaires de dpkg"
++.SH NOM
++update\-rc.d \- Pour installer ou supprimer les liens vers les scripts d'
++initialisation de type System-V 
++.SH SYNOPSIS
++.B update\-rc.d
++.RI [ -n ]
++.RI [ -f ]
++.IB nom " remove"
++.HP
++.B update-rc.d
++.RI [ -n ]
++.IB nom " defaults"
++.RI [ NN " | " NN-start " " NN-stop ]
++.HP
++.B update-rc.d
++.RI [ -n ]
++.I nom
++.BR start | stop
++.IR "NN runlevel runlevel " ...
++.B .
++.BR start | stop
++.IR "NN runlevel runlevel " ...
++.BR . " ..."
++.SH DESCRIPTION
++.B update-rc.d
++met à jour automatiquement les liens vers les scripts d'initialisation de type
++System-V dont le nom est
++.BI /etc/rc runlevel .d/ NNnom
++vers les scripts
++.BI /etc/init.d/ name \fR.
++Ils sont lancés par
++.B init
++quand on change de niveau de fonctionnement et ils sont généralement utilisés 
++pour démarrer ou arrêter des services tels que les démons.
++.I runlevel
++est l'un des niveaux de fonctionnement autorisés par
++.BR init ", " 0123456789S ,
++et
++.I NN
++est le code à deux chiffres utilisé par
++.B init
++pour décider de l'ordre d'exécution des scripts.
++
++Cette page de manuel documente seulement le comportement de
++.BR update-rc.d 
++et son utilisation.
++Pour une discussion sur la préparation des scripts pour l'initialisation de type System-V voyez
++.BR init (8)
++et le
++.IR "dpkg programmers' manual" .
++.SH L'INSTALLATION DES LIENS DES SCRIPTS D'INITIALISATION
++Quand update-rc.d est lancé avec les options
++.BR defaults ", " start ", ou " stop,
++il crée les liens
++.BI /etc/rc runlevel .d/[SK] NNname
++qui pointent vers le script
++.BI /etc/init.d/ name\fR.
++
++Quand des fichiers
++.BI /etc/rc runlevel .d/[SK]?? name
++existent déjà, 
++.B update-rc.d
++ne fait rien.  C'est ainsi pour que l'administrateur système puisse
++réarranger les liens -- à condition qu'il en reste au moins un -- sans
++que sa configuration ne soit réécrite.  
++
++Quand l'option
++.B defaults
++est utilisée,
++.B update-rc.d
++crée des liens pour démarrer un service dans les niveaux de fonctionnement
++.B 2345
++et des liens pour arrêter un service dans les niveaux 
++.BR 016 .
++Par défaut, tous les liens ont un code égal à 20, mais on peut le changer en
++donnant un ou deux arguments
++.I NN ;
++quand un seul argument est donné, il remplace le code à la fois pour les 
++liens de démarrage (start) et pour les liens d'arrêt (stop) ; quand deux 
++arguments sont donnés, le premier remplace le code pour les liens de 
++démarrage (start) et le second remplace le code pour les liens d'arrêt (stop).
++
++Au lieu de
++.B defaults,
++on peut indiquer les niveaux de fonctionnement dans lesquels lancer ou 
++arrêter les services en utilisant une suite explicite d'ensembles d'arguments :
++
++Chacun de ces ensembles commence par un argument
++.BR start " ou " stop
++de manière à indiquer s'il faut créer des liens de démarrage ou d'arrêt.
++Ensuite vient le nombre du code
++.IR NN ,
++pour tous les liens de cet ensemble, puis un ou plusieurs nombres indiquant
++le niveau de fonctionnement, un seul argument pour chacun. l'ensemble se
++termine par un argument
++.B .
++(un simple point).
++
++Quand, plutôt que
++.BR defaults,
++on utilise une détermination explicite, il faut habituellement un ensemble de
++démarrage
++.B start, 
++et un ensemble d'arrêt
++.B stop.
++Quand on veut différents codes dans les différents niveaux de fonctionnement,
++on peut spécifier différents ensembles de démarrage
++.B start
++ou différents ensembles d'arrêt
++.B stop.
++
++Le script
++.BI /etc/init.d/ name
++doit exister avant de lancer
++.B update-rc.d
++pour créer les liens.
++.SH LA SUPPRESSION DES SCRIPTS
++Quand on appelle update-rc.d avec l'option
++.I remove
++les liens dans les répertoires
++.BI /etc/rc runlevel .d
++qui pointent vers le script
++.BI /etc/init.d/ name\fR.
++sont supprimés.
++Ce script doit déjà avoir été supprimé --
++.B update-rc.d
++vérifie cela.
++On appelle habituellement
++.B update-rc.d
++dans le script « post-removal » d'un paquet et quand ce script a détecté que
++son premier argument était 
++.BR purge ; 
++Cela indique que l'utilisateur a demandé le suppression de la configuration de
++ce paquet.
++Tout fichier dans les répertoires
++.BI /etc/rc runlevel .d
++qui n'est pas un lien symbolique vers le script
++.BI /etc/init.d/ name
++est préservé.
++.SH OPTIONS
++.TP
++.I -n
++Ne fait rien, montre seulement ce qui pourrait être fait.
++.TP
++.I -f
++Force la suppression des liens même si
++.BI /etc/init.d/ name
++existe encore.
++.SH EXEMPLES
++Insère des liens avec l'option « defaults » :
++.nf
++.B "   update-rc.d foobar defaults"
++.fi
++La même commande, avec une détermination explicite utilisant les ensembles 
++d'arguments :
++.nf
++.B "   update-rc.d foobar start 20 2 3 4 5 . stop 20 0 1 6 ."
++.fi
++.SH BOGUES
++
++Il devrait y avoir un moyen pour l'administrateur système d'indiquer à
++l'option 
++.B defaults
++au moins les niveaux de fonctionnement par défaut à utiliser pour le 
++démarrage et l'arrêt des services ; l'administrateur système  devrait sans
++doute aussi pouvoir changer d'autres choses.
++.SH FICHIERS
++.TP
++.B /etc/init.d/
++Le répertoire qui contient en fait les scripts d'initialisation.
++.TP
++.B /etc/rc?.d/
++Le répertoire qui contient les liens utilisés par
++.BR init
++et gérés par
++.BR update-rc.d.
++.TP
++.B /etc/init.d/skeleton
++Modèle pour l'écriture des scripts de
++.B init.d.
++.SH VOIR AUSSI
++.IR "dpkg programmers manual" ,
++.br
++.BR /etc/init.d/skeleton ,
++.br
++.BR init (8).
++.SH TRADUCTION
++Philippe Batailler. Dec 2000.
+--- sysvinit-2.84.orig/debian/extra/update-rc.d.8
++++ sysvinit-2.84/debian/extra/update-rc.d.8
+@@ -0,0 +1,182 @@
++.\" Hey, Emacs!  This is an -*- nroff -*- source file.
++.\" Authors: Ian Jackson
++.TH UPDATE\-RC.D 8 "2 March 1998" "Debian Project" "dpkg utilities"
++.SH NAME
++update\-rc.d \- install and remove System-V style init script links
++.SH SYNOPSIS
++.B update\-rc.d
++.RI [ -n ]
++.RI [ -f ]
++.IB name " remove"
++.HP
++.B update-rc.d
++.RI [ -n ]
++.IB name " defaults"
++.RI [ NN " | " NN-start " " NN-stop ]
++.HP
++.B update-rc.d
++.RI [ -n ]
++.I name
++.BR start | stop
++.IR "NN runlevel runlevel " ...
++.B .
++.BR start | stop
++.IR "NN runlevel runlevel " ...
++.BR . " ..."
++.SH DESCRIPTION
++.B update-rc.d
++automatically updates the System V style init script links
++.BI /etc/rc runlevel .d/ NNname
++to scripts
++.BI /etc/init.d/ name \fR.
++These are run by
++.B init
++when changing runlevels and are generally used to start and stop
++system services such as daemons.
++.I runlevel
++is one of the runlevels supported by
++.BR init ", " 0123456789S ,
++and
++.I NN
++is the two-digit sequence code used by
++.B init
++to decide which order to run the scripts in.
++
++This manpage documents only the usage and behaviour of
++.BR update-rc.d .
++For a discussion of the System V style init script arrangements please
++see
++.BR init (8)
++and the
++.IR "dpkg programmers' manual" .
++.SH INSTALLING INIT SCRIPT LINKS
++When run with either the
++.BR defaults ", " start ", or " stop
++options, update-rc.d makes links
++.BI /etc/rc runlevel .d/[SK] NNname
++pointing to the script
++.BI /etc/init.d/ name\fR,
++
++If any files
++.BI /etc/rc runlevel .d/[SK]?? name
++already exist then
++.B update-rc.d
++does nothing.  This is so that the system administrator can rearrange
++the links, provided that they leave at least one link remaining,
++without having their configuration overwritten.
++
++If
++.B defaults
++is used then
++.B update-rc.d
++will make links to start the service in runlevels
++.B 2345
++and stop the service in runlevels
++.BR 016 .
++By default all the links will have sequence code 20, but
++this can be overridden by supplying one or two
++.I NN
++arguments; one argument overrides the sequence code for both start and
++stop links whereas of two arguments the first overrides the code for
++start links and the second that for stop links.
++
++Instead of
++.B defaults
++the runlevels in which to start and stop the service may be specified
++explicitly using a series of sets of arguments:
++
++Each of these sets starts with an argument
++.BR start " or " stop
++to specify whether start or stop links are to be created by that set.
++Then follows
++.IR NN ,
++the sequence code number for all the links in the set, and one or more
++runlevel numbers as a single argument each.  The set is terminated by
++an argument
++.B .
++(a single full stop).
++
++When explicit specification, rather than
++.BR defaults ,
++is used there will usually be one
++.B start
++and one
++.B stop
++set.  If different sequence codes are required in different runlevels
++then several 
++.B start
++sets or several
++.B stop
++sets may be specified.
++
++The script
++.BI /etc/init.d/ name
++must exist before
++.B update-rc.d
++is run to create the links.
++.SH REMOVING SCRIPTS
++When invoked with the
++.I remove
++option, update-rc.d removes any links in the
++.BI /etc/rc runlevel .d
++directories to the script
++.BI /etc/init.d/ name\fR.
++The script must have been deleted already -
++.B update-rc.d
++checks for this.
++.B update-rc.d
++is usually called from a package's post-removal script when that
++script detects that its first argument is
++.BR purge ,
++indicating that the user has requested the configuration for the
++package to be removed.
++Any files in the
++.BI /etc/rc runlevel .d
++directories that are not symbolic links to the script
++.BI /etc/init.d/ name
++will be left untouched.
++.SH OPTIONS
++.TP
++.I -n
++Don't do anything, just show what we would do.
++.TP
++.I -f
++Force removal of symlinks even if
++.BI /etc/init.d/ name
++still exists.
++.SH EXAMPLES
++Insert links using the defaults:
++.nf
++.B "   update-rc.d foobar defaults"
++.fi
++Equivalent command using explicit argument sets:
++.nf
++.B "   update-rc.d foobar start 20 2 3 4 5 . stop 20 0 1 6 ."
++.fi
++.SH BUGS
++
++There should be a way for the system administrator to specify at least
++the default start and stop runlevels to be used by
++.B defaults
++and possibly to override other things as well.
++.SH FILES
++.TP
++.B /etc/init.d/
++The directory containing the actual init scripts.
++.TP
++.B /etc/rc?.d/
++The directories containing the links used by
++.BR init
++and managed by
++.BR update-rc.d .
++.TP
++.B /etc/init.d/skeleton
++Model for use by writers of
++.B init.d
++scripts.
++.SH SEE ALSO
++.IR "dpkg programmers manual" ,
++.br
++.BR /etc/init.d/skeleton ,
++.br
++.BR init (8).
+--- sysvinit-2.84.orig/debian/extra/update-rc.d
++++ sysvinit-2.84/debian/extra/update-rc.d
+@@ -0,0 +1,207 @@
++#! /usr/bin/perl
++#
++# update-rc.d	Update the links in /etc/rc[0-9S].d/
++#
++# Version:	@(#)update-rc.d.pl  2.02  05-Mar-1998  miquels@cistron.nl
++#
++
++$initd = "/etc/init.d";
++$etcd  = "/etc/rc";
++$notreally = 0;
++
++# Print usage message and die.
++
++sub usage {
++	print STDERR "update-rc.d: error: @_\n" if ($#_ >= 0);
++	print STDERR <<EOF;
++usage: update-rc.d [-n] [-f] <basename> remove
++       update-rc.d [-n] <basename> defaults [NN | sNN kNN]
++       update-rc.d [-n] <basename> start|stop NN runlvl [runlvl] [...] .
++		-n: not really
++		-f: force
++EOF
++	exit (1);
++}
++
++# Check out options.
++
++while($#ARGV >= 0 && ($_ = $ARGV[0]) =~ /^-/) {
++	shift @ARGV;
++	if (/^-n$/) { $notreally++; next }
++	if (/^-f$/) { $force++; next }
++	if (/^-h|--help$/) { &usage; }
++	&usage("unknown option");
++}
++
++# Action.
++
++&usage() if ($#ARGV < 1);
++$bn = shift @ARGV;
++if ($ARGV[0] ne 'remove') {
++    if (! -f "$initd/$bn") {
++	print STDERR "update-rc.d: $initd/$bn: file does not exist\n";
++	exit (1);
++    }
++} elsif (-f "$initd/$bn") {
++    if (!$force) {
++	printf STDERR "update-rc.d: $initd/$bn exists during rc.d purge (use -f to force)\n";
++	exit (1);
++    } else {
++	printf STDERR "update-rc.d: $initd/$bn exists during rc.d purge (continuing)\n";
++    }
++}
++
++$_ = $ARGV[0];
++if    (/^remove$/)       { &checklinks ("remove"); }
++elsif (/^defaults$/)     { &defaults; &makelinks }
++elsif (/^(start|stop)$/) { &startstop; &makelinks; }
++else                     { &usage; }
++
++exit (0);
++
++# Check if there are links in /etc/rc[0-9S].d/ 
++# Remove if the first argument is "remove" and the links 
++# point to $bn.
++
++sub is_link () {
++    my ($op, $fn, $bn) = @_;
++    if (! -l $fn) {
++	print STDERR "update-rc.d: warning: $fn is not a symbolic link\n";
++	return 0;
++    } else {
++	$linkdst = readlink ($fn);
++	if (! defined $linkdst) {
++	    die ("update-rc.d: error reading symbolic link: $!\n");
++	}
++	if (($linkdst ne "../init.d/$bn") && ($linkdst ne "../init.d/$bn")) {
++	    print STDERR "update-rc.d: warning: $fn is not a link to ../init.d/$bn\n";
++	    return 0;
++	}
++    }
++    return 1;
++}
++
++sub checklinks {
++    my ($i, $found, $fn, $islnk);
++
++    print " Removing any system startup links for $initd/$bn ...\n"
++	if ($_[0] eq 'remove');
++
++    $found = 0;
++
++    foreach $i (0..9, 'S') {
++	unless (chdir ("$etcd$i.d")) {
++	    next if ($i =~ m/^[789S]$/);
++	    die("update-rc.d: chdir $etcd$i.d: $!\n");
++	}
++	opendir(DIR, ".");
++	foreach $_ (readdir(DIR)) {
++	    next unless (/^[SK]\d\d$bn$/);
++	    $fn = "$etcd$i.d/$_";
++	    $found = 1;
++	    $islnk = &is_link ($_[0], $fn, $bn);
++	    next if ($_[0] ne 'remove');
++	    if (! $islnk) {
++		print "   $fn is not a link to ../init.d/$bn; not removing\n"; 
++		next;
++	    }
++	    print "   $etcd$i.d/$_\n";
++	    next if ($notreally);
++	    unlink ("$etcd$i.d/$_") ||
++		die("update-rc.d: unlink: $!\n");
++	}
++	closedir(DIR);
++    }
++    $found;
++}
++
++# Process the arguments after the "defaults" keyword.
++
++sub defaults {
++    my ($start, $stop) = (20, 20);
++
++    &usage ("defaults takes only one or two codenumbers") if ($#ARGV > 2);
++    $start = $stop = $ARGV[1] if ($#ARGV >= 1);
++    $stop  =         $ARGV[2] if ($#ARGV >= 2);
++    &usage ("codenumber must be a number between 0 and 99")
++	if ($start !~ /^\d\d?$/ || $stop  !~ /^\d\d?$/);
++
++    $start = sprintf("%02d", $start);
++    $stop  = sprintf("%02d", $stop);
++
++    $stoplinks[0] = $stoplinks[1] = $stoplinks[6] = "K$stop";
++    $startlinks[2] = $startlinks[3] =
++	$startlinks[4] = $startlinks[5] = "S$start";
++
++    1;
++}
++
++# Process the arguments after the start or stop keyword.
++
++sub startstop {
++
++    my($letter, $NN, $level);
++
++    while ($#ARGV >= 0) {
++	if    ($ARGV[0] eq 'start') { $letter = 'S'; }
++	elsif ($ARGV[0] eq 'stop')  { $letter = 'K' }
++	else {
++	    &usage("expected start|stop");
++	}
++
++	if ($ARGV[1] !~ /^\d\d?$/) {
++	    &usage("expected NN after $ARGV[0]");
++	}
++	$NN = sprintf("%02d", $ARGV[1]);
++
++	shift @ARGV; shift @ARGV;
++	$level = shift @ARGV;
++	do {
++	    if ($level !~ m/^[0-9S]$/) {
++		&usage(
++		       "expected runlevel [0-9S] (did you forget \".\" ?)");
++	    }
++	    if (! -d "$etcd$level.d") {
++		print STDERR
++		    "update-rc.d: $etcd$level.d: no such directory\n";
++		exit(1);
++	    }
++	    $level = 99 if ($level eq 'S');
++	    $startlinks[$level] = "$letter$NN" if ($letter eq 'S');
++	    $stoplinks[$level]  = "$letter$NN" if ($letter eq 'K');
++	} while (($level = shift @ARGV) ne '.');
++	&usage("action with list of runlevels not terminated by \`.'")
++	    if ($level ne '.');
++    }
++    1;
++}
++
++# Create the links.
++
++sub makelinks {
++    my($t, $i);
++    my @links;
++
++    if (&checklinks) {
++	print " System startup links for $initd/$bn already exist.\n";
++	exit (0);
++    }
++    print " Adding system startup for $initd/$bn ...\n";
++
++    # nice unreadable perl mess :)
++
++    for($t = 0; $t < 2; $t++) {
++	@links = $t ? @startlinks : @stoplinks;
++	for($i = 0; $i <= $#links; $i++) {
++	    $lvl = $i;
++	    $lvl = 'S' if ($i == 99);
++	    next if ($links[$i] eq '');
++	    print "   $etcd$lvl.d/$links[$i]$bn -> ../init.d/$bn\n";
++	    next if ($notreally);
++	    symlink("../init.d/$bn", "$etcd$lvl.d/$links[$i]$bn")
++		|| die("update-rc.d: symlink: $!\n");
++	}
++    }
++
++    1;
++}
+--- sysvinit-2.84.orig/debian/prerm
++++ sysvinit-2.84/debian/prerm
+@@ -0,0 +1,13 @@
++#! /bin/sh
++
++case "$1" in
++  upgrade|remove)
++	[ -L /usr/doc/sysvinit ] && rm -f /usr/doc/sysvinit
++	;;
++  failed-upgrade)
++	;;
++  deconfigure)
++	;;
++esac
++
++exit 0
+--- sysvinit-2.84.orig/man/inittab.5
++++ sysvinit-2.84/man/inittab.5
+@@ -1,6 +1,6 @@
+ .\"{{{}}}
+ .\"{{{  Title
+-.TH INITTAB 5 "May 19, 1998" "" "Linux System Administrator's Manual"
++.TH INITTAB 5 "Dec 4, 2001" "" "Linux System Administrator's Manual"
+ .\"}}}
+ .\"{{{  Name
+ .SH NAME
+@@ -26,12 +26,13 @@
+ .IP \fIid\fP
+ is a unique sequence of 1-4 characters which identifies an entry in
+ .B inittab 
+-(for versions of sysvinit compiled with libraries < 5.2.18 or
++(for versions of sysvinit compiled with the \fIold\fP libc5 (< 5.2.18) or
+ a.out libraries the limit is 2 characters).
+ .sp
+-Note: For gettys or other login processes, the \fIid\fP field should be
+-the tty suffix of the corresponding tty, e.g.\& \fB1\fP for \fBtty1\fP.
+-Otherwise, the login accounting might not work correctly.
++Note: traditionally, for getty and other login processes, the value of the
++\fIid\fP field is kept the same as the suffix of the corresponding tty, e.g.\&
++\fB1\fP for \fBtty1\fP. Some ancient login accounting programs might
++expect this, though I can't think of any.
+ .\"}}}
+ .\"{{{  runlevels
+ .IP \fIrunlevels\fP
+@@ -191,24 +192,39 @@
+ # Level to run in
+ id:2:initdefault:
+ 
+-# System initialization before anything else.
+-si::sysinit:/etc/rc.d/bcheckrc
++# Boot-time system configuration/initialization script.
++si::sysinit:/etc/init.d/rcS
+ 
+-# Runlevel 0,6 is halt and reboot, 1 is maintenance mode.
+-l0:0:wait:/etc/rc.d/rc.halt
+-l1:1:wait:/etc/rc.d/rc.single
+-l2:2345:wait:/etc/rc.d/rc.multi
+-l6:6:wait:/etc/rc.d/rc.reboot
++# What to do in single-user mode.
++~:S:wait:/sbin/sulogin
++
++# /etc/init.d executes the S and K scripts upon change
++# of runlevel.
++#
++# Runlevel 0 is halt.
++# Runlevel 1 is single-user.
++# Runlevels 2-5 are multi-user.
++# Runlevel 6 is reboot.
++
++l0:0:wait:/etc/init.d/rc 0
++l1:1:wait:/etc/init.d/rc 1
++l2:2:wait:/etc/init.d/rc 2
++l3:3:wait:/etc/init.d/rc 3
++l4:4:wait:/etc/init.d/rc 4
++l5:5:wait:/etc/init.d/rc 5
++l6:6:wait:/etc/init.d/rc 6
+ 
+ # What to do at the "3 finger salute".
+-ca::ctrlaltdel:/sbin/shutdown -t5 -rf now
++ca::ctrlaltdel:/sbin/shutdown -t1 -h now
+ 
+-# Runlevel 2&3: getty on console, level 3 also getty on modem port.
++# Runlevel 2,3: getty on virtual consoles
++# Runlevel   3: getty on terminal (ttyS0) and modem (ttyS1)
+ 1:23:respawn:/sbin/getty tty1 VC linux
+ 2:23:respawn:/sbin/getty tty2 VC linux
+ 3:23:respawn:/sbin/getty tty3 VC linux
+ 4:23:respawn:/sbin/getty tty4 VC linux
+-S2:3:respawn:/sbin/uugetty ttyS2 M19200
++S0:3:respawn:/sbin/getty -L 9600 ttyS0 vt320
++S1:3:respawn:/sbin/mgetty -x0 -D ttyS1
+ 
+ .fi
+ .sp
+--- sysvinit-2.84.orig/src/init.c
++++ sysvinit-2.84/src/init.c
+@@ -5,10 +5,10 @@
+  *		     init [0123456SsQqAaBbCc]
+  *		  telinit [0123456SsQqAaBbCc]
+  *
+- * Version:	@(#)init.c  2.84  27-Nov-2001  miquels@cistron.nl
++ * Version:	@(#)init.c  2.84-3  28-May-2002  miquels@cistron.nl
+  */
+ #define VERSION "2.84"
+-#define DATE    "27-Nov-2001"
++#define DATE    "28-May-2002"
+ /*
+  *		This file is part of the sysvinit suite,
+  *		Copyright 1991-2001 Miquel van Smoorenburg.
+@@ -108,7 +108,7 @@
+ int wrote_utmp_reboot = 1;	/* Set when we wrote the reboot record */
+ int sltime = 5;			/* Sleep time between TERM and KILL */
+ char *argv0;			/* First arguments; show up in ps listing */
+-int maxproclen;			/* Maximal length of argv[0] */
++int maxproclen;			/* Maximal length of argv[0] without \0 */
+ struct utmp utproto;		/* Only used for sizeof(utproto.ut_id) */
+ char *console_dev;		/* Console device. */
+ int wrote_iosave = 0;		/* Did we write ioctl.save yet? */
+@@ -431,7 +431,7 @@
+ 	va_end(ap);
+ 
+ 	memset(argv0, 0, maxproclen + 1);
+-	strncpy(argv0, buf, maxproclen);
++	strncpy(argv0, buf, maxproclen - 1);
+ 
+ 	return len;
+ }
+@@ -2556,7 +2556,9 @@
+ 
+ 		myname = strdup(argv[0]);
+ 		argv0 = argv[0];
+-		maxproclen = strlen(argv[0]);
++		maxproclen = 0;
++		for (f = 0; f < argc; f++)
++			maxproclen += strlen(argv[f]) + 1;
+ 		reload = 1;
+ 		wrote_iosave = 1;
+ 		setproctitle("init [%c]",runlevel);
+@@ -2583,7 +2585,6 @@
+ 		if (dfl_level == 's') dfl_level = 'S';
+ 		maxproclen += strlen(argv[f]) + 1;
+ 	}
+-	maxproclen--;
+ 
+ 	/* Start booting. */
+ 	argv0 = argv[0];
+--- sysvinit-2.84.orig/src/dowall.c
++++ sysvinit-2.84/src/dowall.c
+@@ -3,10 +3,10 @@
+  *
+  * Author:	Miquel van Smoorenburg, miquels@cistron.nl
+  * 
+- * Version:	@(#)dowall.c  2.79  11-Sep-2000  miquels@cistron.nl
++ * Version:	@(#)dowall.c  2.84-3  27-May-2002  miquels@cistron.nl
+  *
+  *		This file is part of the sysvinit suite,
+- *		Copyright 1991-2000 Miquel van Smoorenburg.
++ *		Copyright 1991-2002 Miquel van Smoorenburg.
+  *
+  *		This program is free software; you can redistribute it and/or
+  *		modify it under the terms of the GNU General Public License
+@@ -35,10 +35,8 @@
+  *	Alarm handler
+  */
+ /*ARGSUSED*/
+-static void handler(arg)
+-int arg;
++static void handler(int arg)
+ {
+-	signal(SIGALRM, handler);
+ 	longjmp(jbuf, 1);
+ }
+ 
+@@ -74,6 +72,7 @@
+ 	char uidbuf[32];
+ 	static int fd, init = 0;
+ 	struct passwd *pwd;
++	struct sigaction sa;
+ 	char *tty, *p;
+ 	time_t t;
+ 	struct utmp *utmp;
+@@ -98,7 +97,10 @@
+ 		} else
+ 			ttynm[0] = 0;
+ 		init++;
+-		signal(SIGALRM, handler);
++		sa.sa_handler = handler;
++		sa.sa_flags = 0;
++		sigemptyset(&sa.sa_mask);
++		sigaction(SIGALRM, &sa, NULL);
+ 	}
+ 	
+ 	/* Get the time */
+@@ -134,18 +136,19 @@
+ 		else
+ 			snprintf(term, sizeof(term), "/dev/%s",
+ 				utmp->ut_line);
+-	
++		if (strstr(term, "/../")) continue;
++
+ 		/*
+ 		 *	Sometimes the open/write hangs in spite of the O_NDELAY
+ 		 */
+ 		alarm(2);
+-#ifdef O_NDELAY
++
+ 		/*
+ 		 *	Open it non-delay
+ 		 */
+-		if (setjmp(jbuf) == 0 &&
+-		    (fd = open(term, O_WRONLY | O_NDELAY )) > 0) {
+-			if ((tp = fdopen(fd, "w")) != NULL) {
++		if (sigsetjmp(jbuf, 1) == 0 &&
++		    (fd = open(term, O_WRONLY|O_NDELAY|O_NOCTTY)) > 0) {
++			if (isatty(fd) && (tp = fdopen(fd, "w")) != NULL) {
+ 				fputs(line, tp);
+ 				feputs(text, tp);
+ 				fclose(tp);
+@@ -155,16 +158,6 @@
+ 			alarm(0);
+ 		}
+ 		if (fd >= 0) close(fd);
+-#else
+-		if (setjmp(jbuf) == 0 && (tp = fopen(term, "w")) != NULL) {
+-			fputs(line, tp);
+-			feputs(text, tp);
+-			alarm(0);
+-			fclose(tp);
+-			tp = NULL;
+-		}
+-		if (tp != NULL) fclose(tp);
+-#endif
+ 		alarm(0);
+ 	}
+ 	endutent();
+--- sysvinit-2.84.orig/src/bootlogd.c
++++ sysvinit-2.84/src/bootlogd.c
+@@ -70,8 +70,13 @@
+   { "2.1.",	268	},
+   { "2.2.", 	272	},
+   { "2.3.",	272	},
++  { "2.4.",	272	},
++  { "2.5.",	272	},
+ #else				/* 64 bits */
+   { "2.2.", 	480	},
++  { "2.3.", 	480	},
++  { "2.4.", 	480	},
++  { "2.5.", 	480	},
+ #endif
+   { NULL,	0	},
+ };
