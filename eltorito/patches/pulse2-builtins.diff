@@ -1,0 +1,4642 @@
+Index: grub-0.97/stage2/builtins_pulse2.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ grub-0.97/stage2/builtins_pulse2.c	2011-07-14 19:32:27.413788844 +0200
+@@ -0,0 +1,628 @@
++/*
++ *  $Id$
++ */
++/*
++ *  GRUB LBS functions
++ *  Copyright (C) 2002  Free & Alter Soft
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation; either version 2 of the License, or
++ *  (at your option) any later version.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program; if not, write to the Free Software
++ *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ */
++
++#include <shared.h>
++//#include <filesys.h>
++#include <term.h>
++
++#include "zlib/zlib.h"
++#include "shared-pulse2.h"
++
++#define INBUFF 8192
++#define OUTBUFF 24064
++unsigned char *zcalloc (long toto, int nb, int size);
++void zcfree (long toto, unsigned char *zone);
++
++/* ugly global vars */
++int fat, ntfs, files, new_len, new_type;
++
++/* auto fill mode ?! */
++int auto_fill = 1;
++
++/* total/current bytes of data to decompress */
++unsigned int total_kbytes = 0;
++unsigned int current_bytes = 0;
++
++/* default = cannot access to grub's command line */
++int nosecurity = 0;
++
++/* current image name being restored */
++char imgname[32];
++
++/* for decompression */
++int bitindex = -1, files = 1;
++int mask[8] = { 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80 };
++unsigned long cursect;
++int dest_drive = 0;
++
++/* proto */
++int new_get (char *file, int sect, int *endsect, int table);
++
++extern unsigned long cdrom_drive;
++
++//#define TFTPBLOCK 1432
++#define TFTPBLOCK 1024
++#define BLKSIZE "1024"
++//#define TFTPBLOCK 2000
++//#define BLKSIZE "2000"
++
++typedef struct diskbuffer_
++{
++//              unsigned char data[OUTBUFF];    -> Direct to BUFFERADDR
++  int full;
++  int size;
++} diskbuffer;
++
++struct tftpbuffer_
++{
++  unsigned char udp[4];
++  unsigned char data[TFTPBLOCK + 16];
++  int length;			// 0 if available
++  struct tftpbuffer_ *next;
++};
++
++typedef struct tftpbuffer_ tftpbuffer;
++
++#define NB_BUF 10
++
++int
++get_empty (tftpbuffer * buff, int *i)
++{
++  int j;
++
++  for (j = 0; j < NB_BUF; j++) 
++    {
++      if (buff[j].length == 0)
++	{
++	  *i = j;
++	  return 1;
++	}
++    }
++  return 0;
++}
++
++int
++tot_lg (tftpbuffer * buff)
++{
++  int i = 0;
++
++  do
++    {
++      i += buff->length;
++      if (buff->next)
++	buff = buff->next;
++      else
++	return i;
++    }
++  while (1 == 1);
++}
++
++unsigned long
++parse_maxint (unsigned char *str)
++{
++  unsigned long i = 0;
++
++  while ((*str >= '0') && (*str <= '9'))
++    {
++      i = (i * 10) + (*str - '0');
++      str++;
++    }
++  return i;
++}
++
++
++int
++val (unsigned char *string, unsigned char *ptr)
++{
++  char *cp=NULL;
++  int i;
++
++  while (*ptr)
++    {
++      cp = ptr;
++      i = 0;
++      while (cp[i] == string[i])
++	{
++	  i++;
++	}
++      if ((string[i] == 0) && (cp[i] == '='))
++	{
++	  cp = cp + i + 1;
++	  break;
++	}
++      cp = NULL;
++      ptr++;
++    }
++
++  if (cp)
++    {
++      i = parse_maxint (cp);
++      return i;
++    }
++
++  return -1;
++}
++
++int
++exist (unsigned char *string, unsigned char *ptr)
++{
++  char *cp;
++  int i;
++
++  while (*ptr)
++    {
++      cp = ptr;
++      i = 0;
++      while (cp[i] == string[i])
++	{
++	  i++;
++	}
++      if ((string[i] == 0) && (cp[i] == '='))
++	{
++	  return 1;
++	}
++      ptr++;
++    }
++
++  return 0;
++}
++
++
++
++/* ptabs */
++int
++ptabs_func (char *arg, int flags)
++{
++  char buf[516];
++  char *secbuf = (char *) SCRATCHADDR;
++  unsigned long sect;
++  int save_drive, i, nb = 0;
++
++  if (!set_device (arg))
++    return 1;
++
++  save_drive = current_drive;
++
++  arg = skip_to (0, arg);
++
++  /* correct the path */
++  grub_sprintf(buf, "(cd)%s", grub_strstr(arg, "/"));
++
++  if (!grub_open (buf))
++    return 1;
++
++  /*  */
++  if (current_term->setcolorstate)
++                  current_term->setcolorstate (COLOR_STATE_HIGHLIGHT);
++  grub_printf("\n**** Warning ! ****************************************************************\n\n"
++	      "Your Hard Disk will be ERASED !\n"
++	      "Continue (Y/N) ?\n\n"
++	      );
++  if (current_term->setcolorstate)
++                  current_term->setcolorstate (COLOR_STATE_NORMAL);
++
++  i = ASCII_CHAR (getkey());
++  if (i != 'y' && i != 'Y') {
++    errnum = ERR_BAD_ARGUMENT;
++    return 1;
++  }
++
++  while (grub_read (buf, 516))
++    {
++      sect = *(unsigned long *) buf;
++
++//    printf("Writing sect : %d\n",sect);
++
++      for (i = 0; i < 512; i++)
++	secbuf[i] = buf[i + 4];
++
++      buf_track = -1;
++      if (biosdisk
++	  (BIOSDISK_WRITE, save_drive, &buf_geom, sect, 1, SCRATCHSEG))
++	{			
++	  errnum = ERR_WRITE;
++	  return 1;
++	}
++      nb++;
++    }
++
++  printf ("Wrote %d sectors\n", nb);
++
++  grub_close ();
++
++  current_bytes = 0;
++
++  return 0;
++}
++
++
++/* partcopy START NAME_PREFIX [type] */
++int
++partcopy_func (char *arg, int flags)
++{
++  int new_start;
++  /* int start_cl, start_ch, start_dh;
++     int end_cl, end_ch, end_dh; */
++  int entry;
++  char *mbr = (char *) SCRATCHADDR, *path;
++  static int sendlog = 1;
++
++  int i, j, curr;
++  unsigned long save_drive;
++  char name[64];
++  int old_perc;
++  int l1 = 0, l2 = '0', l3 = '0';
++
++
++  /* Convert a LBA address to a CHS address in the INT 13 format.  */
++  void lba_to_chs (int lba, int *cl, int *ch, int *dh)
++  {
++    int cylinder, head, sector;
++
++    sector = lba % buf_geom.sectors + 1;
++    head = (lba / buf_geom.sectors) % buf_geom.heads;
++    cylinder = lba / (buf_geom.sectors * buf_geom.heads);
++
++    if (cylinder >= buf_geom.cylinders)
++      cylinder = buf_geom.cylinders - 1;
++
++    *cl = sector | ((cylinder & 0x300) >> 2);
++    *ch = cylinder & 0xFF;
++    *dh = head;
++  }
++
++
++  /* Get the drive and the partition.  */
++  if (!set_device (arg))
++    return 1;
++
++  /* The drive must be a hard disk.  */
++  if (!(current_drive & 0x80))
++    {
++      errnum = ERR_BAD_ARGUMENT;
++      return 1;
++    }
++  dest_drive = current_drive;
++
++  /* check if we need to initialise */
++  zcinit();
++
++  /* The partition must a primary partition.  
++     if ((current_partition >> 16) > 3
++     || (current_partition & 0xFFFF) != 0xFFFF)
++     {
++     errnum = ERR_BAD_ARGUMENT;
++     return 1;
++     }
++   */
++
++  entry = current_partition >> 16;
++
++  save_drive = current_drive;
++
++  /* update the disk geometry */
++  get_diskinfo (current_drive, &buf_geom);
++  if (biosdisk (BIOSDISK_READ, current_drive, &buf_geom, 0, 1, SCRATCHSEG))
++    {
++      grub_printf ("Error reading the 1st sector on disk %d\n",
++		   current_drive);
++      //return 1;
++    }
++
++#if 0
++  grub_printf ("GEO : %d, %d, %d, %d E: %d DR: %d err=%d\n",
++	       buf_geom.total_sectors, buf_geom.cylinders, buf_geom.heads,
++	       buf_geom.sectors, entry, current_drive, 0);
++#endif
++
++  /* Get the new partition start.  */
++  arg = skip_to (0, arg);
++
++  if (entry <= 3)
++    {
++      // old code ? remove it ?
++      if (grub_memcmp (arg, "-first", 6) == 0)
++	new_start = buf_geom.sectors;
++      else if (grub_memcmp (arg, "-next", 5) == 0)
++	new_start =
++	  buf_geom.sectors *
++	  (((PC_SLICE_START (mbr, (entry - 1))) +
++	    (PC_SLICE_LENGTH (mbr, (entry - 1))) + (buf_geom.sectors -
++						    1)) / buf_geom.sectors);
++      else if (!safe_parse_maxint (&arg, &new_start))
++	return 1;
++    }
++  else if (!safe_parse_maxint (&arg, &new_start))
++    return 1;
++
++
++  /* get file path */
++  path = skip_to (0, arg);
++  grub_memmove(path, "(cd)", 4); /* force cdrom destination */
++
++  /* find the image name */
++  for (i = grub_strlen(path); i > 0; i--)
++    {
++      if (path[i] == '/') break;
++    }
++  for (j = i-1; j > 0; j--)
++    {
++      if (path[j] == '/') break;      
++    }
++  grub_memmove(imgname, &path[j+1], i-j);
++  imgname[i-j-1] = '\0';
++
++  /* try to get image size */
++  if (total_kbytes == 0) {
++    int i, olddrive = current_drive;
++
++    strcpy(name, path);
++    for (i = grub_strlen(name); i > 0; i--)
++      {
++	if (name[i] == '/') break;
++      }
++    strcpy(&name[i+1], "size.txt");
++
++    total_kbytes = 0;
++ 
++    if (grub_open ("(cd)/size.txt")) {
++      char buf[17], *ptr = buf;
++      
++      grub_read(ptr, 16);	
++      safe_parse_maxint(&ptr, &total_kbytes);
++      grub_printf("\nKB to read from CD: %d\n", total_kbytes);
++      grub_close();
++      
++    }
++    current_drive = olddrive;
++  }
++
++  grub_printf ("\nCopy from sector : %d\n", new_start);
++  cursect = new_start;
++
++  fat = 0;
++  ntfs = 0;
++  files = 1;
++  new_len = -1;
++  new_type = -1;
++  curr = new_start;
++
++
++  for (i = 0; i < files; i++)
++    {
++      //    grub_printf("-> %d/%d : \r",i+1,files);
++      old_perc = -1;
++
++      grub_sprintf (name, "%s%d%c%c", path, l1, l2, l3);
++      l3++;
++      if (l3 > '9')
++	{
++	  l2++;
++	  l3 = '0';
++	  if (l2 > '9')
++	    {
++	      l1++;
++	      l2 = '0';
++	    }
++	}
++
++      if (new_get (name, curr, &curr, 0))
++	{
++	  errnum = ERR_FILE_NOT_FOUND;
++	  return 1;
++	}
++    }
++  grub_printf ("\nOne partition successfully restored.\n\n");
++
++  return 0;
++}
++
++
++
++void
++flushsect (unsigned char *buf, unsigned char *alloc, int nbsect)
++{
++  int i, j, nb;
++
++  if (bitindex < 0)
++    {
++      grub_printf ("Bitmap not yet defined...\n");
++      return;
++    }
++
++  for (i = 0; i < nbsect;)
++    {
++      while (!(alloc[bitindex >> 3] & mask[bitindex & 7]))
++	{
++	  cursect++;
++	  bitindex++;
++	}
++      nb = 0;
++      while ((alloc[bitindex >> 3] & mask[bitindex & 7])
++	     && ((i + nb) < nbsect))
++	{
++	  nb++;
++	  bitindex++;
++	}
++
++      // our buffer should be 16 bytes aligned 
++      if (biosdisk (BIOSDISK_WRITE, dest_drive, &buf_geom, 
++		    cursect, nb, (unsigned int)(buf)/16)) 
++	{
++	  grub_printf("Write error, sector %d\n", cursect+j);
++	  getkey();
++	}
++      buf += (512 * nb);
++      i += nb;
++      cursect += nb;
++    }
++}
++
++int
++new_get (char *file, int sect, int *endsect, int table)
++{
++  unsigned long savesect;
++  unsigned char sectbuf[2048], *buffer;
++  unsigned char bitmap[24064 - 2048];
++  z_stream zptr;
++  int state = Z_SYNC_FLUSH, alloclg=22016;
++  int ret, firstpass = 1, firstdisp = 1;
++  unsigned char progr = 0, progress[] = "/-\\|";
++
++ retry_open:
++  if (! grub_open(file)) 
++    {
++      /* Switch CD */
++
++      grub_printf("\n\nCan't open %s (%s)\nPlease insert the next CD and press a Key (Escape to cancel)", file, err_list[errnum]);
++
++      buf_drive = -1;
++      errnum = 0;
++
++      if (getkey() == 0x11b) {
++	return 1;
++      }      
++      goto retry_open;
++    }
++
++  zcinit();
++
++  buffer = (char *) BUFFERADDR;
++  zptr.zalloc = zptr.zfree = Z_NULL;
++  zptr.avail_in = grub_read(sectbuf, 2048);
++  current_bytes += zptr.avail_in/1024;
++  zptr.next_in = (char *) sectbuf;
++  zptr.next_out = (char *) buffer;
++  zptr.avail_out = 24064;
++  bitindex = -1;
++
++  savesect=cursect;
++
++
++  ret = inflateInit (&zptr);
++  if (ret != Z_OK) {
++    grub_printf("inflateinit failed %d\n", ret);
++  }
++
++
++  do
++    {
++      //grub_printf("Pre : avin = %d , avout = %d , next_in = %x , next_out = %x\n",zptr.avail_in,zptr.avail_out, zptr.next_in, zptr.next_out);
++      //grub_printf("%x %x\n", sectbuf[0], sectbuf[1024]);
++      if ((current_bytes % 256) == 0 || (current_bytes % 256) == 1 || firstdisp)
++	{
++	  int percent = 0, i;
++
++	  firstdisp = 0;
++
++	  grub_printf ("%s ==> HD", file);
++	  
++	  if (total_kbytes != 0) 
++	    percent = (((current_bytes)*100)/total_kbytes);
++	  if (percent > 99) percent = 99;		    
++	  
++	  grub_printf (" %c  %d", progress[progr], percent);
++	  grub_putchar('%');
++	  progr = (progr + 1) & 3;
++	  for (i = 0; i < 16+strlen(file); i++)
++	    grub_printf ("\b");
++	  if (percent >= 10) 
++	    grub_printf ("\b");
++
++	  
++	}      
++      ret = inflate (&zptr, state);
++
++      if ((ret==Z_BUF_ERROR) && (zptr.avail_out==0)) ret=Z_OK;
++
++      if (((ret == Z_OK) && (zptr.avail_out == 0)) || (ret == Z_STREAM_END))
++	{
++	  if (firstpass)
++	    {
++//           grub_printf("%s\n",buffer);
++	      if (exist ("BLOCKS", buffer))
++		{
++		  files = val ("BLOCKS", buffer);
++		  grub_printf ("\n Nb of files : %d\n", files);
++		}
++	      if (exist ("SECTORS", buffer))
++		{
++		  new_len = val ("SECTORS", buffer);
++		  grub_printf (" Part. lg : %d\n", new_len);
++		}
++	      if (exist ("TYPE", buffer))
++		{
++		  new_type = val ("TYPE", buffer);
++		  grub_printf (" Part. Type : %d\n", new_type);
++		}
++	      if (exist ("ALLOCTABLELG", buffer))
++		{
++		  alloclg = val ("ALLOCTABLELG", buffer);
++		  if (alloclg!=22016) grub_printf (" Alloc Lg : %d\n", alloclg);
++		}
++
++	      grub_memmove (bitmap, buffer + 2048, 24064 - 2048);
++	      bitindex = 0;
++	      firstpass = 0;
++	    }
++	  else
++	    {
++	      if ((24064 - zptr.avail_out) % 512)
++		{
++		  grub_printf ("*** Modulo 512 !=0 ***\n");
++		}
++	      flushsect (buffer, bitmap, (24064 - zptr.avail_out) / 512);
++
++	      //grub_printf("flush %d\n", 24064 - zptr.avail_out);
++	    }
++
++	  zptr.next_out = (char *) buffer;
++	  zptr.avail_out = 24064;
++	}
++
++      if ((ret == Z_OK) && (zptr.avail_in == 0))
++	{
++	  zptr.avail_in = grub_read(sectbuf, 2048);
++	  current_bytes += zptr.avail_in/1024;
++	  // grub_printf("read %d  t=%d k\n", zptr.avail_in, current_bytes);
++	  zptr.next_in = (char *) sectbuf;
++	}
++
++    }
++  while (ret == Z_OK);
++
++  if (ret != Z_STREAM_END) {
++    
++    grub_printf ("End While : %d  (-2 STREAM_ERROR, -3 DATA, -4 MEM, -5 BUF, -6 VERSION)\n%s\n", ret, zptr.msg);
++    grub_printf("avin = %d , avout = %d , next_in = %x , next_out = %x\n",zptr.avail_in,zptr.avail_out, zptr.next_in, zptr.next_out);
++  }
++  ret = inflate (&zptr, Z_FINISH);
++  if (ret != Z_STREAM_END) {
++    grub_printf ("End Decompress : %d\n", ret);
++  }
++  inflateEnd (&zptr);
++
++  cursect=savesect+alloclg*8;
++
++  return 0;
++}
++
+Index: grub-0.97/stage2/builtins_pulse2.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ grub-0.97/stage2/builtins_pulse2.h	2011-07-14 18:59:09.251880491 +0200
+@@ -0,0 +1,36 @@
++/*
++ * $Id$
++ */
++
++
++#define HELP_ON 1
++
++int partcopy_func (char *arg, int flags);
++int ptabs_func (char *arg, int flags);
++
++/* variables */
++
++/* grub builtins */
++
++static struct builtin builtin_partcopy = {
++  "partcopy",
++  partcopy_func,
++  BUILTIN_CMDLINE | BUILTIN_MENU,
++#ifdef HELP_ON
++  "partcopy START PREFIXNAME [TYPE]",
++  "Create a primary partition at the starting address START with the"
++    " compressed files beginning with PREFIXNAME. Update partition table "
++    "with the partition TYPE type."
++#endif
++};
++
++static struct builtin builtin_ptabs = {
++  "ptabs",
++  ptabs_func,
++  BUILTIN_CMDLINE,
++#ifdef HELP_ON
++  "ptabs DISK FILE",
++  "Copy uncompressed sectors from FILE (LBA,DATA) to disk DISK."
++#endif
++};
++
+Index: grub-0.97/stage2/shared-pulse2.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ grub-0.97/stage2/shared-pulse2.h	2011-07-14 19:26:07.111903025 +0200
+@@ -0,0 +1,84 @@
++/* shared.h - definitions used in all GRUB-specific code */
++/*
++ *  GRUB  --  GRand Unified Bootloader
++ *  Copyright (C) 1996  Erich Boleyn  <erich@uruk.org>
++ *  Copyright (C) 1999, 2000 Free Software Foundation, Inc.
++ *
++ *  This program is free software; you can redistribute it and/or modify
++ *  it under the terms of the GNU General Public License as published by
++ *  the Free Software Foundation; either version 2 of the License, or
++ *  (at your option) any later version.
++ *
++ *  This program is distributed in the hope that it will be useful,
++ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
++ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++ *  GNU General Public License for more details.
++ *
++ *  You should have received a copy of the GNU General Public License
++ *  along with this program; if not, write to the Free Software
++ *  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
++ */
++
++#ifndef SHARED_PULSE2_H
++#define SHARED_PULSE2_H 1
++
++/*
++ *  Generic defines to use anywhere
++ */
++
++#ifndef ASM_FILE
++
++/* Sets text mode character attribute at the cursor position.  See A_*
++   constants defined above. */
++void set_attrib (int attr);
++
++extern char basedir[];
++
++extern char *linux_data_real_addr;
++
++/* This variable specifies which console should be used.  */
++extern int terminal;
++
++/* Color settings */
++extern int normal_color, highlight_color;
++
++extern unsigned long boot_part_offset;
++
++extern unsigned short pxe_pointer_offset;
++extern unsigned short pxe_pointer_segment;
++extern unsigned short pxe_stack_offset;
++extern unsigned short pxe_stack_segment;
++extern unsigned short pxe_int1a_offset;
++extern unsigned short pxe_int1a_segment;
++
++/* Control the auto fill mode.  */
++extern int auto_fill;
++
++// Moved to zfunc.c
++static inline void *zmemcpy(void *dest,const void *src,int len)
++{
++    int d0,d1,d2;
++     
++    asm volatile ("cld\n\t"
++                  "rep\n\t"
++                  "movsb"
++                : "=&c" (d0), "=&S" (d1), "=&D" (d2)
++                : "0" (len),"1" (src),"2" (dest)
++                : "memory");
++    return dest;
++}
++#define fast_memmove(a,b,c) zmemcpy(a,b,c)
++
++#endif
++
++#define BUILTIN_DESC            0x10    /* Description Tag */
++
++/* The size of the key map.  */
++#undef KEY_MAP_SIZE
++#define KEY_MAP_SIZE		256
++
++#define TERMINAL_CONSOLE	(1 << 0)	/* keyboard and screen */
++#define TERMINAL_SERIAL		(1 << 1)	/* serial console */
++#define TERMINAL_DUMB		(1 << 16)	/* dumb terminal */
++
++#endif /* ! SHARED_PULSE2_H */
+Index: grub-0.97/stage2/zlib/adler32.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ grub-0.97/stage2/zlib/adler32.c	2011-07-14 14:01:58.436000187 +0200
+@@ -0,0 +1,48 @@
++/* adler32.c -- compute the Adler-32 checksum of a data stream
++ * Copyright (C) 1995-1998 Mark Adler
++ * For conditions of distribution and use, see copyright notice in zlib.h 
++ */
++
++/* @(#) $Id$ */
++
++#include "zlib.h"
++
++#define BASE 65521L /* largest prime smaller than 65536 */
++#define NMAX 5552
++/* NMAX is the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1 */
++
++#define DO1(buf,i)  {s1 += buf[i]; s2 += s1;}
++#define DO2(buf,i)  DO1(buf,i); DO1(buf,i+1);
++#define DO4(buf,i)  DO2(buf,i); DO2(buf,i+2);
++#define DO8(buf,i)  DO4(buf,i); DO4(buf,i+4);
++#define DO16(buf)   DO8(buf,0); DO8(buf,8);
++
++/* ========================================================================= */
++uLong ZEXPORT adler32(adler, buf, len)
++    uLong adler;
++    const Bytef *buf;
++    uInt len;
++{
++    unsigned long s1 = adler & 0xffff;
++    unsigned long s2 = (adler >> 16) & 0xffff;
++    int k;
++
++    if (buf == Z_NULL) return 1L;
++
++    while (len > 0) {
++        k = len < NMAX ? len : NMAX;
++        len -= k;
++        while (k >= 16) {
++            DO16(buf);
++	    buf += 16;
++            k -= 16;
++        }
++        if (k != 0) do {
++            s1 += *buf++;
++	    s2 += s1;
++        } while (--k);
++        s1 %= BASE;
++        s2 %= BASE;
++    }
++    return (s2 << 16) | s1;
++}
+Index: grub-0.97/stage2/zlib/infblock.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ grub-0.97/stage2/zlib/infblock.c	2011-07-14 14:01:58.436000187 +0200
+@@ -0,0 +1,402 @@
++/* infblock.c -- interpret and process block types to last block
++ * Copyright (C) 1995-1998 Mark Adler
++ * For conditions of distribution and use, see copyright notice in zlib.h 
++ */
++
++#include "zutil.h"
++#include "infblock.h"
++#include "inftrees.h"
++#include "infcodes.h"
++#include "infutil.h"
++
++struct inflate_codes_state {int dummy;}; /* for buggy compilers */
++
++/* simplify the use of the inflate_huft type with some defines */
++#define exop word.what.Exop
++#define bits word.what.Bits
++
++/* Table for deflate from PKZIP's appnote.txt. */
++local const uInt border[] = { /* Order of the bit length code lengths */
++        16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15};
++
++/*
++   Notes beyond the 1.93a appnote.txt:
++
++   1. Distance pointers never point before the beginning of the output
++      stream.
++   2. Distance pointers can point back across blocks, up to 32k away.
++   3. There is an implied maximum of 7 bits for the bit length table and
++      15 bits for the actual data.
++   4. If only one code exists, then it is encoded using one bit.  (Zero
++      would be more efficient, but perhaps a little confusing.)  If two
++      codes exist, they are coded using one bit each (0 and 1).
++   5. There is no way of sending zero distance codes--a dummy must be
++      sent if there are none.  (History: a pre 2.0 version of PKZIP would
++      store blocks with no distance codes, but this was discovered to be
++      too harsh a criterion.)  Valid only for 1.93a.  2.04c does allow
++      zero distance codes, which is sent as one code of zero bits in
++      length.
++   6. There are up to 286 literal/length codes.  Code 256 represents the
++      end-of-block.  Note however that the static length tree defines
++      288 codes just to fill out the Huffman codes.  Codes 286 and 287
++      cannot be used though, since there is no length base or extra bits
++      defined for them.  Similarily, there are up to 30 distance codes.
++      However, static trees define 32 codes (all 5 bits) to fill out the
++      Huffman codes, but the last two had better not show up in the data.
++   7. Unzip can check dynamic Huffman blocks for complete code sets.
++      The exception is that a single code would not be complete (see #4).
++   8. The five bits following the block type is really the number of
++      literal codes sent minus 257.
++   9. Length codes 8,16,16 are interpreted as 13 length codes of 8 bits
++      (1+6+6).  Therefore, to output three times the length, you output
++      three codes (1+1+1), whereas to output four times the same length,
++      you only need two codes (1+3).  Hmm.
++  10. In the tree reconstruction algorithm, Code = Code + Increment
++      only if BitLength(i) is not zero.  (Pretty obvious.)
++  11. Correction: 4 Bits: # of Bit Length codes - 4     (4 - 19)
++  12. Note: length code 284 can represent 227-258, but length code 285
++      really is 258.  The last length deserves its own, short code
++      since it gets used a lot in very redundant files.  The length
++      258 is special since 258 - 3 (the min match length) is 255.
++  13. The literal/length and distance code bit lengths are read as a
++      single stream of lengths.  It is possible (and advantageous) for
++      a repeat code (16, 17, or 18) to go across the boundary between
++      the two sets of lengths.
++ */
++
++
++void inflate_blocks_reset(s, z, c)
++inflate_blocks_statef *s;
++z_streamp z;
++uLongf *c;
++{
++  if (c != Z_NULL)
++    *c = s->check;
++  if (s->mode == BTREE || s->mode == DTREE)
++    ZFREE(z, s->sub.trees.blens);
++  if (s->mode == CODES)
++    inflate_codes_free(s->sub.decode.codes, z);
++  s->mode = TYPE;
++  s->bitk = 0;
++  s->bitb = 0;
++  s->read = s->write = s->window;
++  if (s->checkfn != Z_NULL)
++    z->adler = s->check = (*s->checkfn)(0L, (const Bytef *)Z_NULL, 0);
++  Tracev((stderr, "inflate:   blocks reset\n"));
++}
++
++
++inflate_blocks_statef *inflate_blocks_new(z, c, w)
++z_streamp z;
++check_func c;
++uInt w;
++{
++  inflate_blocks_statef *s;
++
++  if ((s = (inflate_blocks_statef *)ZALLOC
++       (z,1,sizeof(struct inflate_blocks_state))) == Z_NULL)
++    return s;
++  if ((s->hufts =
++       (inflate_huft *)ZALLOC(z, sizeof(inflate_huft), MANY)) == Z_NULL)
++  {
++    ZFREE(z, s);
++    return Z_NULL;
++  }
++  if ((s->window = (Bytef *)ZALLOC(z, 1, w)) == Z_NULL)
++  {
++    ZFREE(z, s->hufts);
++    ZFREE(z, s);
++    return Z_NULL;
++  }
++  s->end = s->window + w;
++  s->checkfn = c;
++  s->mode = TYPE;
++  Tracev((stderr, "inflate:   blocks allocated\n"));
++  inflate_blocks_reset(s, z, Z_NULL);
++  return s;
++}
++
++
++int inflate_blocks(s, z, r)
++inflate_blocks_statef *s;
++z_streamp z;
++int r;
++{
++  uInt t;               /* temporary storage */
++  uLong b;              /* bit buffer */
++  uInt k;               /* bits in bit buffer */
++  Bytef *p;             /* input data pointer */
++  uInt n;               /* bytes available there */
++  Bytef *q;             /* output window write pointer */
++  uInt m;               /* bytes to end of window or read pointer */
++
++  /* copy input/output information to locals (UPDATE macro restores) */
++  LOAD
++
++  /* process input based on current state */
++  while (1) switch (s->mode)
++  {
++    case TYPE:
++      NEEDBITS(3)
++      t = (uInt)b & 7;
++      s->last = t & 1;
++      switch (t >> 1)
++      {
++        case 0:                         /* stored */
++          Tracev((stderr, "inflate:     stored block%s\n",
++                 s->last ? " (last)" : ""));
++          DUMPBITS(3)
++          t = k & 7;                    /* go to byte boundary */
++          DUMPBITS(t)
++          s->mode = LENS;               /* get length of stored block */
++          break;
++        case 1:                         /* fixed */
++          Tracev((stderr, "inflate:     fixed codes block%s\n",
++                 s->last ? " (last)" : ""));
++          {
++            uInt bl, bd;
++            inflate_huft *tl, *td;
++
++            inflate_trees_fixed(&bl, &bd, &tl, &td, z);
++            s->sub.decode.codes = inflate_codes_new(bl, bd, tl, td, z);
++            if (s->sub.decode.codes == Z_NULL)
++            {
++              r = Z_MEM_ERROR;
++              LEAVE
++            }
++          }
++          DUMPBITS(3)
++          s->mode = CODES;
++          break;
++        case 2:                         /* dynamic */
++          Tracev((stderr, "inflate:     dynamic codes block%s\n",
++                 s->last ? " (last)" : ""));
++          DUMPBITS(3)
++          s->mode = TABLE;
++          break;
++        case 3:                         /* illegal */
++          DUMPBITS(3)
++          s->mode = BAD;
++          //z->msg = (char*)"invalid block type";
++	  z->msg = (char*)"IBT";
++          r = Z_DATA_ERROR;
++          LEAVE
++      }
++      break;
++    case LENS:
++      NEEDBITS(32)
++      if ((((~b) >> 16) & 0xffff) != (b & 0xffff))
++      {
++        s->mode = BAD;
++        //z->msg = (char*)"invalid stored block lengths";
++        z->msg = (char*)"ISBL";
++        r = Z_DATA_ERROR;
++        LEAVE
++      }
++      s->sub.left = (uInt)b & 0xffff;
++      b = k = 0;                      /* dump bits */
++      Tracev((stderr, "inflate:       stored length %u\n", s->sub.left));
++      s->mode = s->sub.left ? STORED : (s->last ? DRY : TYPE);
++      break;
++    case STORED:
++      if (n == 0)
++        LEAVE
++      NEEDOUT
++      t = s->sub.left;
++      if (t > n) t = n;
++      if (t > m) t = m;
++      zmemcpy(q, p, t);
++      p += t;  n -= t;
++      q += t;  m -= t;
++      if ((s->sub.left -= t) != 0)
++        break;
++      Tracev((stderr, "inflate:       stored end, %lu total out\n",
++              z->total_out + (q >= s->read ? q - s->read :
++              (s->end - s->read) + (q - s->window))));
++      s->mode = s->last ? DRY : TYPE;
++      break;
++    case TABLE:
++      NEEDBITS(14)
++      s->sub.trees.table = t = (uInt)b & 0x3fff;
++#ifndef PKZIP_BUG_WORKAROUND
++      if ((t & 0x1f) > 29 || ((t >> 5) & 0x1f) > 29)
++      {
++        s->mode = BAD;
++        //z->msg = (char*)"too many length or distance symbols";
++        z->msg = (char*)"TML/DS";
++        r = Z_DATA_ERROR;
++        LEAVE
++      }
++#endif
++      t = 258 + (t & 0x1f) + ((t >> 5) & 0x1f);
++      if ((s->sub.trees.blens = (uIntf*)ZALLOC(z, t, sizeof(uInt))) == Z_NULL)
++      {
++        r = Z_MEM_ERROR;
++        LEAVE
++      }
++      DUMPBITS(14)
++      s->sub.trees.index = 0;
++      Tracev((stderr, "inflate:       table sizes ok\n"));
++      s->mode = BTREE;
++    case BTREE:
++      while (s->sub.trees.index < 4 + (s->sub.trees.table >> 10))
++      {
++        NEEDBITS(3)
++        s->sub.trees.blens[border[s->sub.trees.index++]] = (uInt)b & 7;
++        DUMPBITS(3)
++      }
++      while (s->sub.trees.index < 19)
++        s->sub.trees.blens[border[s->sub.trees.index++]] = 0;
++      s->sub.trees.bb = 7;
++      t = inflate_trees_bits(s->sub.trees.blens, &s->sub.trees.bb,
++                             &s->sub.trees.tb, s->hufts, z);
++      if (t != Z_OK)
++      {
++        ZFREE(z, s->sub.trees.blens);
++        r = t;
++        if (r == Z_DATA_ERROR)
++          s->mode = BAD;
++        LEAVE
++      }
++      s->sub.trees.index = 0;
++      Tracev((stderr, "inflate:       bits tree ok\n"));
++      s->mode = DTREE;
++    case DTREE:
++      while (t = s->sub.trees.table,
++             s->sub.trees.index < 258 + (t & 0x1f) + ((t >> 5) & 0x1f))
++      {
++        inflate_huft *h;
++        uInt i, j, c;
++
++        t = s->sub.trees.bb;
++        NEEDBITS(t)
++        h = s->sub.trees.tb + ((uInt)b & inflate_mask[t]);
++        t = h->bits;
++        c = h->base;
++        if (c < 16)
++        {
++          DUMPBITS(t)
++          s->sub.trees.blens[s->sub.trees.index++] = c;
++        }
++        else /* c == 16..18 */
++        {
++          i = c == 18 ? 7 : c - 14;
++          j = c == 18 ? 11 : 3;
++          NEEDBITS(t + i)
++          DUMPBITS(t)
++          j += (uInt)b & inflate_mask[i];
++          DUMPBITS(i)
++          i = s->sub.trees.index;
++          t = s->sub.trees.table;
++          if (i + j > 258 + (t & 0x1f) + ((t >> 5) & 0x1f) ||
++              (c == 16 && i < 1))
++          {
++            ZFREE(z, s->sub.trees.blens);
++            s->mode = BAD;
++            //z->msg = (char*)"invalid bit length repeat";
++            z->msg = (char*)"IBLR";
++            r = Z_DATA_ERROR;
++            LEAVE
++          }
++          c = c == 16 ? s->sub.trees.blens[i - 1] : 0;
++          do {
++            s->sub.trees.blens[i++] = c;
++          } while (--j);
++          s->sub.trees.index = i;
++        }
++      }
++      s->sub.trees.tb = Z_NULL;
++      {
++        uInt bl, bd;
++        inflate_huft *tl, *td;
++        inflate_codes_statef *c;
++
++        bl = 9;         /* must be <= 9 for lookahead assumptions */
++        bd = 6;         /* must be <= 9 for lookahead assumptions */
++        t = s->sub.trees.table;
++        t = inflate_trees_dynamic(257 + (t & 0x1f), 1 + ((t >> 5) & 0x1f),
++                                  s->sub.trees.blens, &bl, &bd, &tl, &td,
++                                  s->hufts, z);
++        ZFREE(z, s->sub.trees.blens);
++        if (t != Z_OK)
++        {
++          if (t == (uInt)Z_DATA_ERROR)
++            s->mode = BAD;
++          r = t;
++          LEAVE
++        }
++        Tracev((stderr, "inflate:       trees ok\n"));
++        if ((c = inflate_codes_new(bl, bd, tl, td, z)) == Z_NULL)
++        {
++          r = Z_MEM_ERROR;
++          LEAVE
++        }
++        s->sub.decode.codes = c;
++      }
++      s->mode = CODES;
++    case CODES:
++      UPDATE
++      if ((r = inflate_codes(s, z, r)) != Z_STREAM_END)
++        return inflate_flush(s, z, r);
++      r = Z_OK;
++      inflate_codes_free(s->sub.decode.codes, z);
++      LOAD
++      Tracev((stderr, "inflate:       codes end, %lu total out\n",
++              z->total_out + (q >= s->read ? q - s->read :
++              (s->end - s->read) + (q - s->window))));
++      if (!s->last)
++      {
++        s->mode = TYPE;
++        break;
++      }
++      s->mode = DRY;
++    case DRY:
++      FLUSH
++      if (s->read != s->write)
++        LEAVE
++      s->mode = DONE;
++    case DONE:
++      r = Z_STREAM_END;
++      LEAVE
++    case BAD:
++      r = Z_DATA_ERROR;
++      LEAVE
++    default:
++      r = Z_STREAM_ERROR;
++      LEAVE
++  }
++}
++
++
++int inflate_blocks_free(s, z)
++inflate_blocks_statef *s;
++z_streamp z;
++{
++  inflate_blocks_reset(s, z, Z_NULL);
++  ZFREE(z, s->window);
++  ZFREE(z, s->hufts);
++  ZFREE(z, s);
++  Tracev((stderr, "inflate:   blocks freed\n"));
++  return Z_OK;
++}
++
++
++void inflate_set_dictionary(s, d, n)
++inflate_blocks_statef *s;
++const Bytef *d;
++uInt  n;
++{
++  zmemcpy(s->window, d, n);
++  s->read = s->write = s->window + n;
++}
++
++
++/* Returns true if inflate is currently at the end of a block generated
++ * by Z_SYNC_FLUSH or Z_FULL_FLUSH. 
++ * IN assertion: s != Z_NULL
++ */
++int inflate_blocks_sync_point(s)
++inflate_blocks_statef *s;
++{
++  return s->mode == LENS;
++}
+Index: grub-0.97/stage2/zlib/infblock.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ grub-0.97/stage2/zlib/infblock.h	2011-07-14 14:01:58.436000187 +0200
+@@ -0,0 +1,39 @@
++/* infblock.h -- header to use infblock.c
++ * Copyright (C) 1995-1998 Mark Adler
++ * For conditions of distribution and use, see copyright notice in zlib.h 
++ */
++
++/* WARNING: this file should *not* be used by applications. It is
++   part of the implementation of the compression library and is
++   subject to change. Applications should only use zlib.h.
++ */
++
++struct inflate_blocks_state;
++typedef struct inflate_blocks_state FAR inflate_blocks_statef;
++
++extern inflate_blocks_statef * inflate_blocks_new OF((
++    z_streamp z,
++    check_func c,               /* check function */
++    uInt w));                   /* window size */
++
++extern int inflate_blocks OF((
++    inflate_blocks_statef *,
++    z_streamp ,
++    int));                      /* initial return code */
++
++extern void inflate_blocks_reset OF((
++    inflate_blocks_statef *,
++    z_streamp ,
++    uLongf *));                  /* check value on output */
++
++extern int inflate_blocks_free OF((
++    inflate_blocks_statef *,
++    z_streamp));
++
++extern void inflate_set_dictionary OF((
++    inflate_blocks_statef *s,
++    const Bytef *d,  /* dictionary */
++    uInt  n));       /* dictionary length */
++
++extern int inflate_blocks_sync_point OF((
++    inflate_blocks_statef *s));
+Index: grub-0.97/stage2/zlib/infcodes.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ grub-0.97/stage2/zlib/infcodes.c	2011-07-14 14:01:58.436000187 +0200
+@@ -0,0 +1,259 @@
++/* infcodes.c -- process literals and length/distance pairs
++ * Copyright (C) 1995-1998 Mark Adler
++ * For conditions of distribution and use, see copyright notice in zlib.h 
++ */
++
++#include "zutil.h"
++#include "inftrees.h"
++#include "infblock.h"
++#include "infcodes.h"
++#include "infutil.h"
++#include "inffast.h"
++
++/* simplify the use of the inflate_huft type with some defines */
++#define exop word.what.Exop
++#define bits word.what.Bits
++
++typedef enum {        /* waiting for "i:"=input, "o:"=output, "x:"=nothing */
++      START,    /* x: set up for LEN */
++      LEN,      /* i: get length/literal/eob next */
++      LENEXT,   /* i: getting length extra (have base) */
++      DIST,     /* i: get distance next */
++      DISTEXT,  /* i: getting distance extra */
++      COPY,     /* o: copying bytes in window, waiting for space */
++      LIT,      /* o: got literal, waiting for output space */
++      WASH,     /* o: got eob, possibly still output waiting */
++      END,      /* x: got eob and all data flushed */
++      BADCODE}  /* x: got error */
++inflate_codes_mode;
++
++/* inflate codes private state */
++struct inflate_codes_state {
++
++  /* mode */
++  inflate_codes_mode mode;      /* current inflate_codes mode */
++
++  /* mode dependent information */
++  uInt len;
++  union {
++    struct {
++      inflate_huft *tree;       /* pointer into tree */
++      uInt need;                /* bits needed */
++    } code;             /* if LEN or DIST, where in tree */
++    uInt lit;           /* if LIT, literal */
++    struct {
++      uInt get;                 /* bits to get for extra */
++      uInt dist;                /* distance back to copy from */
++    } copy;             /* if EXT or COPY, where and how much */
++  } sub;                /* submode */
++
++  /* mode independent information */
++  Byte lbits;           /* ltree bits decoded per branch */
++  Byte dbits;           /* dtree bits decoder per branch */
++  inflate_huft *ltree;          /* literal/length/eob tree */
++  inflate_huft *dtree;          /* distance tree */
++
++};
++
++
++inflate_codes_statef *inflate_codes_new(bl, bd, tl, td, z)
++uInt bl, bd;
++inflate_huft *tl;
++inflate_huft *td; /* need separate declaration for Borland C++ */
++z_streamp z;
++{
++  inflate_codes_statef *c;
++
++  if ((c = (inflate_codes_statef *)
++       ZALLOC(z,1,sizeof(struct inflate_codes_state))) != Z_NULL)
++  {
++    c->mode = START;
++    c->lbits = (Byte)bl;
++    c->dbits = (Byte)bd;
++    c->ltree = tl;
++    c->dtree = td;
++    Tracev((stderr, "inflate:       codes new\n"));
++  }
++  return c;
++}
++
++
++int inflate_codes(s, z, r)
++inflate_blocks_statef *s;
++z_streamp z;
++int r;
++{
++  uInt j;               /* temporary storage */
++  inflate_huft *t;      /* temporary pointer */
++  uInt e;               /* extra bits or operation */
++  uLong b;              /* bit buffer */
++  uInt k;               /* bits in bit buffer */
++  Bytef *p;             /* input data pointer */
++  uInt n;               /* bytes available there */
++  Bytef *q;             /* output window write pointer */
++  uInt m;               /* bytes to end of window or read pointer */
++  Bytef *f;             /* pointer to copy strings from */
++  inflate_codes_statef *c = s->sub.decode.codes;  /* codes state */
++
++  /* copy input/output information to locals (UPDATE macro restores) */
++  LOAD
++
++  /* process input and output based on current state */
++  while (1) switch (c->mode)
++  {             /* waiting for "i:"=input, "o:"=output, "x:"=nothing */
++    case START:         /* x: set up for LEN */
++#ifndef SLOW
++      if (m >= 258 && n >= 10)
++      {
++        UPDATE
++        r = inflate_fast(c->lbits, c->dbits, c->ltree, c->dtree, s, z);
++        LOAD
++        if (r != Z_OK)
++        {
++          c->mode = r == Z_STREAM_END ? WASH : BADCODE;
++          break;
++        }
++      }
++#endif /* !SLOW */
++      c->sub.code.need = c->lbits;
++      c->sub.code.tree = c->ltree;
++      c->mode = LEN;
++    case LEN:           /* i: get length/literal/eob next */
++      j = c->sub.code.need;
++      NEEDBITS(j)
++      t = c->sub.code.tree + ((uInt)b & inflate_mask[j]);
++      DUMPBITS(t->bits)
++      e = (uInt)(t->exop);
++      if (e == 0)               /* literal */
++      {
++        c->sub.lit = t->base;
++        Tracevv((stderr, t->base >= 0x20 && t->base < 0x7f ?
++                 "inflate:         literal '%c'\n" :
++                 "inflate:         literal 0x%02x\n", t->base));
++        c->mode = LIT;
++        break;
++      }
++      if (e & 16)               /* length */
++      {
++        c->sub.copy.get = e & 15;
++        c->len = t->base;
++        c->mode = LENEXT;
++        break;
++      }
++      if ((e & 64) == 0)        /* next table */
++      {
++        c->sub.code.need = e;
++        c->sub.code.tree = t + t->base;
++        break;
++      }
++      if (e & 32)               /* end of block */
++      {
++        Tracevv((stderr, "inflate:         end of block\n"));
++        c->mode = WASH;
++        break;
++      }
++      c->mode = BADCODE;        /* invalid code */
++      //z->msg = (char*)"invalid literal/length code";
++      z->msg = (char*)"IL/LC";
++      r = Z_DATA_ERROR;
++      LEAVE
++    case LENEXT:        /* i: getting length extra (have base) */
++      j = c->sub.copy.get;
++      NEEDBITS(j)
++      c->len += (uInt)b & inflate_mask[j];
++      DUMPBITS(j)
++      c->sub.code.need = c->dbits;
++      c->sub.code.tree = c->dtree;
++      Tracevv((stderr, "inflate:         length %u\n", c->len));
++      c->mode = DIST;
++    case DIST:          /* i: get distance next */
++      j = c->sub.code.need;
++      NEEDBITS(j)
++      t = c->sub.code.tree + ((uInt)b & inflate_mask[j]);
++      DUMPBITS(t->bits)
++      e = (uInt)(t->exop);
++      if (e & 16)               /* distance */
++      {
++        c->sub.copy.get = e & 15;
++        c->sub.copy.dist = t->base;
++        c->mode = DISTEXT;
++        break;
++      }
++      if ((e & 64) == 0)        /* next table */
++      {
++        c->sub.code.need = e;
++        c->sub.code.tree = t + t->base;
++        break;
++      }
++      c->mode = BADCODE;        /* invalid code */
++      //z->msg = (char*)"invalid distance code";
++      z->msg = (char*)"IDC";
++      r = Z_DATA_ERROR;
++      LEAVE
++    case DISTEXT:       /* i: getting distance extra */
++      j = c->sub.copy.get;
++      NEEDBITS(j)
++      c->sub.copy.dist += (uInt)b & inflate_mask[j];
++      DUMPBITS(j)
++      Tracevv((stderr, "inflate:         distance %u\n", c->sub.copy.dist));
++      c->mode = COPY;
++    case COPY:          /* o: copying bytes in window, waiting for space */
++#ifndef __TURBOC__ /* Turbo C bug for following expression */
++      f = (uInt)(q - s->window) < c->sub.copy.dist ?
++          s->end - (c->sub.copy.dist - (q - s->window)) :
++          q - c->sub.copy.dist;
++#else
++      f = q - c->sub.copy.dist;
++      if ((uInt)(q - s->window) < c->sub.copy.dist)
++        f = s->end - (c->sub.copy.dist - (uInt)(q - s->window));
++#endif
++      while (c->len)
++      {
++        NEEDOUT
++        OUTBYTE(*f++)
++        if (f == s->end)
++          f = s->window;
++        c->len--;
++      }
++      c->mode = START;
++      break;
++    case LIT:           /* o: got literal, waiting for output space */
++      NEEDOUT
++      OUTBYTE(c->sub.lit)
++      c->mode = START;
++      break;
++    case WASH:          /* o: got eob, possibly more output */
++      if (k > 7)        /* return unused byte, if any */
++      {
++        Assert(k < 16, "inflate_codes grabbed too many bytes")
++        k -= 8;
++        n++;
++        p--;            /* can always return one */
++      }
++      FLUSH
++      if (s->read != s->write)
++        LEAVE
++      c->mode = END;
++    case END:
++      r = Z_STREAM_END;
++      LEAVE
++    case BADCODE:       /* x: got error */
++      r = Z_DATA_ERROR;
++      LEAVE
++    default:
++      r = Z_STREAM_ERROR;
++      LEAVE
++  }
++#ifdef NEED_DUMMY_RETURN
++  return Z_STREAM_ERROR;  /* Some dumb compilers complain without this */
++#endif
++}
++
++
++void inflate_codes_free(c, z)
++inflate_codes_statef *c;
++z_streamp z;
++{
++  ZFREE(z, c);
++  Tracev((stderr, "inflate:       codes free\n"));
++}
+Index: grub-0.97/stage2/zlib/infcodes.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ grub-0.97/stage2/zlib/infcodes.h	2011-07-14 14:01:58.436000187 +0200
+@@ -0,0 +1,27 @@
++/* infcodes.h -- header to use infcodes.c
++ * Copyright (C) 1995-1998 Mark Adler
++ * For conditions of distribution and use, see copyright notice in zlib.h 
++ */
++
++/* WARNING: this file should *not* be used by applications. It is
++   part of the implementation of the compression library and is
++   subject to change. Applications should only use zlib.h.
++ */
++
++struct inflate_codes_state;
++typedef struct inflate_codes_state FAR inflate_codes_statef;
++
++extern inflate_codes_statef *inflate_codes_new OF((
++    uInt, uInt,
++    inflate_huft *, inflate_huft *,
++    z_streamp ));
++
++extern int inflate_codes OF((
++    inflate_blocks_statef *,
++    z_streamp ,
++    int));
++
++extern void inflate_codes_free OF((
++    inflate_codes_statef *,
++    z_streamp ));
++
+Index: grub-0.97/stage2/zlib/inffast.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ grub-0.97/stage2/zlib/inffast.c	2011-07-14 14:01:58.436000187 +0200
+@@ -0,0 +1,172 @@
++/* inffast.c -- process literals and length/distance pairs fast
++ * Copyright (C) 1995-1998 Mark Adler
++ * For conditions of distribution and use, see copyright notice in zlib.h 
++ */
++
++#include "zutil.h"
++#include "inftrees.h"
++#include "infblock.h"
++#include "infcodes.h"
++#include "infutil.h"
++#include "inffast.h"
++
++struct inflate_codes_state {int dummy;}; /* for buggy compilers */
++
++/* simplify the use of the inflate_huft type with some defines */
++#define exop word.what.Exop
++#define bits word.what.Bits
++
++/* macros for bit input with no checking and for returning unused bytes */
++#define GRABBITS(j) {while(k<(j)){b|=((uLong)NEXTBYTE)<<k;k+=8;}}
++#define UNGRAB {c=z->avail_in-n;c=(k>>3)<c?k>>3:c;n+=c;p-=c;k-=c<<3;}
++
++/* Called with number of bytes left to write in window at least 258
++   (the maximum string length) and number of input bytes available
++   at least ten.  The ten bytes are six bytes for the longest length/
++   distance pair plus four bytes for overloading the bit buffer. */
++
++int inflate_fast(bl, bd, tl, td, s, z)
++uInt bl, bd;
++inflate_huft *tl;
++inflate_huft *td; /* need separate declaration for Borland C++ */
++inflate_blocks_statef *s;
++z_streamp z;
++{
++  inflate_huft *t;      /* temporary pointer */
++  uInt e;               /* extra bits or operation */
++  uLong b;              /* bit buffer */
++  uInt k;               /* bits in bit buffer */
++  Bytef *p;             /* input data pointer */
++  uInt n;               /* bytes available there */
++  Bytef *q;             /* output window write pointer */
++  uInt m;               /* bytes to end of window or read pointer */
++  uInt ml;              /* mask for literal/length tree */
++  uInt md;              /* mask for distance tree */
++  uInt c;               /* bytes to copy */
++  uInt d;               /* distance back to copy from */
++  Bytef *r;             /* copy source pointer */
++
++  /* load input, output, bit values */
++  LOAD
++
++  /* initialize masks */
++  ml = inflate_mask[bl];
++  md = inflate_mask[bd];
++
++  /* do until not enough input or output space for fast loop */
++  do {                          /* assume called with m >= 258 && n >= 10 */
++    /* get literal/length code */
++    GRABBITS(20)                /* max bits for literal/length code */
++    if ((e = (t = tl + ((uInt)b & ml))->exop) == 0)
++    {
++      DUMPBITS(t->bits)
++      Tracevv((stderr, t->base >= 0x20 && t->base < 0x7f ?
++                "inflate:         * literal '%c'\n" :
++                "inflate:         * literal 0x%02x\n", t->base));
++      *q++ = (Byte)t->base;
++      m--;
++      continue;
++    }
++    do {
++      DUMPBITS(t->bits)
++      if (e & 16)
++      {
++        /* get extra bits for length */
++        e &= 15;
++        c = t->base + ((uInt)b & inflate_mask[e]);
++        DUMPBITS(e)
++        Tracevv((stderr, "inflate:         * length %u\n", c));
++
++        /* decode distance base of block to copy */
++        GRABBITS(15);           /* max bits for distance code */
++        e = (t = td + ((uInt)b & md))->exop;
++        do {
++          DUMPBITS(t->bits)
++          if (e & 16)
++          {
++            /* get extra bits to add to distance base */
++            e &= 15;
++            GRABBITS(e)         /* get extra bits (up to 13) */
++            d = t->base + ((uInt)b & inflate_mask[e]);
++            DUMPBITS(e)
++            Tracevv((stderr, "inflate:         * distance %u\n", d));
++
++            /* do the copy */
++            m -= c;
++            if ((uInt)(q - s->window) >= d)     /* offset before dest */
++            {                                   /*  just copy */
++              r = q - d;
++              *q++ = *r++;  c--;        /* minimum count is three, */
++              *q++ = *r++;  c--;        /*  so unroll loop a little */
++            }
++            else                        /* else offset after destination */
++            {
++              e = d - (uInt)(q - s->window); /* bytes from offset to end */
++              r = s->end - e;           /* pointer to offset */
++              if (c > e)                /* if source crosses, */
++              {
++                c -= e;                 /* copy to end of window */
++                do {
++                  *q++ = *r++;
++                } while (--e);
++                r = s->window;          /* copy rest from start of window */
++              }
++            }
++            do {                        /* copy all or what's left */
++              *q++ = *r++;
++            } while (--c);
++            break;
++          }
++          else if ((e & 64) == 0)
++          {
++            t += t->base;
++            e = (t += ((uInt)b & inflate_mask[e]))->exop;
++          }
++          else
++          {
++            //z->msg = (char*)"invalid distance code";
++            z->msg = (char*)"IDC";
++            UNGRAB
++            UPDATE
++            return Z_DATA_ERROR;
++          }
++        } while (1);
++        break;
++      }
++      if ((e & 64) == 0)
++      {
++        t += t->base;
++        if ((e = (t += ((uInt)b & inflate_mask[e]))->exop) == 0)
++        {
++          DUMPBITS(t->bits)
++          Tracevv((stderr, t->base >= 0x20 && t->base < 0x7f ?
++                    "inflate:         * literal '%c'\n" :
++                    "inflate:         * literal 0x%02x\n", t->base));
++          *q++ = (Byte)t->base;
++          m--;
++          break;
++        }
++      }
++      else if (e & 32)
++      {
++        Tracevv((stderr, "inflate:         * end of block\n"));
++        UNGRAB
++        UPDATE
++        return Z_STREAM_END;
++      }
++      else
++      {
++        //z->msg = (char*)"invalid literal/length code";
++        z->msg = (char*)"IL/LC";
++        UNGRAB
++        UPDATE
++        return Z_DATA_ERROR;
++      }
++    } while (1);
++  } while (m >= 258 && n >= 10);
++
++  /* not enough input or output--restore pointers and return */
++  UNGRAB
++  UPDATE
++  return Z_OK;
++}
+Index: grub-0.97/stage2/zlib/inffast.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ grub-0.97/stage2/zlib/inffast.h	2011-07-14 14:01:58.436000187 +0200
+@@ -0,0 +1,17 @@
++/* inffast.h -- header to use inffast.c
++ * Copyright (C) 1995-1998 Mark Adler
++ * For conditions of distribution and use, see copyright notice in zlib.h 
++ */
++
++/* WARNING: this file should *not* be used by applications. It is
++   part of the implementation of the compression library and is
++   subject to change. Applications should only use zlib.h.
++ */
++
++extern int inflate_fast OF((
++    uInt,
++    uInt,
++    inflate_huft *,
++    inflate_huft *,
++    inflate_blocks_statef *,
++    z_streamp ));
+Index: grub-0.97/stage2/zlib/inffixed.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ grub-0.97/stage2/zlib/inffixed.h	2011-07-14 14:01:58.436000187 +0200
+@@ -0,0 +1,151 @@
++/* inffixed.h -- table for decoding fixed codes
++ * Generated automatically by the maketree.c program
++ */
++
++/* WARNING: this file should *not* be used by applications. It is
++   part of the implementation of the compression library and is
++   subject to change. Applications should only use zlib.h.
++ */
++
++local uInt fixed_bl = 9;
++local uInt fixed_bd = 5;
++local inflate_huft fixed_tl[] = {
++    {{{96,7}},256}, {{{0,8}},80}, {{{0,8}},16}, {{{84,8}},115},
++    {{{82,7}},31}, {{{0,8}},112}, {{{0,8}},48}, {{{0,9}},192},
++    {{{80,7}},10}, {{{0,8}},96}, {{{0,8}},32}, {{{0,9}},160},
++    {{{0,8}},0}, {{{0,8}},128}, {{{0,8}},64}, {{{0,9}},224},
++    {{{80,7}},6}, {{{0,8}},88}, {{{0,8}},24}, {{{0,9}},144},
++    {{{83,7}},59}, {{{0,8}},120}, {{{0,8}},56}, {{{0,9}},208},
++    {{{81,7}},17}, {{{0,8}},104}, {{{0,8}},40}, {{{0,9}},176},
++    {{{0,8}},8}, {{{0,8}},136}, {{{0,8}},72}, {{{0,9}},240},
++    {{{80,7}},4}, {{{0,8}},84}, {{{0,8}},20}, {{{85,8}},227},
++    {{{83,7}},43}, {{{0,8}},116}, {{{0,8}},52}, {{{0,9}},200},
++    {{{81,7}},13}, {{{0,8}},100}, {{{0,8}},36}, {{{0,9}},168},
++    {{{0,8}},4}, {{{0,8}},132}, {{{0,8}},68}, {{{0,9}},232},
++    {{{80,7}},8}, {{{0,8}},92}, {{{0,8}},28}, {{{0,9}},152},
++    {{{84,7}},83}, {{{0,8}},124}, {{{0,8}},60}, {{{0,9}},216},
++    {{{82,7}},23}, {{{0,8}},108}, {{{0,8}},44}, {{{0,9}},184},
++    {{{0,8}},12}, {{{0,8}},140}, {{{0,8}},76}, {{{0,9}},248},
++    {{{80,7}},3}, {{{0,8}},82}, {{{0,8}},18}, {{{85,8}},163},
++    {{{83,7}},35}, {{{0,8}},114}, {{{0,8}},50}, {{{0,9}},196},
++    {{{81,7}},11}, {{{0,8}},98}, {{{0,8}},34}, {{{0,9}},164},
++    {{{0,8}},2}, {{{0,8}},130}, {{{0,8}},66}, {{{0,9}},228},
++    {{{80,7}},7}, {{{0,8}},90}, {{{0,8}},26}, {{{0,9}},148},
++    {{{84,7}},67}, {{{0,8}},122}, {{{0,8}},58}, {{{0,9}},212},
++    {{{82,7}},19}, {{{0,8}},106}, {{{0,8}},42}, {{{0,9}},180},
++    {{{0,8}},10}, {{{0,8}},138}, {{{0,8}},74}, {{{0,9}},244},
++    {{{80,7}},5}, {{{0,8}},86}, {{{0,8}},22}, {{{192,8}},0},
++    {{{83,7}},51}, {{{0,8}},118}, {{{0,8}},54}, {{{0,9}},204},
++    {{{81,7}},15}, {{{0,8}},102}, {{{0,8}},38}, {{{0,9}},172},
++    {{{0,8}},6}, {{{0,8}},134}, {{{0,8}},70}, {{{0,9}},236},
++    {{{80,7}},9}, {{{0,8}},94}, {{{0,8}},30}, {{{0,9}},156},
++    {{{84,7}},99}, {{{0,8}},126}, {{{0,8}},62}, {{{0,9}},220},
++    {{{82,7}},27}, {{{0,8}},110}, {{{0,8}},46}, {{{0,9}},188},
++    {{{0,8}},14}, {{{0,8}},142}, {{{0,8}},78}, {{{0,9}},252},
++    {{{96,7}},256}, {{{0,8}},81}, {{{0,8}},17}, {{{85,8}},131},
++    {{{82,7}},31}, {{{0,8}},113}, {{{0,8}},49}, {{{0,9}},194},
++    {{{80,7}},10}, {{{0,8}},97}, {{{0,8}},33}, {{{0,9}},162},
++    {{{0,8}},1}, {{{0,8}},129}, {{{0,8}},65}, {{{0,9}},226},
++    {{{80,7}},6}, {{{0,8}},89}, {{{0,8}},25}, {{{0,9}},146},
++    {{{83,7}},59}, {{{0,8}},121}, {{{0,8}},57}, {{{0,9}},210},
++    {{{81,7}},17}, {{{0,8}},105}, {{{0,8}},41}, {{{0,9}},178},
++    {{{0,8}},9}, {{{0,8}},137}, {{{0,8}},73}, {{{0,9}},242},
++    {{{80,7}},4}, {{{0,8}},85}, {{{0,8}},21}, {{{80,8}},258},
++    {{{83,7}},43}, {{{0,8}},117}, {{{0,8}},53}, {{{0,9}},202},
++    {{{81,7}},13}, {{{0,8}},101}, {{{0,8}},37}, {{{0,9}},170},
++    {{{0,8}},5}, {{{0,8}},133}, {{{0,8}},69}, {{{0,9}},234},
++    {{{80,7}},8}, {{{0,8}},93}, {{{0,8}},29}, {{{0,9}},154},
++    {{{84,7}},83}, {{{0,8}},125}, {{{0,8}},61}, {{{0,9}},218},
++    {{{82,7}},23}, {{{0,8}},109}, {{{0,8}},45}, {{{0,9}},186},
++    {{{0,8}},13}, {{{0,8}},141}, {{{0,8}},77}, {{{0,9}},250},
++    {{{80,7}},3}, {{{0,8}},83}, {{{0,8}},19}, {{{85,8}},195},
++    {{{83,7}},35}, {{{0,8}},115}, {{{0,8}},51}, {{{0,9}},198},
++    {{{81,7}},11}, {{{0,8}},99}, {{{0,8}},35}, {{{0,9}},166},
++    {{{0,8}},3}, {{{0,8}},131}, {{{0,8}},67}, {{{0,9}},230},
++    {{{80,7}},7}, {{{0,8}},91}, {{{0,8}},27}, {{{0,9}},150},
++    {{{84,7}},67}, {{{0,8}},123}, {{{0,8}},59}, {{{0,9}},214},
++    {{{82,7}},19}, {{{0,8}},107}, {{{0,8}},43}, {{{0,9}},182},
++    {{{0,8}},11}, {{{0,8}},139}, {{{0,8}},75}, {{{0,9}},246},
++    {{{80,7}},5}, {{{0,8}},87}, {{{0,8}},23}, {{{192,8}},0},
++    {{{83,7}},51}, {{{0,8}},119}, {{{0,8}},55}, {{{0,9}},206},
++    {{{81,7}},15}, {{{0,8}},103}, {{{0,8}},39}, {{{0,9}},174},
++    {{{0,8}},7}, {{{0,8}},135}, {{{0,8}},71}, {{{0,9}},238},
++    {{{80,7}},9}, {{{0,8}},95}, {{{0,8}},31}, {{{0,9}},158},
++    {{{84,7}},99}, {{{0,8}},127}, {{{0,8}},63}, {{{0,9}},222},
++    {{{82,7}},27}, {{{0,8}},111}, {{{0,8}},47}, {{{0,9}},190},
++    {{{0,8}},15}, {{{0,8}},143}, {{{0,8}},79}, {{{0,9}},254},
++    {{{96,7}},256}, {{{0,8}},80}, {{{0,8}},16}, {{{84,8}},115},
++    {{{82,7}},31}, {{{0,8}},112}, {{{0,8}},48}, {{{0,9}},193},
++    {{{80,7}},10}, {{{0,8}},96}, {{{0,8}},32}, {{{0,9}},161},
++    {{{0,8}},0}, {{{0,8}},128}, {{{0,8}},64}, {{{0,9}},225},
++    {{{80,7}},6}, {{{0,8}},88}, {{{0,8}},24}, {{{0,9}},145},
++    {{{83,7}},59}, {{{0,8}},120}, {{{0,8}},56}, {{{0,9}},209},
++    {{{81,7}},17}, {{{0,8}},104}, {{{0,8}},40}, {{{0,9}},177},
++    {{{0,8}},8}, {{{0,8}},136}, {{{0,8}},72}, {{{0,9}},241},
++    {{{80,7}},4}, {{{0,8}},84}, {{{0,8}},20}, {{{85,8}},227},
++    {{{83,7}},43}, {{{0,8}},116}, {{{0,8}},52}, {{{0,9}},201},
++    {{{81,7}},13}, {{{0,8}},100}, {{{0,8}},36}, {{{0,9}},169},
++    {{{0,8}},4}, {{{0,8}},132}, {{{0,8}},68}, {{{0,9}},233},
++    {{{80,7}},8}, {{{0,8}},92}, {{{0,8}},28}, {{{0,9}},153},
++    {{{84,7}},83}, {{{0,8}},124}, {{{0,8}},60}, {{{0,9}},217},
++    {{{82,7}},23}, {{{0,8}},108}, {{{0,8}},44}, {{{0,9}},185},
++    {{{0,8}},12}, {{{0,8}},140}, {{{0,8}},76}, {{{0,9}},249},
++    {{{80,7}},3}, {{{0,8}},82}, {{{0,8}},18}, {{{85,8}},163},
++    {{{83,7}},35}, {{{0,8}},114}, {{{0,8}},50}, {{{0,9}},197},
++    {{{81,7}},11}, {{{0,8}},98}, {{{0,8}},34}, {{{0,9}},165},
++    {{{0,8}},2}, {{{0,8}},130}, {{{0,8}},66}, {{{0,9}},229},
++    {{{80,7}},7}, {{{0,8}},90}, {{{0,8}},26}, {{{0,9}},149},
++    {{{84,7}},67}, {{{0,8}},122}, {{{0,8}},58}, {{{0,9}},213},
++    {{{82,7}},19}, {{{0,8}},106}, {{{0,8}},42}, {{{0,9}},181},
++    {{{0,8}},10}, {{{0,8}},138}, {{{0,8}},74}, {{{0,9}},245},
++    {{{80,7}},5}, {{{0,8}},86}, {{{0,8}},22}, {{{192,8}},0},
++    {{{83,7}},51}, {{{0,8}},118}, {{{0,8}},54}, {{{0,9}},205},
++    {{{81,7}},15}, {{{0,8}},102}, {{{0,8}},38}, {{{0,9}},173},
++    {{{0,8}},6}, {{{0,8}},134}, {{{0,8}},70}, {{{0,9}},237},
++    {{{80,7}},9}, {{{0,8}},94}, {{{0,8}},30}, {{{0,9}},157},
++    {{{84,7}},99}, {{{0,8}},126}, {{{0,8}},62}, {{{0,9}},221},
++    {{{82,7}},27}, {{{0,8}},110}, {{{0,8}},46}, {{{0,9}},189},
++    {{{0,8}},14}, {{{0,8}},142}, {{{0,8}},78}, {{{0,9}},253},
++    {{{96,7}},256}, {{{0,8}},81}, {{{0,8}},17}, {{{85,8}},131},
++    {{{82,7}},31}, {{{0,8}},113}, {{{0,8}},49}, {{{0,9}},195},
++    {{{80,7}},10}, {{{0,8}},97}, {{{0,8}},33}, {{{0,9}},163},
++    {{{0,8}},1}, {{{0,8}},129}, {{{0,8}},65}, {{{0,9}},227},
++    {{{80,7}},6}, {{{0,8}},89}, {{{0,8}},25}, {{{0,9}},147},
++    {{{83,7}},59}, {{{0,8}},121}, {{{0,8}},57}, {{{0,9}},211},
++    {{{81,7}},17}, {{{0,8}},105}, {{{0,8}},41}, {{{0,9}},179},
++    {{{0,8}},9}, {{{0,8}},137}, {{{0,8}},73}, {{{0,9}},243},
++    {{{80,7}},4}, {{{0,8}},85}, {{{0,8}},21}, {{{80,8}},258},
++    {{{83,7}},43}, {{{0,8}},117}, {{{0,8}},53}, {{{0,9}},203},
++    {{{81,7}},13}, {{{0,8}},101}, {{{0,8}},37}, {{{0,9}},171},
++    {{{0,8}},5}, {{{0,8}},133}, {{{0,8}},69}, {{{0,9}},235},
++    {{{80,7}},8}, {{{0,8}},93}, {{{0,8}},29}, {{{0,9}},155},
++    {{{84,7}},83}, {{{0,8}},125}, {{{0,8}},61}, {{{0,9}},219},
++    {{{82,7}},23}, {{{0,8}},109}, {{{0,8}},45}, {{{0,9}},187},
++    {{{0,8}},13}, {{{0,8}},141}, {{{0,8}},77}, {{{0,9}},251},
++    {{{80,7}},3}, {{{0,8}},83}, {{{0,8}},19}, {{{85,8}},195},
++    {{{83,7}},35}, {{{0,8}},115}, {{{0,8}},51}, {{{0,9}},199},
++    {{{81,7}},11}, {{{0,8}},99}, {{{0,8}},35}, {{{0,9}},167},
++    {{{0,8}},3}, {{{0,8}},131}, {{{0,8}},67}, {{{0,9}},231},
++    {{{80,7}},7}, {{{0,8}},91}, {{{0,8}},27}, {{{0,9}},151},
++    {{{84,7}},67}, {{{0,8}},123}, {{{0,8}},59}, {{{0,9}},215},
++    {{{82,7}},19}, {{{0,8}},107}, {{{0,8}},43}, {{{0,9}},183},
++    {{{0,8}},11}, {{{0,8}},139}, {{{0,8}},75}, {{{0,9}},247},
++    {{{80,7}},5}, {{{0,8}},87}, {{{0,8}},23}, {{{192,8}},0},
++    {{{83,7}},51}, {{{0,8}},119}, {{{0,8}},55}, {{{0,9}},207},
++    {{{81,7}},15}, {{{0,8}},103}, {{{0,8}},39}, {{{0,9}},175},
++    {{{0,8}},7}, {{{0,8}},135}, {{{0,8}},71}, {{{0,9}},239},
++    {{{80,7}},9}, {{{0,8}},95}, {{{0,8}},31}, {{{0,9}},159},
++    {{{84,7}},99}, {{{0,8}},127}, {{{0,8}},63}, {{{0,9}},223},
++    {{{82,7}},27}, {{{0,8}},111}, {{{0,8}},47}, {{{0,9}},191},
++    {{{0,8}},15}, {{{0,8}},143}, {{{0,8}},79}, {{{0,9}},255}
++  };
++local inflate_huft fixed_td[] = {
++    {{{80,5}},1}, {{{87,5}},257}, {{{83,5}},17}, {{{91,5}},4097},
++    {{{81,5}},5}, {{{89,5}},1025}, {{{85,5}},65}, {{{93,5}},16385},
++    {{{80,5}},3}, {{{88,5}},513}, {{{84,5}},33}, {{{92,5}},8193},
++    {{{82,5}},9}, {{{90,5}},2049}, {{{86,5}},129}, {{{192,5}},24577},
++    {{{80,5}},2}, {{{87,5}},385}, {{{83,5}},25}, {{{91,5}},6145},
++    {{{81,5}},7}, {{{89,5}},1537}, {{{85,5}},97}, {{{93,5}},24577},
++    {{{80,5}},4}, {{{88,5}},769}, {{{84,5}},49}, {{{92,5}},12289},
++    {{{82,5}},13}, {{{90,5}},3073}, {{{86,5}},193}, {{{192,5}},24577}
++  };
+Index: grub-0.97/stage2/zlib/inflate.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ grub-0.97/stage2/zlib/inflate.c	2011-07-14 14:01:58.436000187 +0200
+@@ -0,0 +1,374 @@
++/* inflate.c -- zlib interface to inflate modules
++ * Copyright (C) 1995-1998 Mark Adler
++ * For conditions of distribution and use, see copyright notice in zlib.h 
++ */
++
++#include "zutil.h"
++#include "infblock.h"
++
++struct inflate_blocks_state {int dummy;}; /* for buggy compilers */
++
++typedef enum {
++      METHOD,   /* waiting for method byte */
++      FLAG,     /* waiting for flag byte */
++      DICT4,    /* four dictionary check bytes to go */
++      DICT3,    /* three dictionary check bytes to go */
++      DICT2,    /* two dictionary check bytes to go */
++      DICT1,    /* one dictionary check byte to go */
++      DICT0,    /* waiting for inflateSetDictionary */
++      BLOCKS,   /* decompressing blocks */
++      CHECK4,   /* four check bytes to go */
++      CHECK3,   /* three check bytes to go */
++      CHECK2,   /* two check bytes to go */
++      CHECK1,   /* one check byte to go */
++      DONE,     /* finished check, done */
++      BAD}      /* got an error--stay here */
++inflate_mode;
++
++/* inflate private state */
++struct internal_state {
++
++  /* mode */
++  inflate_mode  mode;   /* current inflate mode */
++
++  /* mode dependent information */
++  union {
++    uInt method;        /* if FLAGS, method byte */
++    struct {
++      uLong was;                /* computed check value */
++      uLong need;               /* stream check value */
++    } check;            /* if CHECK, check values to compare */
++    uInt marker;        /* if BAD, inflateSync's marker bytes count */
++  } sub;        /* submode */
++
++  /* mode independent information */
++  int  nowrap;          /* flag for no wrapper */
++  uInt wbits;           /* log2(window size)  (8..15, defaults to 15) */
++  inflate_blocks_statef 
++    *blocks;            /* current inflate_blocks state */
++
++};
++
++
++int ZEXPORT inflateReset(z)
++z_streamp z;
++{
++  if (z == Z_NULL || z->state == Z_NULL)
++    return Z_STREAM_ERROR;
++  z->total_in = z->total_out = 0;
++  z->msg = Z_NULL;
++  z->state->mode = z->state->nowrap ? BLOCKS : METHOD;
++  inflate_blocks_reset(z->state->blocks, z, Z_NULL);
++  Tracev((stderr, "inflate: reset\n"));
++  return Z_OK;
++}
++
++
++int ZEXPORT inflateEnd(z)
++z_streamp z;
++{
++  if (z == Z_NULL || z->state == Z_NULL || z->zfree == Z_NULL)
++    return Z_STREAM_ERROR;
++  if (z->state->blocks != Z_NULL)
++    inflate_blocks_free(z->state->blocks, z);
++  ZFREE(z, z->state);
++  z->state = Z_NULL;
++  Tracev((stderr, "inflate: end\n"));
++  return Z_OK;
++}
++
++
++int ZEXPORT inflateInit2_(z, w, version, stream_size)
++z_streamp z;
++int w;
++const char *version;
++int stream_size;
++{
++  if (version == Z_NULL || version[0] != ZLIB_VERSION[0] ||
++      stream_size != sizeof(z_stream))
++      return Z_VERSION_ERROR;
++
++  /* initialize state */
++  if (z == Z_NULL)
++    return Z_STREAM_ERROR;
++  z->msg = Z_NULL;
++  if (z->zalloc == Z_NULL)
++  {
++    z->zalloc = zcalloc;
++    z->opaque = (voidpf)0;
++  }
++  if (z->zfree == Z_NULL) z->zfree = zcfree;
++  if ((z->state = (struct internal_state FAR *)
++       ZALLOC(z,1,sizeof(struct internal_state))) == Z_NULL) {
++       grub_printf("!!!!\n");
++
++    return Z_MEM_ERROR;
++    }
++  z->state->blocks = Z_NULL;
++
++  /* handle undocumented nowrap option (no zlib header or check) */
++  z->state->nowrap = 0;
++  if (w < 0)
++  {
++    w = - w;
++    z->state->nowrap = 1;
++  }
++
++  /* set window size */
++  if (w < 8 || w > 15)
++  {
++    inflateEnd(z);
++    return Z_STREAM_ERROR;
++  }
++  z->state->wbits = (uInt)w;
++
++  /* create inflate_blocks state */
++  if ((z->state->blocks =
++      inflate_blocks_new(z, z->state->nowrap ? Z_NULL : adler32, (uInt)1 << w))
++      == Z_NULL)
++  {
++    inflateEnd(z);
++    return Z_MEM_ERROR;
++  }
++  Tracev((stderr, "inflate: allocated\n"));
++
++  /* reset state */
++  inflateReset(z);
++  return Z_OK;
++}
++
++
++int ZEXPORT inflateInit_(z, version, stream_size)
++z_streamp z;
++const char *version;
++int stream_size;
++{
++  return inflateInit2_(z, DEF_WBITS, version, stream_size);
++}
++
++
++#define NEEDBYTE {if(z->avail_in==0)return r;r=f;}
++#define NEXTBYTE (z->avail_in--,z->total_in++,*z->next_in++)
++
++int ZEXPORT inflate(z, f)
++z_streamp z;
++int f;
++{
++  int r;
++  uInt b;
++
++  if (z == Z_NULL || z->state == Z_NULL || z->next_in == Z_NULL)
++    return Z_STREAM_ERROR;
++  f = f == Z_FINISH ? Z_BUF_ERROR : Z_OK;
++  r = Z_BUF_ERROR;
++  while (1) switch (z->state->mode)
++  {
++    case METHOD:
++      NEEDBYTE
++      if (((z->state->sub.method = NEXTBYTE) & 0xf) != Z_DEFLATED)
++      {
++        z->state->mode = BAD;
++        //z->msg = (char*)"unknown compression method";
++        z->msg = (char*)"UCM";
++        z->state->sub.marker = 5;       /* can't try inflateSync */
++        break;
++      }
++      if ((z->state->sub.method >> 4) + 8 > z->state->wbits)
++      {
++        z->state->mode = BAD;
++        //z->msg = (char*)"invalid window size";
++        z->msg = (char*)"IWS";
++        z->state->sub.marker = 5;       /* can't try inflateSync */
++        break;
++      }
++      z->state->mode = FLAG;
++    case FLAG:
++      NEEDBYTE
++      b = NEXTBYTE;
++      if (((z->state->sub.method << 8) + b) % 31)
++      {
++        z->state->mode = BAD;
++        //z->msg = (char*)"incorrect header check";
++        z->msg = (char*)"IHC";
++        z->state->sub.marker = 5;       /* can't try inflateSync */
++        break;
++      }
++      Tracev((stderr, "inflate: zlib header ok\n"));
++      if (!(b & PRESET_DICT))
++      {
++        z->state->mode = BLOCKS;
++        break;
++      }
++      z->state->mode = DICT4;
++    case DICT4:
++      NEEDBYTE
++      z->state->sub.check.need = (uLong)NEXTBYTE << 24;
++      z->state->mode = DICT3;
++    case DICT3:
++      NEEDBYTE
++      z->state->sub.check.need += (uLong)NEXTBYTE << 16;
++      z->state->mode = DICT2;
++    case DICT2:
++      NEEDBYTE
++      z->state->sub.check.need += (uLong)NEXTBYTE << 8;
++      z->state->mode = DICT1;
++    case DICT1:
++      NEEDBYTE
++      z->state->sub.check.need += (uLong)NEXTBYTE;
++      z->adler = z->state->sub.check.need;
++      z->state->mode = DICT0;
++      return Z_NEED_DICT;
++    case DICT0:
++      z->state->mode = BAD;
++      //z->msg = (char*)"need dictionary";
++      z->msg = (char*)"ND";
++      z->state->sub.marker = 0;       /* can try inflateSync */
++      return Z_STREAM_ERROR;
++    case BLOCKS:
++      r = inflate_blocks(z->state->blocks, z, r);
++      if (r == Z_DATA_ERROR)
++      {
++        z->state->mode = BAD;
++        z->state->sub.marker = 0;       /* can try inflateSync */
++        break;
++      }
++      if (r == Z_OK)
++        r = f;
++      if (r != Z_STREAM_END)
++        return r;
++      r = f;
++      inflate_blocks_reset(z->state->blocks, z, &z->state->sub.check.was);
++      if (z->state->nowrap)
++      {
++        z->state->mode = DONE;
++        break;
++      }
++      z->state->mode = CHECK4;
++    case CHECK4:
++      NEEDBYTE
++      z->state->sub.check.need = (uLong)NEXTBYTE << 24;
++      z->state->mode = CHECK3;
++    case CHECK3:
++      NEEDBYTE
++      z->state->sub.check.need += (uLong)NEXTBYTE << 16;
++      z->state->mode = CHECK2;
++    case CHECK2:
++      NEEDBYTE
++      z->state->sub.check.need += (uLong)NEXTBYTE << 8;
++      z->state->mode = CHECK1;
++    case CHECK1:
++      NEEDBYTE
++      z->state->sub.check.need += (uLong)NEXTBYTE;
++
++      if (z->state->sub.check.was != z->state->sub.check.need)
++      {
++        z->state->mode = BAD;
++        //z->msg = (char*)"incorrect data check";
++        z->msg = (char*)"IdC";
++        z->state->sub.marker = 5;       /* can't try inflateSync */
++        break;
++      }
++      Tracev((stderr, "inflate: zlib check ok\n"));
++      z->state->mode = DONE;
++    case DONE:
++      return Z_STREAM_END;
++    case BAD:
++      return Z_DATA_ERROR;
++    default:
++      return Z_STREAM_ERROR;
++  }
++#ifdef NEED_DUMMY_RETURN
++  return Z_STREAM_ERROR;  /* Some dumb compilers complain without this */
++#endif
++}
++
++
++int ZEXPORT inflateSetDictionary(z, dictionary, dictLength)
++z_streamp z;
++const Bytef *dictionary;
++uInt  dictLength;
++{
++  uInt length = dictLength;
++
++  if (z == Z_NULL || z->state == Z_NULL || z->state->mode != DICT0)
++    return Z_STREAM_ERROR;
++
++  if (adler32(1L, dictionary, dictLength) != z->adler) return Z_DATA_ERROR;
++  z->adler = 1L;
++
++  if (length >= ((uInt)1<<z->state->wbits))
++  {
++    length = (1<<z->state->wbits)-1;
++    dictionary += dictLength - length;
++  }
++  inflate_set_dictionary(z->state->blocks, dictionary, length);
++  z->state->mode = BLOCKS;
++  return Z_OK;
++}
++
++
++int ZEXPORT inflateSync(z)
++z_streamp z;
++{
++  uInt n;       /* number of bytes to look at */
++  Bytef *p;     /* pointer to bytes */
++  uInt m;       /* number of marker bytes found in a row */
++  uLong r, w;   /* temporaries to save total_in and total_out */
++
++  /* set up */
++  if (z == Z_NULL || z->state == Z_NULL)
++    return Z_STREAM_ERROR;
++  if (z->state->mode != BAD)
++  {
++    z->state->mode = BAD;
++    z->state->sub.marker = 0;
++  }
++  if ((n = z->avail_in) == 0)
++    return Z_BUF_ERROR;
++  p = z->next_in;
++  m = z->state->sub.marker;
++
++  /* search */
++  while (n && m < 4)
++  {
++    static const Byte mark[4] = {0, 0, 0xff, 0xff};
++    if (*p == mark[m])
++      m++;
++    else if (*p)
++      m = 0;
++    else
++      m = 4 - m;
++    p++, n--;
++  }
++
++  /* restore */
++  z->total_in += p - z->next_in;
++  z->next_in = p;
++  z->avail_in = n;
++  z->state->sub.marker = m;
++
++  /* return no joy or set up to restart on a new block */
++  if (m != 4)
++    return Z_DATA_ERROR;
++  r = z->total_in;  w = z->total_out;
++  inflateReset(z);
++  z->total_in = r;  z->total_out = w;
++  z->state->mode = BLOCKS;
++  return Z_OK;
++}
++
++
++/* Returns true if inflate is currently at the end of a block generated
++ * by Z_SYNC_FLUSH or Z_FULL_FLUSH. This function is used by one PPP
++ * implementation to provide an additional safety check. PPP uses Z_SYNC_FLUSH
++ * but removes the length bytes of the resulting empty stored block. When
++ * decompressing, PPP checks that at the end of input packet, inflate is
++ * waiting for these length bytes.
++ */
++int ZEXPORT inflateSyncPoint(z)
++z_streamp z;
++{
++  if (z == Z_NULL || z->state == Z_NULL || z->state->blocks == Z_NULL)
++    return Z_STREAM_ERROR;
++  return inflate_blocks_sync_point(z->state->blocks);
++}
+Index: grub-0.97/stage2/zlib/inftrees.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ grub-0.97/stage2/zlib/inftrees.c	2011-07-14 14:01:58.436000187 +0200
+@@ -0,0 +1,462 @@
++/* inftrees.c -- generate Huffman trees for efficient decoding
++ * Copyright (C) 1995-1998 Mark Adler
++ * For conditions of distribution and use, see copyright notice in zlib.h 
++ */
++
++#include "zutil.h"
++#include "inftrees.h"
++
++#if !defined(BUILDFIXED) && !defined(STDC)
++#  define BUILDFIXED   /* non ANSI compilers may not accept inffixed.h */
++#endif
++
++const char inflate_copyright[] =
++   " inflate 1.1.3 Copyright 1995-1998 Mark Adler ";
++/*
++  If you use the zlib library in a product, an acknowledgment is welcome
++  in the documentation of your product. If for some reason you cannot
++  include such an acknowledgment, I would appreciate that you keep this
++  copyright string in the executable of your product.
++ */
++struct internal_state  {int dummy;}; /* for buggy compilers */
++
++/* simplify the use of the inflate_huft type with some defines */
++#define exop word.what.Exop
++#define bits word.what.Bits
++
++
++local int huft_build OF((
++    uIntf *,            /* code lengths in bits */
++    uInt,               /* number of codes */
++    uInt,               /* number of "simple" codes */
++    const uIntf *,      /* list of base values for non-simple codes */
++    const uIntf *,      /* list of extra bits for non-simple codes */
++    inflate_huft * FAR*,/* result: starting table */
++    uIntf *,            /* maximum lookup bits (returns actual) */
++    inflate_huft *,     /* space for trees */
++    uInt *,             /* hufts used in space */
++    uIntf * ));         /* space for values */
++
++/* Tables for deflate from PKZIP's appnote.txt. */
++local const uInt cplens[31] = { /* Copy lengths for literal codes 257..285 */
++        3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31,
++        35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258, 0, 0};
++        /* see note #13 above about 258 */
++local const uInt cplext[31] = { /* Extra bits for literal codes 257..285 */
++        0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2,
++        3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0, 112, 112}; /* 112==invalid */
++local const uInt cpdist[30] = { /* Copy offsets for distance codes 0..29 */
++        1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193,
++        257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145,
++        8193, 12289, 16385, 24577};
++local const uInt cpdext[30] = { /* Extra bits for distance codes */
++        0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6,
++        7, 7, 8, 8, 9, 9, 10, 10, 11, 11,
++        12, 12, 13, 13};
++
++/*
++   Huffman code decoding is performed using a multi-level table lookup.
++   The fastest way to decode is to simply build a lookup table whose
++   size is determined by the longest code.  However, the time it takes
++   to build this table can also be a factor if the data being decoded
++   is not very long.  The most common codes are necessarily the
++   shortest codes, so those codes dominate the decoding time, and hence
++   the speed.  The idea is you can have a shorter table that decodes the
++   shorter, more probable codes, and then point to subsidiary tables for
++   the longer codes.  The time it costs to decode the longer codes is
++   then traded against the time it takes to make longer tables.
++
++   This results of this trade are in the variables lbits and dbits
++   below.  lbits is the number of bits the first level table for literal/
++   length codes can decode in one step, and dbits is the same thing for
++   the distance codes.  Subsequent tables are also less than or equal to
++   those sizes.  These values may be adjusted either when all of the
++   codes are shorter than that, in which case the longest code length in
++   bits is used, or when the shortest code is *longer* than the requested
++   table size, in which case the length of the shortest code in bits is
++   used.
++
++   There are two different values for the two tables, since they code a
++   different number of possibilities each.  The literal/length table
++   codes 286 possible values, or in a flat code, a little over eight
++   bits.  The distance table codes 30 possible values, or a little less
++   than five bits, flat.  The optimum values for speed end up being
++   about one bit more than those, so lbits is 8+1 and dbits is 5+1.
++   The optimum values may differ though from machine to machine, and
++   possibly even between compilers.  Your mileage may vary.
++ */
++
++
++/* If BMAX needs to be larger than 16, then h and x[] should be uLong. */
++#define BMAX 15         /* maximum bit length of any code */
++
++local int huft_build(b, n, s, d, e, t, m, hp, hn, v)
++uIntf *b;               /* code lengths in bits (all assumed <= BMAX) */
++uInt n;                 /* number of codes (assumed <= 288) */
++uInt s;                 /* number of simple-valued codes (0..s-1) */
++const uIntf *d;         /* list of base values for non-simple codes */
++const uIntf *e;         /* list of extra bits for non-simple codes */
++inflate_huft * FAR *t;  /* result: starting table */
++uIntf *m;               /* maximum lookup bits, returns actual */
++inflate_huft *hp;       /* space for trees */
++uInt *hn;               /* hufts used in space */
++uIntf *v;               /* working area: values in order of bit length */
++/* Given a list of code lengths and a maximum table size, make a set of
++   tables to decode that set of codes.  Return Z_OK on success, Z_BUF_ERROR
++   if the given code set is incomplete (the tables are still built in this
++   case), Z_DATA_ERROR if the input is invalid (an over-subscribed set of
++   lengths), or Z_MEM_ERROR if not enough memory. */
++{
++
++  uInt a;                       /* counter for codes of length k */
++  uInt c[BMAX+1];               /* bit length count table */
++  uInt f;                       /* i repeats in table every f entries */
++  int g;                        /* maximum code length */
++  int h;                        /* table level */
++  register uInt i;              /* counter, current code */
++  register uInt j;              /* counter */
++  register int k;               /* number of bits in current code */
++  int l;                        /* bits per table (returned in m) */
++  uInt mask;                    /* (1 << w) - 1, to avoid cc -O bug on HP */
++  register uIntf *p;            /* pointer into c[], b[], or v[] */
++  inflate_huft *q;              /* points to current table */
++  struct inflate_huft_s r;      /* table entry for structure assignment */
++  inflate_huft *u[BMAX];        /* table stack */
++  register int w;               /* bits before this table == (l * h) */
++  uInt x[BMAX+1];               /* bit offsets, then code stack */
++  uIntf *xp;                    /* pointer into x */
++  int y;                        /* number of dummy codes added */
++  uInt z;                       /* number of entries in current table */
++
++
++  /* Generate counts for each bit length */
++  p = c;
++#define C0 *p++ = 0;
++#define C2 C0 C0 C0 C0
++#define C4 C2 C2 C2 C2
++  C4                            /* clear c[]--assume BMAX+1 is 16 */
++  p = b;  i = n;
++  do {
++    c[*p++]++;                  /* assume all entries <= BMAX */
++  } while (--i);
++  if (c[0] == n)                /* null input--all zero length codes */
++  {
++    *t = (inflate_huft *)Z_NULL;
++    *m = 0;
++    return Z_OK;
++  }
++
++
++  /* Find minimum and maximum length, bound *m by those */
++  l = *m;
++  for (j = 1; j <= BMAX; j++)
++    if (c[j])
++      break;
++  k = j;                        /* minimum code length */
++  if ((uInt)l < j)
++    l = j;
++  for (i = BMAX; i; i--)
++    if (c[i])
++      break;
++  g = i;                        /* maximum code length */
++  if ((uInt)l > i)
++    l = i;
++  *m = l;
++
++
++  /* Adjust last length count to fill out codes, if needed */
++  for (y = 1 << j; j < i; j++, y <<= 1)
++    if ((y -= c[j]) < 0)
++      return Z_DATA_ERROR;
++  if ((y -= c[i]) < 0)
++    return Z_DATA_ERROR;
++  c[i] += y;
++
++
++  /* Generate starting offsets into the value table for each length */
++  x[1] = j = 0;
++  p = c + 1;  xp = x + 2;
++  while (--i) {                 /* note that i == g from above */
++    *xp++ = (j += *p++);
++  }
++
++
++  /* Make a table of values in order of bit lengths */
++  p = b;  i = 0;
++  do {
++    if ((j = *p++) != 0)
++      v[x[j]++] = i;
++  } while (++i < n);
++  n = x[g];                     /* set n to length of v */
++
++
++  /* Generate the Huffman codes and for each, make the table entries */
++  x[0] = i = 0;                 /* first Huffman code is zero */
++  p = v;                        /* grab values in bit order */
++  h = -1;                       /* no tables yet--level -1 */
++  w = -l;                       /* bits decoded == (l * h) */
++  u[0] = (inflate_huft *)Z_NULL;        /* just to keep compilers happy */
++  q = (inflate_huft *)Z_NULL;   /* ditto */
++  z = 0;                        /* ditto */
++
++  /* go through the bit lengths (k already is bits in shortest code) */
++  for (; k <= g; k++)
++  {
++    a = c[k];
++    while (a--)
++    {
++      /* here i is the Huffman code of length k bits for value *p */
++      /* make tables up to required level */
++      while (k > w + l)
++      {
++        h++;
++        w += l;                 /* previous table always l bits */
++
++        /* compute minimum size table less than or equal to l bits */
++        z = g - w;
++        z = z > (uInt)l ? l : z;        /* table size upper limit */
++        if ((f = 1 << (j = k - w)) > a + 1)     /* try a k-w bit table */
++        {                       /* too few codes for k-w bit table */
++          f -= a + 1;           /* deduct codes from patterns left */
++          xp = c + k;
++          if (j < z)
++            while (++j < z)     /* try smaller tables up to z bits */
++            {
++              if ((f <<= 1) <= *++xp)
++                break;          /* enough codes to use up j bits */
++              f -= *xp;         /* else deduct codes from patterns */
++            }
++        }
++        z = 1 << j;             /* table entries for j-bit table */
++
++        /* allocate new table */
++        if (*hn + z > MANY)     /* (note: doesn't matter for fixed) */
++          return Z_MEM_ERROR;   /* not enough memory */
++        u[h] = q = hp + *hn;
++        *hn += z;
++
++        /* connect to last table, if there is one */
++        if (h)
++        {
++          x[h] = i;             /* save pattern for backing up */
++          r.bits = (Byte)l;     /* bits to dump before this table */
++          r.exop = (Byte)j;     /* bits in this table */
++          j = i >> (w - l);
++          r.base = (uInt)(q - u[h-1] - j);   /* offset to this table */
++          u[h-1][j] = r;        /* connect to last table */
++        }
++        else
++          *t = q;               /* first table is returned result */
++      }
++
++      /* set up table entry in r */
++      r.bits = (Byte)(k - w);
++      if (p >= v + n)
++        r.exop = 128 + 64;      /* out of values--invalid code */
++      else if (*p < s)
++      {
++        r.exop = (Byte)(*p < 256 ? 0 : 32 + 64);     /* 256 is end-of-block */
++        r.base = *p++;          /* simple code is just the value */
++      }
++      else
++      {
++        r.exop = (Byte)(e[*p - s] + 16 + 64);/* non-simple--look up in lists */
++        r.base = d[*p++ - s];
++      }
++
++      /* fill code-like entries with r */
++      f = 1 << (k - w);
++      for (j = i >> w; j < z; j += f)
++        q[j] = r;
++
++      /* backwards increment the k-bit code i */
++      for (j = 1 << (k - 1); i & j; j >>= 1)
++        i ^= j;
++      i ^= j;
++
++      /* backup over finished tables */
++      mask = (1 << w) - 1;      /* needed on HP, cc -O bug */
++      while ((i & mask) != x[h])
++      {
++        h--;                    /* don't need to update q */
++        w -= l;
++        mask = (1 << w) - 1;
++      }
++    }
++  }
++
++
++  /* Return Z_BUF_ERROR if we were given an incomplete table */
++  return y != 0 && g != 1 ? Z_BUF_ERROR : Z_OK;
++}
++
++
++int inflate_trees_bits(c, bb, tb, hp, z)
++uIntf *c;               /* 19 code lengths */
++uIntf *bb;              /* bits tree desired/actual depth */
++inflate_huft * FAR *tb; /* bits tree result */
++inflate_huft *hp;       /* space for trees */
++z_streamp z;            /* for messages */
++{
++  int r;
++  uInt hn = 0;          /* hufts used in space */
++  uIntf *v;             /* work area for huft_build */
++
++  if ((v = (uIntf*)ZALLOC(z, 19, sizeof(uInt))) == Z_NULL)
++    return Z_MEM_ERROR;
++  r = huft_build(c, 19, 19, (uIntf*)Z_NULL, (uIntf*)Z_NULL,
++                 tb, bb, hp, &hn, v);
++  if (r == Z_DATA_ERROR)
++    //z->msg = (char*)"oversubscribed dynamic bit lengths tree";
++    z->msg = (char*)"ODBLT";
++  else if (r == Z_BUF_ERROR || *bb == 0)
++  {
++    //z->msg = (char*)"incomplete dynamic bit lengths tree";
++    z->msg = (char*)"IDBLT";
++    r = Z_DATA_ERROR;
++  }
++  ZFREE(z, v);
++  return r;
++}
++
++
++int inflate_trees_dynamic(nl, nd, c, bl, bd, tl, td, hp, z)
++uInt nl;                /* number of literal/length codes */
++uInt nd;                /* number of distance codes */
++uIntf *c;               /* that many (total) code lengths */
++uIntf *bl;              /* literal desired/actual bit depth */
++uIntf *bd;              /* distance desired/actual bit depth */
++inflate_huft * FAR *tl; /* literal/length tree result */
++inflate_huft * FAR *td; /* distance tree result */
++inflate_huft *hp;       /* space for trees */
++z_streamp z;            /* for messages */
++{
++  int r;
++  uInt hn = 0;          /* hufts used in space */
++  uIntf *v;             /* work area for huft_build */
++
++  /* allocate work area */
++  if ((v = (uIntf*)ZALLOC(z, 288, sizeof(uInt))) == Z_NULL)
++    return Z_MEM_ERROR;
++
++  /* build literal/length tree */
++  r = huft_build(c, nl, 257, cplens, cplext, tl, bl, hp, &hn, v);
++  if (r != Z_OK || *bl == 0)
++  {
++    if (r == Z_DATA_ERROR)
++      //z->msg = (char*)"oversubscribed literal/length tree";
++      z->msg = (char*)"OL/LT";
++    else if (r != Z_MEM_ERROR)
++    {
++      //z->msg = (char*)"incomplete literal/length tree";
++      z->msg = (char*)"IL/LT";
++      r = Z_DATA_ERROR;
++    }
++    ZFREE(z, v);
++    return r;
++  }
++
++  /* build distance tree */
++  r = huft_build(c + nl, nd, 0, cpdist, cpdext, td, bd, hp, &hn, v);
++  if (r != Z_OK || (*bd == 0 && nl > 257))
++  {
++    if (r == Z_DATA_ERROR)
++      //z->msg = (char*)"oversubscribed distance tree";
++      z->msg = (char*)"ODT";
++    else if (r == Z_BUF_ERROR) {
++#ifdef PKZIP_BUG_WORKAROUND
++      r = Z_OK;
++    }
++#else
++      //z->msg = (char*)"incomplete distance tree";
++      z->msg = (char*)"IDT";
++      r = Z_DATA_ERROR;
++    }
++    else if (r != Z_MEM_ERROR)
++    {
++      //z->msg = (char*)"empty distance tree with lengths";
++      z->msg = (char*)"EDTWL";
++      r = Z_DATA_ERROR;
++    }
++    ZFREE(z, v);
++    return r;
++#endif
++  }
++
++  /* done */
++  ZFREE(z, v);
++  return Z_OK;
++}
++
++
++/* build fixed tables only once--keep them here */
++#ifdef BUILDFIXED
++local int fixed_built = 0;
++#define FIXEDH 544      /* number of hufts used by fixed tables */
++local inflate_huft fixed_mem[FIXEDH];
++local uInt fixed_bl;
++local uInt fixed_bd;
++local inflate_huft *fixed_tl;
++local inflate_huft *fixed_td;
++#else
++#include "inffixed.h"
++#endif
++
++
++int inflate_trees_fixed(bl, bd, tl, td, z)
++uIntf *bl;               /* literal desired/actual bit depth */
++uIntf *bd;               /* distance desired/actual bit depth */
++inflate_huft * FAR *tl;  /* literal/length tree result */
++inflate_huft * FAR *td;  /* distance tree result */
++z_streamp z;             /* for memory allocation */
++{
++#ifdef BUILDFIXED
++  /* build fixed tables if not already */
++  if (!fixed_built)
++  {
++    int k;              /* temporary variable */
++    uInt f = 0;         /* number of hufts used in fixed_mem */
++    uIntf *c;           /* length list for huft_build */
++    uIntf *v;           /* work area for huft_build */
++
++    /* allocate memory */
++    if ((c = (uIntf*)ZALLOC(z, 288, sizeof(uInt))) == Z_NULL)
++      return Z_MEM_ERROR;
++    if ((v = (uIntf*)ZALLOC(z, 288, sizeof(uInt))) == Z_NULL)
++    {
++      ZFREE(z, c);
++      return Z_MEM_ERROR;
++    }
++
++    /* literal table */
++    for (k = 0; k < 144; k++)
++      c[k] = 8;
++    for (; k < 256; k++)
++      c[k] = 9;
++    for (; k < 280; k++)
++      c[k] = 7;
++    for (; k < 288; k++)
++      c[k] = 8;
++    fixed_bl = 9;
++    huft_build(c, 288, 257, cplens, cplext, &fixed_tl, &fixed_bl,
++               fixed_mem, &f, v);
++
++    /* distance table */
++    for (k = 0; k < 30; k++)
++      c[k] = 5;
++    fixed_bd = 5;
++    huft_build(c, 30, 0, cpdist, cpdext, &fixed_td, &fixed_bd,
++               fixed_mem, &f, v);
++
++    /* done */
++    ZFREE(z, v);
++    ZFREE(z, c);
++    fixed_built = 1;
++  }
++#endif
++  *bl = fixed_bl;
++  *bd = fixed_bd;
++  *tl = fixed_tl;
++  *td = fixed_td;
++  return Z_OK;
++}
+Index: grub-0.97/stage2/zlib/inftrees.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ grub-0.97/stage2/zlib/inftrees.h	2011-07-14 14:01:58.436000187 +0200
+@@ -0,0 +1,58 @@
++/* inftrees.h -- header to use inftrees.c
++ * Copyright (C) 1995-1998 Mark Adler
++ * For conditions of distribution and use, see copyright notice in zlib.h 
++ */
++
++/* WARNING: this file should *not* be used by applications. It is
++   part of the implementation of the compression library and is
++   subject to change. Applications should only use zlib.h.
++ */
++
++/* Huffman code lookup table entry--this entry is four bytes for machines
++   that have 16-bit pointers (e.g. PC's in the small or medium model). */
++
++typedef struct inflate_huft_s FAR inflate_huft;
++
++struct inflate_huft_s {
++  union {
++    struct {
++      Byte Exop;        /* number of extra bits or operation */
++      Byte Bits;        /* number of bits in this code or subcode */
++    } what;
++    uInt pad;           /* pad structure to a power of 2 (4 bytes for */
++  } word;               /*  16-bit, 8 bytes for 32-bit int's) */
++  uInt base;            /* literal, length base, distance base,
++                           or table offset */
++};
++
++/* Maximum size of dynamic tree.  The maximum found in a long but non-
++   exhaustive search was 1004 huft structures (850 for length/literals
++   and 154 for distances, the latter actually the result of an
++   exhaustive search).  The actual maximum is not known, but the
++   value below is more than safe. */
++#define MANY 1440
++
++extern int inflate_trees_bits OF((
++    uIntf *,                    /* 19 code lengths */
++    uIntf *,                    /* bits tree desired/actual depth */
++    inflate_huft * FAR *,       /* bits tree result */
++    inflate_huft *,             /* space for trees */
++    z_streamp));                /* for messages */
++
++extern int inflate_trees_dynamic OF((
++    uInt,                       /* number of literal/length codes */
++    uInt,                       /* number of distance codes */
++    uIntf *,                    /* that many (total) code lengths */
++    uIntf *,                    /* literal desired/actual bit depth */
++    uIntf *,                    /* distance desired/actual bit depth */
++    inflate_huft * FAR *,       /* literal/length tree result */
++    inflate_huft * FAR *,       /* distance tree result */
++    inflate_huft *,             /* space for trees */
++    z_streamp));                /* for messages */
++
++extern int inflate_trees_fixed OF((
++    uIntf *,                    /* literal desired/actual bit depth */
++    uIntf *,                    /* distance desired/actual bit depth */
++    inflate_huft * FAR *,       /* literal/length tree result */
++    inflate_huft * FAR *,       /* distance tree result */
++    z_streamp));                /* for memory allocation */
+Index: grub-0.97/stage2/zlib/infutil.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ grub-0.97/stage2/zlib/infutil.c	2011-07-14 14:01:58.436000187 +0200
+@@ -0,0 +1,87 @@
++/* inflate_util.c -- data and routines common to blocks and codes
++ * Copyright (C) 1995-1998 Mark Adler
++ * For conditions of distribution and use, see copyright notice in zlib.h 
++ */
++
++#include "zutil.h"
++#include "infblock.h"
++#include "inftrees.h"
++#include "infcodes.h"
++#include "infutil.h"
++
++struct inflate_codes_state {int dummy;}; /* for buggy compilers */
++
++/* And'ing with mask[n] masks the lower n bits */
++uInt inflate_mask[17] = {
++    0x0000,
++    0x0001, 0x0003, 0x0007, 0x000f, 0x001f, 0x003f, 0x007f, 0x00ff,
++    0x01ff, 0x03ff, 0x07ff, 0x0fff, 0x1fff, 0x3fff, 0x7fff, 0xffff
++};
++
++
++/* copy as much as possible from the sliding window to the output area */
++int inflate_flush(s, z, r)
++inflate_blocks_statef *s;
++z_streamp z;
++int r;
++{
++  uInt n;
++  Bytef *p;
++  Bytef *q;
++
++  /* local copies of source and destination pointers */
++  p = z->next_out;
++  q = s->read;
++
++  /* compute number of bytes to copy as far as end of window */
++  n = (uInt)((q <= s->write ? s->write : s->end) - q);
++  if (n > z->avail_out) n = z->avail_out;
++  if (n && r == Z_BUF_ERROR) r = Z_OK;
++
++  /* update counters */
++  z->avail_out -= n;
++  z->total_out += n;
++
++  /* update check information */
++  if (s->checkfn != Z_NULL)
++    z->adler = s->check = (*s->checkfn)(s->check, q, n);
++
++  /* copy as far as end of window */
++  zmemcpy(p, q, n);
++  p += n;
++  q += n;
++
++  /* see if more to copy at beginning of window */
++  if (q == s->end)
++  {
++    /* wrap pointers */
++    q = s->window;
++    if (s->write == s->end)
++      s->write = s->window;
++
++    /* compute bytes to copy */
++    n = (uInt)(s->write - q);
++    if (n > z->avail_out) n = z->avail_out;
++    if (n && r == Z_BUF_ERROR) r = Z_OK;
++
++    /* update counters */
++    z->avail_out -= n;
++    z->total_out += n;
++
++    /* update check information */
++    if (s->checkfn != Z_NULL)
++      z->adler = s->check = (*s->checkfn)(s->check, q, n);
++
++    /* copy */
++    zmemcpy(p, q, n);
++    p += n;
++    q += n;
++  }
++
++  /* update pointers */
++  z->next_out = p;
++  s->read = q;
++
++  /* done */
++  return r;
++}
+Index: grub-0.97/stage2/zlib/infutil.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ grub-0.97/stage2/zlib/infutil.h	2011-07-14 14:01:58.436000187 +0200
+@@ -0,0 +1,98 @@
++/* infutil.h -- types and macros common to blocks and codes
++ * Copyright (C) 1995-1998 Mark Adler
++ * For conditions of distribution and use, see copyright notice in zlib.h 
++ */
++
++/* WARNING: this file should *not* be used by applications. It is
++   part of the implementation of the compression library and is
++   subject to change. Applications should only use zlib.h.
++ */
++
++#ifndef _INFUTIL_H
++#define _INFUTIL_H
++
++typedef enum {
++      TYPE,     /* get type bits (3, including end bit) */
++      LENS,     /* get lengths for stored */
++      STORED,   /* processing stored block */
++      TABLE,    /* get table lengths */
++      BTREE,    /* get bit lengths tree for a dynamic block */
++      DTREE,    /* get length, distance trees for a dynamic block */
++      CODES,    /* processing fixed or dynamic block */
++      DRY,      /* output remaining window bytes */
++      DONE,     /* finished last block, done */
++      BAD}      /* got a data error--stuck here */
++inflate_block_mode;
++
++/* inflate blocks semi-private state */
++struct inflate_blocks_state {
++
++  /* mode */
++  inflate_block_mode  mode;     /* current inflate_block mode */
++
++  /* mode dependent information */
++  union {
++    uInt left;          /* if STORED, bytes left to copy */
++    struct {
++      uInt table;               /* table lengths (14 bits) */
++      uInt index;               /* index into blens (or border) */
++      uIntf *blens;             /* bit lengths of codes */
++      uInt bb;                  /* bit length tree depth */
++      inflate_huft *tb;         /* bit length decoding tree */
++    } trees;            /* if DTREE, decoding info for trees */
++    struct {
++      inflate_codes_statef 
++         *codes;
++    } decode;           /* if CODES, current state */
++  } sub;                /* submode */
++  uInt last;            /* true if this block is the last block */
++
++  /* mode independent information */
++  uInt bitk;            /* bits in bit buffer */
++  uLong bitb;           /* bit buffer */
++  inflate_huft *hufts;  /* single malloc for tree space */
++  Bytef *window;        /* sliding window */
++  Bytef *end;           /* one byte after sliding window */
++  Bytef *read;          /* window read pointer */
++  Bytef *write;         /* window write pointer */
++  check_func checkfn;   /* check function */
++  uLong check;          /* check on output */
++
++};
++
++
++/* defines for inflate input/output */
++/*   update pointers and return */
++#define UPDBITS {s->bitb=b;s->bitk=k;}
++#define UPDIN {z->avail_in=n;z->total_in+=p-z->next_in;z->next_in=p;}
++#define UPDOUT {s->write=q;}
++#define UPDATE {UPDBITS UPDIN UPDOUT}
++#define LEAVE {UPDATE return inflate_flush(s,z,r);}
++/*   get bytes and bits */
++#define LOADIN {p=z->next_in;n=z->avail_in;b=s->bitb;k=s->bitk;}
++#define NEEDBYTE {if(n)r=Z_OK;else LEAVE}
++#define NEXTBYTE (n--,*p++)
++#define NEEDBITS(j) {while(k<(j)){NEEDBYTE;b|=((uLong)NEXTBYTE)<<k;k+=8;}}
++#define DUMPBITS(j) {b>>=(j);k-=(j);}
++/*   output bytes */
++#define WAVAIL (uInt)(q<s->read?s->read-q-1:s->end-q)
++#define LOADOUT {q=s->write;m=(uInt)WAVAIL;}
++#define WRAP {if(q==s->end&&s->read!=s->window){q=s->window;m=(uInt)WAVAIL;}}
++#define FLUSH {UPDOUT r=inflate_flush(s,z,r); LOADOUT}
++#define NEEDOUT {if(m==0){WRAP if(m==0){FLUSH WRAP if(m==0) LEAVE}}r=Z_OK;}
++#define OUTBYTE(a) {*q++=(Byte)(a);m--;}
++/*   load local pointers */
++#define LOAD {LOADIN LOADOUT}
++
++/* masks for lower bits (size given to avoid silly warnings with Visual C++) */
++extern uInt inflate_mask[17];
++
++/* copy as much as possible from the sliding window to the output area */
++extern int inflate_flush OF((
++    inflate_blocks_statef *,
++    z_streamp ,
++    int));
++
++struct internal_state      {int dummy;}; /* for buggy compilers */
++
++#endif
+Index: grub-0.97/stage2/zlib/zconf.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ grub-0.97/stage2/zlib/zconf.h	2011-07-14 14:01:58.436000187 +0200
+@@ -0,0 +1,283 @@
++/* zconf.h -- configuration of the zlib compression library
++ * Copyright (C) 1995-1998 Jean-loup Gailly.
++ * For conditions of distribution and use, see copyright notice in zlib.h 
++ */
++
++/* @(#) $Id$ */
++
++#ifndef _ZCONF_H
++#define _ZCONF_H
++
++#define MY_ZCALLOC 1
++
++/*
++ * If you *really* need a unique prefix for all types and library functions,
++ * compile with -DZ_PREFIX. The "standard" zlib should be compiled without it.
++ */
++#ifdef Z_PREFIX
++#  define deflateInit_	z_deflateInit_
++#  define deflate	z_deflate
++#  define deflateEnd	z_deflateEnd
++#  define inflateInit_ 	z_inflateInit_
++#  define inflate	z_inflate
++#  define inflateEnd	z_inflateEnd
++#  define deflateInit2_	z_deflateInit2_
++#  define deflateSetDictionary z_deflateSetDictionary
++#  define deflateCopy	z_deflateCopy
++#  define deflateReset	z_deflateReset
++#  define deflateParams	z_deflateParams
++#  define inflateInit2_	z_inflateInit2_
++#  define inflateSetDictionary z_inflateSetDictionary
++#  define inflateSync	z_inflateSync
++#  define inflateSyncPoint z_inflateSyncPoint
++#  define inflateReset	z_inflateReset
++#  define compress	z_compress
++#  define compress2	z_compress2
++#  define uncompress	z_uncompress
++#  define adler32	z_adler32
++#  define crc32		z_crc32
++#  define get_crc_table z_get_crc_table
++
++#  define Byte		z_Byte
++#  define uInt		z_uInt
++#  define uLong		z_uLong
++#  define Bytef	        z_Bytef
++#  define charf		z_charf
++#  define intf		z_intf
++#  define uIntf		z_uIntf
++#  define uLongf	z_uLongf
++#  define voidpf	z_voidpf
++#  define voidp		z_voidp
++#endif
++
++#if (defined(_WIN32) || defined(__WIN32__)) && !defined(WIN32)
++#  define WIN32
++#endif
++#if defined(__GNUC__) || defined(WIN32) || defined(__386__) || defined(i386)
++#  ifndef __32BIT__
++#    define __32BIT__
++#  endif
++#endif
++#if defined(__MSDOS__) && !defined(MSDOS)
++#  define MSDOS
++#endif
++
++/*
++ * Compile with -DMAXSEG_64K if the alloc function cannot allocate more
++ * than 64k bytes at a time (needed on systems with 16-bit int).
++ */
++#if defined(MSDOS) && !defined(__32BIT__)
++#  define MAXSEG_64K
++#endif
++#ifdef MSDOS
++#  define UNALIGNED_OK
++#endif
++
++#if (defined(MSDOS) || defined(_WINDOWS) || defined(WIN32))  && !defined(STDC)
++#  define STDC
++#endif
++#if defined(__STDC__) || defined(__cplusplus) || defined(__OS2__)
++#  ifndef STDC
++#    define STDC
++#  endif
++#endif
++
++#ifndef STDC
++#  ifndef const /* cannot use !defined(STDC) && !defined(const) on Mac */
++#    define const
++#  endif
++#endif
++
++/* Some Mac compilers merge all .h files incorrectly: */
++#if defined(__MWERKS__) || defined(applec) ||defined(THINK_C) ||defined(__SC__)
++#  define NO_DUMMY_DECL
++#endif
++
++/* Old Borland C incorrectly complains about missing returns: */
++#if defined(__BORLANDC__) && (__BORLANDC__ < 0x500)
++#  define NEED_DUMMY_RETURN
++#endif
++
++
++/* Maximum value for memLevel in deflateInit2 */
++#ifndef MAX_MEM_LEVEL
++#  ifdef MAXSEG_64K
++#    define MAX_MEM_LEVEL 7
++#  else
++#    define MAX_MEM_LEVEL 7
++#  endif
++#endif
++
++/* Maximum value for windowBits in deflateInit2 and inflateInit2.
++ * WARNING: reducing MAX_WBITS makes minigzip unable to extract .gz files
++ * created by gzip. (Files created by minigzip can still be extracted by
++ * gzip.)
++ */
++#ifndef MAX_WBITS
++#  define MAX_WBITS   14 /* 32K LZ77 window */
++#endif
++
++/* The memory requirements for deflate are (in bytes):
++            (1 << (windowBits+2)) +  (1 << (memLevel+9))
++ that is: 128K for windowBits=15  +  128K for memLevel = 8  (default values)
++ plus a few kilobytes for small objects. For example, if you want to reduce
++ the default memory requirements from 256K to 128K, compile with
++     make CFLAGS="-O -DMAX_WBITS=14 -DMAX_MEM_LEVEL=7"
++ Of course this will generally degrade compression (there's no free lunch).
++
++   The memory requirements for inflate are (in bytes) 1 << windowBits
++ that is, 32K for windowBits=15 (default value) plus a few kilobytes
++ for small objects.
++*/
++
++                        /* Type declarations */
++
++#ifndef OF /* function prototypes */
++#  ifdef STDC
++#    define OF(args)  args
++#  else
++#    define OF(args)  ()
++#  endif
++#endif
++
++/* The following definitions for FAR are needed only for MSDOS mixed
++ * model programming (small or medium model with some far allocations).
++ * This was tested only with MSC; for other MSDOS compilers you may have
++ * to define NO_MEMCPY in zutil.h.  If you don't need the mixed model,
++ * just define FAR to be empty.
++ */
++#if (defined(M_I86SM) || defined(M_I86MM)) && !defined(__32BIT__)
++   /* MSC small or medium model */
++#  define SMALL_MEDIUM
++#  ifdef _MSC_VER
++#    define FAR _far
++#  else
++#    define FAR far
++#  endif
++#endif
++#if defined(__BORLANDC__) && (defined(__SMALL__) || defined(__MEDIUM__))
++#  ifndef __32BIT__
++#    define SMALL_MEDIUM
++#    define FAR _far
++#  endif
++#endif
++
++/* Compile with -DZLIB_DLL for Windows DLL support */
++#if defined(ZLIB_DLL)
++#  if defined(_WINDOWS) || defined(WINDOWS)
++#    ifdef FAR
++#      undef FAR
++#    endif
++#    include <windows.h>
++#    define ZEXPORT  WINAPI
++#    ifdef WIN32
++#      define ZEXPORTVA  WINAPIV
++#    else
++#      define ZEXPORTVA  FAR _cdecl _export
++#    endif
++#  endif
++#  if defined (__BORLANDC__)
++#    if (__BORLANDC__ >= 0x0500) && defined (WIN32)
++#      include <windows.h>
++#      define ZEXPORT __declspec(dllexport) WINAPI
++#      define ZEXPORTRVA __declspec(dllexport) WINAPIV
++#    else
++#      if defined (_Windows) && defined (__DLL__)
++#        define ZEXPORT _export
++#        define ZEXPORTVA _export
++#      endif
++#    endif
++#  endif
++#endif
++
++#if defined (__BEOS__)
++#  if defined (ZLIB_DLL)
++#    define ZEXTERN extern __declspec(dllexport)
++#  else
++#    define ZEXTERN extern __declspec(dllimport)
++#  endif
++#endif
++
++#ifndef ZEXPORT
++#  define ZEXPORT
++#endif
++#ifndef ZEXPORTVA
++#  define ZEXPORTVA
++#endif
++#ifndef ZEXTERN
++#  define ZEXTERN extern
++#endif
++
++#ifndef FAR
++#   define FAR
++#endif
++
++#if !defined(MACOS) && !defined(TARGET_OS_MAC)
++typedef unsigned char  Byte;  /* 8 bits */
++#endif
++typedef unsigned int   uInt;  /* 16 bits or more */
++typedef unsigned long  uLong; /* 32 bits or more */
++
++#ifdef SMALL_MEDIUM
++   /* Borland C/C++ and some old MSC versions ignore FAR inside typedef */
++#  define Bytef Byte FAR
++#else
++   typedef Byte  FAR Bytef;
++#endif
++typedef char  FAR charf;
++typedef int   FAR intf;
++typedef uInt  FAR uIntf;
++typedef uLong FAR uLongf;
++
++#ifdef STDC
++   typedef void FAR *voidpf;
++   typedef void     *voidp;
++#else
++   typedef Byte FAR *voidpf;
++   typedef Byte     *voidp;
++#endif
++
++#undef HAVE_UNISTD_H
++
++#ifdef HAVE_UNISTD_H
++#  include <sys/types.h> /* for off_t */
++#  include <unistd.h>    /* for SEEK_* and off_t */
++#  define z_off_t  off_t
++#endif
++#ifndef SEEK_SET
++#  define SEEK_SET        0       /* Seek from beginning of file.  */
++#  define SEEK_CUR        1       /* Seek from current position.  */
++#  define SEEK_END        2       /* Set file pointer to EOF plus "offset" */
++#endif
++#ifndef z_off_t
++#  define  z_off_t long
++#endif
++
++/* MVS linker does not support external names larger than 8 bytes */
++#if defined(__MVS__)
++#   pragma map(deflateInit_,"DEIN")
++#   pragma map(deflateInit2_,"DEIN2")
++#   pragma map(deflateEnd,"DEEND")
++#   pragma map(inflateInit_,"ININ")
++#   pragma map(inflateInit2_,"ININ2")
++#   pragma map(inflateEnd,"INEND")
++#   pragma map(inflateSync,"INSY")
++#   pragma map(inflateSetDictionary,"INSEDI")
++#   pragma map(inflate_blocks,"INBL")
++#   pragma map(inflate_blocks_new,"INBLNE")
++#   pragma map(inflate_blocks_free,"INBLFR")
++#   pragma map(inflate_blocks_reset,"INBLRE")
++#   pragma map(inflate_codes_free,"INCOFR")
++#   pragma map(inflate_codes,"INCO")
++#   pragma map(inflate_fast,"INFA")
++#   pragma map(inflate_flush,"INFLU")
++#   pragma map(inflate_mask,"INMA")
++#   pragma map(inflate_set_dictionary,"INSEDI2")
++#   pragma map(inflate_copyright,"INCOPY")
++#   pragma map(inflate_trees_bits,"INTRBI")
++#   pragma map(inflate_trees_dynamic,"INTRDY")
++#   pragma map(inflate_trees_fixed,"INTRFI")
++#   pragma map(inflate_trees_free,"INTRFR")
++#endif
++
++#endif /* _ZCONF_H */
+Index: grub-0.97/stage2/zlib/zfunc.c
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ grub-0.97/stage2/zlib/zfunc.c	2011-07-14 14:01:58.436000187 +0200
+@@ -0,0 +1,47 @@
++#include "shared.h"
++#include "zfunc.h"
++
++unsigned char used[MAXALLOCBUFF];
++unsigned char *zone[MAXALLOCBUFF];
++
++#define ALLOCZONE       (char *)0x100000
++
++void
++zcinit (void)
++{
++  int i;
++  for (i = 0; i < MAXALLOCBUFF; i++)
++    {
++      used[i] = 0;
++      zone[i] = (unsigned char *) (ALLOCZONE + i * 32768);
++    }
++}
++
++unsigned char *
++zcalloc (long toto, int nb, int size)
++{
++  int i;
++//  grub_printf ("Calloc (%d) ->", nb * size);
++  for (i = 0; i < 10; i++)
++    if (!used[i])
++      {
++	used[i] = 1;
++//	grub_printf ("%d %x\n", i, zone[i]);
++	return zone[i];
++      }
++  grub_printf ("Calloc error\n");
++  return NULL;
++}
++
++void
++zcfree (long toto, unsigned char *ptr)
++{
++  int i;
++  for (i = 0; i < 10; i++)
++    if (ptr == zone[i])
++      {
++	used[i] = 0;
++	return;
++      }
++  grub_printf ("Cfree error\n");
++}
+Index: grub-0.97/stage2/zlib/zfunc.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ grub-0.97/stage2/zlib/zfunc.h	2011-07-14 14:01:58.436000187 +0200
+@@ -0,0 +1,6 @@
++#define MAXALLOCBUFF 10
++
++void zcinit(void);
++unsigned char *zcalloc(long toto,int nb,int size);
++void zcfree(long toto,unsigned char *ptr);
++
+Index: grub-0.97/stage2/zlib/zlib.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ grub-0.97/stage2/zlib/zlib.h	2011-07-14 14:01:58.436000187 +0200
+@@ -0,0 +1,893 @@
++/* zlib.h -- interface of the 'zlib' general purpose compression library
++  version 1.1.3, July 9th, 1998
++
++  Copyright (C) 1995-1998 Jean-loup Gailly and Mark Adler
++
++  This software is provided 'as-is', without any express or implied
++  warranty.  In no event will the authors be held liable for any damages
++  arising from the use of this software.
++
++  Permission is granted to anyone to use this software for any purpose,
++  including commercial applications, and to alter it and redistribute it
++  freely, subject to the following restrictions:
++
++  1. The origin of this software must not be misrepresented; you must not
++     claim that you wrote the original software. If you use this software
++     in a product, an acknowledgment in the product documentation would be
++     appreciated but is not required.
++  2. Altered source versions must be plainly marked as such, and must not be
++     misrepresented as being the original software.
++  3. This notice may not be removed or altered from any source distribution.
++
++  Jean-loup Gailly        Mark Adler
++  jloup@gzip.org          madler@alumni.caltech.edu
++
++
++  The data format used by the zlib library is described by RFCs (Request for
++  Comments) 1950 to 1952 in the files ftp://ds.internic.net/rfc/rfc1950.txt
++  (zlib format), rfc1951.txt (deflate format) and rfc1952.txt (gzip format).
++*/
++
++#ifndef _ZLIB_H
++#define _ZLIB_H
++
++#include "zconf.h"
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#define ZLIB_VERSION "1.1.3"
++
++/* 
++     The 'zlib' compression library provides in-memory compression and
++  decompression functions, including integrity checks of the uncompressed
++  data.  This version of the library supports only one compression method
++  (deflation) but other algorithms will be added later and will have the same
++  stream interface.
++
++     Compression can be done in a single step if the buffers are large
++  enough (for example if an input file is mmap'ed), or can be done by
++  repeated calls of the compression function.  In the latter case, the
++  application must provide more input and/or consume the output
++  (providing more output space) before each call.
++
++     The library also supports reading and writing files in gzip (.gz) format
++  with an interface similar to that of stdio.
++
++     The library does not install any signal handler. The decoder checks
++  the consistency of the compressed data, so the library should never
++  crash even in case of corrupted input.
++*/
++
++typedef voidpf (*alloc_func) OF((voidpf opaque, uInt items, uInt size));
++typedef void   (*free_func)  OF((voidpf opaque, voidpf address));
++
++struct internal_state;
++
++typedef struct z_stream_s {
++    Bytef    *next_in;  /* next input byte */
++    uInt     avail_in;  /* number of bytes available at next_in */
++    uLong    total_in;  /* total nb of input bytes read so far */
++
++    Bytef    *next_out; /* next output byte should be put there */
++    uInt     avail_out; /* remaining free space at next_out */
++    uLong    total_out; /* total nb of bytes output so far */
++
++    char     *msg;      /* last error message, NULL if no error */
++    struct internal_state FAR *state; /* not visible by applications */
++
++    alloc_func zalloc;  /* used to allocate the internal state */
++    free_func  zfree;   /* used to free the internal state */
++    voidpf     opaque;  /* private data object passed to zalloc and zfree */
++
++    int     data_type;  /* best guess about the data type: ascii or binary */
++    uLong   adler;      /* adler32 value of the uncompressed data */
++    uLong   reserved;   /* reserved for future use */
++} z_stream;
++
++typedef z_stream FAR *z_streamp;
++
++/*
++   The application must update next_in and avail_in when avail_in has
++   dropped to zero. It must update next_out and avail_out when avail_out
++   has dropped to zero. The application must initialize zalloc, zfree and
++   opaque before calling the init function. All other fields are set by the
++   compression library and must not be updated by the application.
++
++   The opaque value provided by the application will be passed as the first
++   parameter for calls of zalloc and zfree. This can be useful for custom
++   memory management. The compression library attaches no meaning to the
++   opaque value.
++
++   zalloc must return Z_NULL if there is not enough memory for the object.
++   If zlib is used in a multi-threaded application, zalloc and zfree must be
++   thread safe.
++
++   On 16-bit systems, the functions zalloc and zfree must be able to allocate
++   exactly 65536 bytes, but will not be required to allocate more than this
++   if the symbol MAXSEG_64K is defined (see zconf.h). WARNING: On MSDOS,
++   pointers returned by zalloc for objects of exactly 65536 bytes *must*
++   have their offset normalized to zero. The default allocation function
++   provided by this library ensures this (see zutil.c). To reduce memory
++   requirements and avoid any allocation of 64K objects, at the expense of
++   compression ratio, compile the library with -DMAX_WBITS=14 (see zconf.h).
++
++   The fields total_in and total_out can be used for statistics or
++   progress reports. After compression, total_in holds the total size of
++   the uncompressed data and may be saved for use in the decompressor
++   (particularly if the decompressor wants to decompress everything in
++   a single step).
++*/
++
++                        /* constants */
++
++#define Z_NO_FLUSH      0
++#define Z_PARTIAL_FLUSH 1 /* will be removed, use Z_SYNC_FLUSH instead */
++#define Z_SYNC_FLUSH    2
++#define Z_FULL_FLUSH    3
++#define Z_FINISH        4
++/* Allowed flush values; see deflate() below for details */
++
++#define Z_OK            0
++#define Z_STREAM_END    1
++#define Z_NEED_DICT     2
++#define Z_ERRNO        (-1)
++#define Z_STREAM_ERROR (-2)
++#define Z_DATA_ERROR   (-3)
++#define Z_MEM_ERROR    (-4)
++#define Z_BUF_ERROR    (-5)
++#define Z_VERSION_ERROR (-6)
++/* Return codes for the compression/decompression functions. Negative
++ * values are errors, positive values are used for special but normal events.
++ */
++
++#define Z_NO_COMPRESSION         0
++#define Z_BEST_SPEED             1
++#define Z_BEST_COMPRESSION       9
++#define Z_DEFAULT_COMPRESSION  (-1)
++/* compression levels */
++
++#define Z_FILTERED            1
++#define Z_HUFFMAN_ONLY        2
++#define Z_DEFAULT_STRATEGY    0
++/* compression strategy; see deflateInit2() below for details */
++
++#define Z_BINARY   0
++#define Z_ASCII    1
++#define Z_UNKNOWN  2
++/* Possible values of the data_type field */
++
++#define Z_DEFLATED   8
++/* The deflate compression method (the only one supported in this version) */
++
++#define Z_NULL  0  /* for initializing zalloc, zfree, opaque */
++
++#define zlib_version zlibVersion()
++/* for compatibility with versions < 1.0.2 */
++
++                        /* basic functions */
++
++ZEXTERN const char * ZEXPORT zlibVersion OF((void));
++/* The application can compare zlibVersion and ZLIB_VERSION for consistency.
++   If the first character differs, the library code actually used is
++   not compatible with the zlib.h header file used by the application.
++   This check is automatically made by deflateInit and inflateInit.
++ */
++
++/* 
++ZEXTERN int ZEXPORT deflateInit OF((z_streamp strm, int level));
++
++     Initializes the internal stream state for compression. The fields
++   zalloc, zfree and opaque must be initialized before by the caller.
++   If zalloc and zfree are set to Z_NULL, deflateInit updates them to
++   use default allocation functions.
++
++     The compression level must be Z_DEFAULT_COMPRESSION, or between 0 and 9:
++   1 gives best speed, 9 gives best compression, 0 gives no compression at
++   all (the input data is simply copied a block at a time).
++   Z_DEFAULT_COMPRESSION requests a default compromise between speed and
++   compression (currently equivalent to level 6).
++
++     deflateInit returns Z_OK if success, Z_MEM_ERROR if there was not
++   enough memory, Z_STREAM_ERROR if level is not a valid compression level,
++   Z_VERSION_ERROR if the zlib library version (zlib_version) is incompatible
++   with the version assumed by the caller (ZLIB_VERSION).
++   msg is set to null if there is no error message.  deflateInit does not
++   perform any compression: this will be done by deflate().
++*/
++
++
++ZEXTERN int ZEXPORT deflate OF((z_streamp strm, int flush));
++/*
++    deflate compresses as much data as possible, and stops when the input
++  buffer becomes empty or the output buffer becomes full. It may introduce some
++  output latency (reading input without producing any output) except when
++  forced to flush.
++
++    The detailed semantics are as follows. deflate performs one or both of the
++  following actions:
++
++  - Compress more input starting at next_in and update next_in and avail_in
++    accordingly. If not all input can be processed (because there is not
++    enough room in the output buffer), next_in and avail_in are updated and
++    processing will resume at this point for the next call of deflate().
++
++  - Provide more output starting at next_out and update next_out and avail_out
++    accordingly. This action is forced if the parameter flush is non zero.
++    Forcing flush frequently degrades the compression ratio, so this parameter
++    should be set only when necessary (in interactive applications).
++    Some output may be provided even if flush is not set.
++
++  Before the call of deflate(), the application should ensure that at least
++  one of the actions is possible, by providing more input and/or consuming
++  more output, and updating avail_in or avail_out accordingly; avail_out
++  should never be zero before the call. The application can consume the
++  compressed output when it wants, for example when the output buffer is full
++  (avail_out == 0), or after each call of deflate(). If deflate returns Z_OK
++  and with zero avail_out, it must be called again after making room in the
++  output buffer because there might be more output pending.
++
++    If the parameter flush is set to Z_SYNC_FLUSH, all pending output is
++  flushed to the output buffer and the output is aligned on a byte boundary, so
++  that the decompressor can get all input data available so far. (In particular
++  avail_in is zero after the call if enough output space has been provided
++  before the call.)  Flushing may degrade compression for some compression
++  algorithms and so it should be used only when necessary.
++
++    If flush is set to Z_FULL_FLUSH, all output is flushed as with
++  Z_SYNC_FLUSH, and the compression state is reset so that decompression can
++  restart from this point if previous compressed data has been damaged or if
++  random access is desired. Using Z_FULL_FLUSH too often can seriously degrade
++  the compression.
++
++    If deflate returns with avail_out == 0, this function must be called again
++  with the same value of the flush parameter and more output space (updated
++  avail_out), until the flush is complete (deflate returns with non-zero
++  avail_out).
++
++    If the parameter flush is set to Z_FINISH, pending input is processed,
++  pending output is flushed and deflate returns with Z_STREAM_END if there
++  was enough output space; if deflate returns with Z_OK, this function must be
++  called again with Z_FINISH and more output space (updated avail_out) but no
++  more input data, until it returns with Z_STREAM_END or an error. After
++  deflate has returned Z_STREAM_END, the only possible operations on the
++  stream are deflateReset or deflateEnd.
++  
++    Z_FINISH can be used immediately after deflateInit if all the compression
++  is to be done in a single step. In this case, avail_out must be at least
++  0.1% larger than avail_in plus 12 bytes.  If deflate does not return
++  Z_STREAM_END, then it must be called again as described above.
++
++    deflate() sets strm->adler to the adler32 checksum of all input read
++  so far (that is, total_in bytes).
++
++    deflate() may update data_type if it can make a good guess about
++  the input data type (Z_ASCII or Z_BINARY). In doubt, the data is considered
++  binary. This field is only for information purposes and does not affect
++  the compression algorithm in any manner.
++
++    deflate() returns Z_OK if some progress has been made (more input
++  processed or more output produced), Z_STREAM_END if all input has been
++  consumed and all output has been produced (only when flush is set to
++  Z_FINISH), Z_STREAM_ERROR if the stream state was inconsistent (for example
++  if next_in or next_out was NULL), Z_BUF_ERROR if no progress is possible
++  (for example avail_in or avail_out was zero).
++*/
++
++
++ZEXTERN int ZEXPORT deflateEnd OF((z_streamp strm));
++/*
++     All dynamically allocated data structures for this stream are freed.
++   This function discards any unprocessed input and does not flush any
++   pending output.
++
++     deflateEnd returns Z_OK if success, Z_STREAM_ERROR if the
++   stream state was inconsistent, Z_DATA_ERROR if the stream was freed
++   prematurely (some input or output was discarded). In the error case,
++   msg may be set but then points to a static string (which must not be
++   deallocated).
++*/
++
++
++/* 
++ZEXTERN int ZEXPORT inflateInit OF((z_streamp strm));
++
++     Initializes the internal stream state for decompression. The fields
++   next_in, avail_in, zalloc, zfree and opaque must be initialized before by
++   the caller. If next_in is not Z_NULL and avail_in is large enough (the exact
++   value depends on the compression method), inflateInit determines the
++   compression method from the zlib header and allocates all data structures
++   accordingly; otherwise the allocation will be deferred to the first call of
++   inflate.  If zalloc and zfree are set to Z_NULL, inflateInit updates them to
++   use default allocation functions.
++
++     inflateInit returns Z_OK if success, Z_MEM_ERROR if there was not enough
++   memory, Z_VERSION_ERROR if the zlib library version is incompatible with the
++   version assumed by the caller.  msg is set to null if there is no error
++   message. inflateInit does not perform any decompression apart from reading
++   the zlib header if present: this will be done by inflate().  (So next_in and
++   avail_in may be modified, but next_out and avail_out are unchanged.)
++*/
++
++
++ZEXTERN int ZEXPORT inflate OF((z_streamp strm, int flush));
++/*
++    inflate decompresses as much data as possible, and stops when the input
++  buffer becomes empty or the output buffer becomes full. It may some
++  introduce some output latency (reading input without producing any output)
++  except when forced to flush.
++
++  The detailed semantics are as follows. inflate performs one or both of the
++  following actions:
++
++  - Decompress more input starting at next_in and update next_in and avail_in
++    accordingly. If not all input can be processed (because there is not
++    enough room in the output buffer), next_in is updated and processing
++    will resume at this point for the next call of inflate().
++
++  - Provide more output starting at next_out and update next_out and avail_out
++    accordingly.  inflate() provides as much output as possible, until there
++    is no more input data or no more space in the output buffer (see below
++    about the flush parameter).
++
++  Before the call of inflate(), the application should ensure that at least
++  one of the actions is possible, by providing more input and/or consuming
++  more output, and updating the next_* and avail_* values accordingly.
++  The application can consume the uncompressed output when it wants, for
++  example when the output buffer is full (avail_out == 0), or after each
++  call of inflate(). If inflate returns Z_OK and with zero avail_out, it
++  must be called again after making room in the output buffer because there
++  might be more output pending.
++
++    If the parameter flush is set to Z_SYNC_FLUSH, inflate flushes as much
++  output as possible to the output buffer. The flushing behavior of inflate is
++  not specified for values of the flush parameter other than Z_SYNC_FLUSH
++  and Z_FINISH, but the current implementation actually flushes as much output
++  as possible anyway.
++
++    inflate() should normally be called until it returns Z_STREAM_END or an
++  error. However if all decompression is to be performed in a single step
++  (a single call of inflate), the parameter flush should be set to
++  Z_FINISH. In this case all pending input is processed and all pending
++  output is flushed; avail_out must be large enough to hold all the
++  uncompressed data. (The size of the uncompressed data may have been saved
++  by the compressor for this purpose.) The next operation on this stream must
++  be inflateEnd to deallocate the decompression state. The use of Z_FINISH
++  is never required, but can be used to inform inflate that a faster routine
++  may be used for the single inflate() call.
++
++     If a preset dictionary is needed at this point (see inflateSetDictionary
++  below), inflate sets strm-adler to the adler32 checksum of the
++  dictionary chosen by the compressor and returns Z_NEED_DICT; otherwise 
++  it sets strm->adler to the adler32 checksum of all output produced
++  so far (that is, total_out bytes) and returns Z_OK, Z_STREAM_END or
++  an error code as described below. At the end of the stream, inflate()
++  checks that its computed adler32 checksum is equal to that saved by the
++  compressor and returns Z_STREAM_END only if the checksum is correct.
++
++    inflate() returns Z_OK if some progress has been made (more input processed
++  or more output produced), Z_STREAM_END if the end of the compressed data has
++  been reached and all uncompressed output has been produced, Z_NEED_DICT if a
++  preset dictionary is needed at this point, Z_DATA_ERROR if the input data was
++  corrupted (input stream not conforming to the zlib format or incorrect
++  adler32 checksum), Z_STREAM_ERROR if the stream structure was inconsistent
++  (for example if next_in or next_out was NULL), Z_MEM_ERROR if there was not
++  enough memory, Z_BUF_ERROR if no progress is possible or if there was not
++  enough room in the output buffer when Z_FINISH is used. In the Z_DATA_ERROR
++  case, the application may then call inflateSync to look for a good
++  compression block.
++*/
++
++
++ZEXTERN int ZEXPORT inflateEnd OF((z_streamp strm));
++/*
++     All dynamically allocated data structures for this stream are freed.
++   This function discards any unprocessed input and does not flush any
++   pending output.
++
++     inflateEnd returns Z_OK if success, Z_STREAM_ERROR if the stream state
++   was inconsistent. In the error case, msg may be set but then points to a
++   static string (which must not be deallocated).
++*/
++
++                        /* Advanced functions */
++
++/*
++    The following functions are needed only in some special applications.
++*/
++
++/*   
++ZEXTERN int ZEXPORT deflateInit2 OF((z_streamp strm,
++                                     int  level,
++                                     int  method,
++                                     int  windowBits,
++                                     int  memLevel,
++                                     int  strategy));
++
++     This is another version of deflateInit with more compression options. The
++   fields next_in, zalloc, zfree and opaque must be initialized before by
++   the caller.
++
++     The method parameter is the compression method. It must be Z_DEFLATED in
++   this version of the library.
++
++     The windowBits parameter is the base two logarithm of the window size
++   (the size of the history buffer).  It should be in the range 8..15 for this
++   version of the library. Larger values of this parameter result in better
++   compression at the expense of memory usage. The default value is 15 if
++   deflateInit is used instead.
++
++     The memLevel parameter specifies how much memory should be allocated
++   for the internal compression state. memLevel=1 uses minimum memory but
++   is slow and reduces compression ratio; memLevel=9 uses maximum memory
++   for optimal speed. The default value is 8. See zconf.h for total memory
++   usage as a function of windowBits and memLevel.
++
++     The strategy parameter is used to tune the compression algorithm. Use the
++   value Z_DEFAULT_STRATEGY for normal data, Z_FILTERED for data produced by a
++   filter (or predictor), or Z_HUFFMAN_ONLY to force Huffman encoding only (no
++   string match).  Filtered data consists mostly of small values with a
++   somewhat random distribution. In this case, the compression algorithm is
++   tuned to compress them better. The effect of Z_FILTERED is to force more
++   Huffman coding and less string matching; it is somewhat intermediate
++   between Z_DEFAULT and Z_HUFFMAN_ONLY. The strategy parameter only affects
++   the compression ratio but not the correctness of the compressed output even
++   if it is not set appropriately.
++
++      deflateInit2 returns Z_OK if success, Z_MEM_ERROR if there was not enough
++   memory, Z_STREAM_ERROR if a parameter is invalid (such as an invalid
++   method). msg is set to null if there is no error message.  deflateInit2 does
++   not perform any compression: this will be done by deflate().
++*/
++                            
++ZEXTERN int ZEXPORT deflateSetDictionary OF((z_streamp strm,
++                                             const Bytef *dictionary,
++                                             uInt  dictLength));
++/*
++     Initializes the compression dictionary from the given byte sequence
++   without producing any compressed output. This function must be called
++   immediately after deflateInit, deflateInit2 or deflateReset, before any
++   call of deflate. The compressor and decompressor must use exactly the same
++   dictionary (see inflateSetDictionary).
++
++     The dictionary should consist of strings (byte sequences) that are likely
++   to be encountered later in the data to be compressed, with the most commonly
++   used strings preferably put towards the end of the dictionary. Using a
++   dictionary is most useful when the data to be compressed is short and can be
++   predicted with good accuracy; the data can then be compressed better than
++   with the default empty dictionary.
++
++     Depending on the size of the compression data structures selected by
++   deflateInit or deflateInit2, a part of the dictionary may in effect be
++   discarded, for example if the dictionary is larger than the window size in
++   deflate or deflate2. Thus the strings most likely to be useful should be
++   put at the end of the dictionary, not at the front.
++
++     Upon return of this function, strm->adler is set to the Adler32 value
++   of the dictionary; the decompressor may later use this value to determine
++   which dictionary has been used by the compressor. (The Adler32 value
++   applies to the whole dictionary even if only a subset of the dictionary is
++   actually used by the compressor.)
++
++     deflateSetDictionary returns Z_OK if success, or Z_STREAM_ERROR if a
++   parameter is invalid (such as NULL dictionary) or the stream state is
++   inconsistent (for example if deflate has already been called for this stream
++   or if the compression method is bsort). deflateSetDictionary does not
++   perform any compression: this will be done by deflate().
++*/
++
++ZEXTERN int ZEXPORT deflateCopy OF((z_streamp dest,
++                                    z_streamp source));
++/*
++     Sets the destination stream as a complete copy of the source stream.
++
++     This function can be useful when several compression strategies will be
++   tried, for example when there are several ways of pre-processing the input
++   data with a filter. The streams that will be discarded should then be freed
++   by calling deflateEnd.  Note that deflateCopy duplicates the internal
++   compression state which can be quite large, so this strategy is slow and
++   can consume lots of memory.
++
++     deflateCopy returns Z_OK if success, Z_MEM_ERROR if there was not
++   enough memory, Z_STREAM_ERROR if the source stream state was inconsistent
++   (such as zalloc being NULL). msg is left unchanged in both source and
++   destination.
++*/
++
++ZEXTERN int ZEXPORT deflateReset OF((z_streamp strm));
++/*
++     This function is equivalent to deflateEnd followed by deflateInit,
++   but does not free and reallocate all the internal compression state.
++   The stream will keep the same compression level and any other attributes
++   that may have been set by deflateInit2.
++
++      deflateReset returns Z_OK if success, or Z_STREAM_ERROR if the source
++   stream state was inconsistent (such as zalloc or state being NULL).
++*/
++
++ZEXTERN int ZEXPORT deflateParams OF((z_streamp strm,
++				      int level,
++				      int strategy));
++/*
++     Dynamically update the compression level and compression strategy.  The
++   interpretation of level and strategy is as in deflateInit2.  This can be
++   used to switch between compression and straight copy of the input data, or
++   to switch to a different kind of input data requiring a different
++   strategy. If the compression level is changed, the input available so far
++   is compressed with the old level (and may be flushed); the new level will
++   take effect only at the next call of deflate().
++
++     Before the call of deflateParams, the stream state must be set as for
++   a call of deflate(), since the currently available input may have to
++   be compressed and flushed. In particular, strm->avail_out must be non-zero.
++
++     deflateParams returns Z_OK if success, Z_STREAM_ERROR if the source
++   stream state was inconsistent or if a parameter was invalid, Z_BUF_ERROR
++   if strm->avail_out was zero.
++*/
++
++/*   
++ZEXTERN int ZEXPORT inflateInit2 OF((z_streamp strm,
++                                     int  windowBits));
++
++     This is another version of inflateInit with an extra parameter. The
++   fields next_in, avail_in, zalloc, zfree and opaque must be initialized
++   before by the caller.
++
++     The windowBits parameter is the base two logarithm of the maximum window
++   size (the size of the history buffer).  It should be in the range 8..15 for
++   this version of the library. The default value is 15 if inflateInit is used
++   instead. If a compressed stream with a larger window size is given as
++   input, inflate() will return with the error code Z_DATA_ERROR instead of
++   trying to allocate a larger window.
++
++      inflateInit2 returns Z_OK if success, Z_MEM_ERROR if there was not enough
++   memory, Z_STREAM_ERROR if a parameter is invalid (such as a negative
++   memLevel). msg is set to null if there is no error message.  inflateInit2
++   does not perform any decompression apart from reading the zlib header if
++   present: this will be done by inflate(). (So next_in and avail_in may be
++   modified, but next_out and avail_out are unchanged.)
++*/
++
++ZEXTERN int ZEXPORT inflateSetDictionary OF((z_streamp strm,
++                                             const Bytef *dictionary,
++                                             uInt  dictLength));
++/*
++     Initializes the decompression dictionary from the given uncompressed byte
++   sequence. This function must be called immediately after a call of inflate
++   if this call returned Z_NEED_DICT. The dictionary chosen by the compressor
++   can be determined from the Adler32 value returned by this call of
++   inflate. The compressor and decompressor must use exactly the same
++   dictionary (see deflateSetDictionary).
++
++     inflateSetDictionary returns Z_OK if success, Z_STREAM_ERROR if a
++   parameter is invalid (such as NULL dictionary) or the stream state is
++   inconsistent, Z_DATA_ERROR if the given dictionary doesn't match the
++   expected one (incorrect Adler32 value). inflateSetDictionary does not
++   perform any decompression: this will be done by subsequent calls of
++   inflate().
++*/
++
++ZEXTERN int ZEXPORT inflateSync OF((z_streamp strm));
++/* 
++    Skips invalid compressed data until a full flush point (see above the
++  description of deflate with Z_FULL_FLUSH) can be found, or until all
++  available input is skipped. No output is provided.
++
++    inflateSync returns Z_OK if a full flush point has been found, Z_BUF_ERROR
++  if no more input was provided, Z_DATA_ERROR if no flush point has been found,
++  or Z_STREAM_ERROR if the stream structure was inconsistent. In the success
++  case, the application may save the current current value of total_in which
++  indicates where valid compressed data was found. In the error case, the
++  application may repeatedly call inflateSync, providing more input each time,
++  until success or end of the input data.
++*/
++
++ZEXTERN int ZEXPORT inflateReset OF((z_streamp strm));
++/*
++     This function is equivalent to inflateEnd followed by inflateInit,
++   but does not free and reallocate all the internal decompression state.
++   The stream will keep attributes that may have been set by inflateInit2.
++
++      inflateReset returns Z_OK if success, or Z_STREAM_ERROR if the source
++   stream state was inconsistent (such as zalloc or state being NULL).
++*/
++
++
++                        /* utility functions */
++
++/*
++     The following utility functions are implemented on top of the
++   basic stream-oriented functions. To simplify the interface, some
++   default options are assumed (compression level and memory usage,
++   standard memory allocation functions). The source code of these
++   utility functions can easily be modified if you need special options.
++*/
++
++ZEXTERN int ZEXPORT compress OF((Bytef *dest,   uLongf *destLen,
++                                 const Bytef *source, uLong sourceLen));
++/*
++     Compresses the source buffer into the destination buffer.  sourceLen is
++   the byte length of the source buffer. Upon entry, destLen is the total
++   size of the destination buffer, which must be at least 0.1% larger than
++   sourceLen plus 12 bytes. Upon exit, destLen is the actual size of the
++   compressed buffer.
++     This function can be used to compress a whole file at once if the
++   input file is mmap'ed.
++     compress returns Z_OK if success, Z_MEM_ERROR if there was not
++   enough memory, Z_BUF_ERROR if there was not enough room in the output
++   buffer.
++*/
++
++ZEXTERN int ZEXPORT compress2 OF((Bytef *dest,   uLongf *destLen,
++                                  const Bytef *source, uLong sourceLen,
++                                  int level));
++/*
++     Compresses the source buffer into the destination buffer. The level
++   parameter has the same meaning as in deflateInit.  sourceLen is the byte
++   length of the source buffer. Upon entry, destLen is the total size of the
++   destination buffer, which must be at least 0.1% larger than sourceLen plus
++   12 bytes. Upon exit, destLen is the actual size of the compressed buffer.
++
++     compress2 returns Z_OK if success, Z_MEM_ERROR if there was not enough
++   memory, Z_BUF_ERROR if there was not enough room in the output buffer,
++   Z_STREAM_ERROR if the level parameter is invalid.
++*/
++
++ZEXTERN int ZEXPORT uncompress OF((Bytef *dest,   uLongf *destLen,
++                                   const Bytef *source, uLong sourceLen));
++/*
++     Decompresses the source buffer into the destination buffer.  sourceLen is
++   the byte length of the source buffer. Upon entry, destLen is the total
++   size of the destination buffer, which must be large enough to hold the
++   entire uncompressed data. (The size of the uncompressed data must have
++   been saved previously by the compressor and transmitted to the decompressor
++   by some mechanism outside the scope of this compression library.)
++   Upon exit, destLen is the actual size of the compressed buffer.
++     This function can be used to decompress a whole file at once if the
++   input file is mmap'ed.
++
++     uncompress returns Z_OK if success, Z_MEM_ERROR if there was not
++   enough memory, Z_BUF_ERROR if there was not enough room in the output
++   buffer, or Z_DATA_ERROR if the input data was corrupted.
++*/
++
++
++typedef voidp gzFile;
++
++ZEXTERN gzFile ZEXPORT gzopen  OF((const char *path, const char *mode));
++/*
++     Opens a gzip (.gz) file for reading or writing. The mode parameter
++   is as in fopen ("rb" or "wb") but can also include a compression level
++   ("wb9") or a strategy: 'f' for filtered data as in "wb6f", 'h' for
++   Huffman only compression as in "wb1h". (See the description
++   of deflateInit2 for more information about the strategy parameter.)
++
++     gzopen can be used to read a file which is not in gzip format; in this
++   case gzread will directly read from the file without decompression.
++
++     gzopen returns NULL if the file could not be opened or if there was
++   insufficient memory to allocate the (de)compression state; errno
++   can be checked to distinguish the two cases (if errno is zero, the
++   zlib error is Z_MEM_ERROR).  */
++
++ZEXTERN gzFile ZEXPORT gzdopen  OF((int fd, const char *mode));
++/*
++     gzdopen() associates a gzFile with the file descriptor fd.  File
++   descriptors are obtained from calls like open, dup, creat, pipe or
++   fileno (in the file has been previously opened with fopen).
++   The mode parameter is as in gzopen.
++     The next call of gzclose on the returned gzFile will also close the
++   file descriptor fd, just like fclose(fdopen(fd), mode) closes the file
++   descriptor fd. If you want to keep fd open, use gzdopen(dup(fd), mode).
++     gzdopen returns NULL if there was insufficient memory to allocate
++   the (de)compression state.
++*/
++
++ZEXTERN int ZEXPORT gzsetparams OF((gzFile file, int level, int strategy));
++/*
++     Dynamically update the compression level or strategy. See the description
++   of deflateInit2 for the meaning of these parameters.
++     gzsetparams returns Z_OK if success, or Z_STREAM_ERROR if the file was not
++   opened for writing.
++*/
++
++ZEXTERN int ZEXPORT    gzread  OF((gzFile file, voidp buf, unsigned len));
++/*
++     Reads the given number of uncompressed bytes from the compressed file.
++   If the input file was not in gzip format, gzread copies the given number
++   of bytes into the buffer.
++     gzread returns the number of uncompressed bytes actually read (0 for
++   end of file, -1 for error). */
++
++ZEXTERN int ZEXPORT    gzwrite OF((gzFile file, 
++				   const voidp buf, unsigned len));
++/*
++     Writes the given number of uncompressed bytes into the compressed file.
++   gzwrite returns the number of uncompressed bytes actually written
++   (0 in case of error).
++*/
++
++ZEXTERN int ZEXPORTVA   gzprintf OF((gzFile file, const char *format, ...));
++/*
++     Converts, formats, and writes the args to the compressed file under
++   control of the format string, as in fprintf. gzprintf returns the number of
++   uncompressed bytes actually written (0 in case of error).
++*/
++
++ZEXTERN int ZEXPORT gzputs OF((gzFile file, const char *s));
++/*
++      Writes the given null-terminated string to the compressed file, excluding
++   the terminating null character.
++      gzputs returns the number of characters written, or -1 in case of error.
++*/
++
++ZEXTERN char * ZEXPORT gzgets OF((gzFile file, char *buf, int len));
++/*
++      Reads bytes from the compressed file until len-1 characters are read, or
++   a newline character is read and transferred to buf, or an end-of-file
++   condition is encountered.  The string is then terminated with a null
++   character.
++      gzgets returns buf, or Z_NULL in case of error.
++*/
++
++ZEXTERN int ZEXPORT    gzputc OF((gzFile file, int c));
++/*
++      Writes c, converted to an unsigned char, into the compressed file.
++   gzputc returns the value that was written, or -1 in case of error.
++*/
++
++ZEXTERN int ZEXPORT    gzgetc OF((gzFile file));
++/*
++      Reads one byte from the compressed file. gzgetc returns this byte
++   or -1 in case of end of file or error.
++*/
++
++ZEXTERN int ZEXPORT    gzflush OF((gzFile file, int flush));
++/*
++     Flushes all pending output into the compressed file. The parameter
++   flush is as in the deflate() function. The return value is the zlib
++   error number (see function gzerror below). gzflush returns Z_OK if
++   the flush parameter is Z_FINISH and all output could be flushed.
++     gzflush should be called only when strictly necessary because it can
++   degrade compression.
++*/
++
++ZEXTERN z_off_t ZEXPORT    gzseek OF((gzFile file,
++				      z_off_t offset, int whence));
++/* 
++      Sets the starting position for the next gzread or gzwrite on the
++   given compressed file. The offset represents a number of bytes in the
++   uncompressed data stream. The whence parameter is defined as in lseek(2);
++   the value SEEK_END is not supported.
++     If the file is opened for reading, this function is emulated but can be
++   extremely slow. If the file is opened for writing, only forward seeks are
++   supported; gzseek then compresses a sequence of zeroes up to the new
++   starting position.
++
++      gzseek returns the resulting offset location as measured in bytes from
++   the beginning of the uncompressed stream, or -1 in case of error, in
++   particular if the file is opened for writing and the new starting position
++   would be before the current position.
++*/
++
++ZEXTERN int ZEXPORT    gzrewind OF((gzFile file));
++/*
++     Rewinds the given file. This function is supported only for reading.
++
++   gzrewind(file) is equivalent to (int)gzseek(file, 0L, SEEK_SET)
++*/
++
++ZEXTERN z_off_t ZEXPORT    gztell OF((gzFile file));
++/*
++     Returns the starting position for the next gzread or gzwrite on the
++   given compressed file. This position represents a number of bytes in the
++   uncompressed data stream.
++
++   gztell(file) is equivalent to gzseek(file, 0L, SEEK_CUR)
++*/
++
++ZEXTERN int ZEXPORT gzeof OF((gzFile file));
++/*
++     Returns 1 when EOF has previously been detected reading the given
++   input stream, otherwise zero.
++*/
++
++ZEXTERN int ZEXPORT    gzclose OF((gzFile file));
++/*
++     Flushes all pending output if necessary, closes the compressed file
++   and deallocates all the (de)compression state. The return value is the zlib
++   error number (see function gzerror below).
++*/
++
++ZEXTERN const char * ZEXPORT gzerror OF((gzFile file, int *errnum));
++/*
++     Returns the error message for the last error which occurred on the
++   given compressed file. errnum is set to zlib error number. If an
++   error occurred in the file system and not in the compression library,
++   errnum is set to Z_ERRNO and the application may consult errno
++   to get the exact error code.
++*/
++
++                        /* checksum functions */
++
++/*
++     These functions are not related to compression but are exported
++   anyway because they might be useful in applications using the
++   compression library.
++*/
++
++ZEXTERN uLong ZEXPORT adler32 OF((uLong adler, const Bytef *buf, uInt len));
++
++/*
++     Update a running Adler-32 checksum with the bytes buf[0..len-1] and
++   return the updated checksum. If buf is NULL, this function returns
++   the required initial value for the checksum.
++   An Adler-32 checksum is almost as reliable as a CRC32 but can be computed
++   much faster. Usage example:
++
++     uLong adler = adler32(0L, Z_NULL, 0);
++
++     while (read_buffer(buffer, length) != EOF) {
++       adler = adler32(adler, buffer, length);
++     }
++     if (adler != original_adler) error();
++*/
++
++ZEXTERN uLong ZEXPORT crc32   OF((uLong crc, const Bytef *buf, uInt len));
++/*
++     Update a running crc with the bytes buf[0..len-1] and return the updated
++   crc. If buf is NULL, this function returns the required initial value
++   for the crc. Pre- and post-conditioning (one's complement) is performed
++   within this function so it shouldn't be done by the application.
++   Usage example:
++
++     uLong crc = crc32(0L, Z_NULL, 0);
++
++     while (read_buffer(buffer, length) != EOF) {
++       crc = crc32(crc, buffer, length);
++     }
++     if (crc != original_crc) error();
++*/
++
++
++                        /* various hacks, don't look :) */
++
++/* deflateInit and inflateInit are macros to allow checking the zlib version
++ * and the compiler's view of z_stream:
++ */
++ZEXTERN int ZEXPORT deflateInit_ OF((z_streamp strm, int level,
++                                     const char *version, int stream_size));
++ZEXTERN int ZEXPORT inflateInit_ OF((z_streamp strm,
++                                     const char *version, int stream_size));
++ZEXTERN int ZEXPORT deflateInit2_ OF((z_streamp strm, int  level, int  method,
++                                      int windowBits, int memLevel,
++                                      int strategy, const char *version,
++                                      int stream_size));
++ZEXTERN int ZEXPORT inflateInit2_ OF((z_streamp strm, int  windowBits,
++                                      const char *version, int stream_size));
++#define deflateInit(strm, level) \
++        deflateInit_((strm), (level),       ZLIB_VERSION, sizeof(z_stream))
++#define inflateInit(strm) \
++        inflateInit_((strm),                ZLIB_VERSION, sizeof(z_stream))
++#define deflateInit2(strm, level, method, windowBits, memLevel, strategy) \
++        deflateInit2_((strm),(level),(method),(windowBits),(memLevel),\
++                      (strategy),           ZLIB_VERSION, sizeof(z_stream))
++#define inflateInit2(strm, windowBits) \
++        inflateInit2_((strm), (windowBits), ZLIB_VERSION, sizeof(z_stream))
++
++
++#if !defined(_Z_UTIL_H) && !defined(NO_DUMMY_DECL)
++    struct internal_state {int dummy;}; /* hack for buggy compilers */
++#endif
++
++ZEXTERN const char   * ZEXPORT zError           OF((int err));
++ZEXTERN int            ZEXPORT inflateSyncPoint OF((z_streamp z));
++ZEXTERN const uLongf * ZEXPORT get_crc_table    OF((void));
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif /* _ZLIB_H */
+Index: grub-0.97/stage2/zlib/zutil.h
+===================================================================
+--- /dev/null	1970-01-01 00:00:00.000000000 +0000
++++ grub-0.97/stage2/zlib/zutil.h	2011-07-14 14:01:58.436000187 +0200
+@@ -0,0 +1,226 @@
++/* zutil.h -- internal interface and configuration of the compression library
++ * Copyright (C) 1995-1998 Jean-loup Gailly.
++ * For conditions of distribution and use, see copyright notice in zlib.h
++ */
++
++/* WARNING: this file should *not* be used by applications. It is
++   part of the implementation of the compression library and is
++   subject to change. Applications should only use zlib.h.
++ */
++
++/* @(#) $Id$ */
++
++#ifndef _Z_UTIL_H
++#define _Z_UTIL_H
++
++#include "zlib.h"
++
++/*
++#ifdef STDC
++#  include <stddef.h>
++#  include <string.h>
++#  include <stdlib.h>
++#endif
++*/
++#include <shared.h>
++
++#define NO_ERRNO_H 1
++
++#ifdef NO_ERRNO_H
++    extern int errno;
++#else
++#   include <errno.h>
++#endif
++
++#ifndef local
++#  define local static
++#endif
++/* compile with -Dlocal if your debugger can't find static symbols */
++
++typedef unsigned char  uch;
++typedef uch FAR uchf;
++typedef unsigned short ush;
++typedef ush FAR ushf;
++typedef unsigned long  ulg;
++
++extern const char *z_errmsg[10]; /* indexed by 2-zlib_error */
++/* (size given to avoid silly warnings with Visual C++) */
++
++#define ERR_MSG(err) z_errmsg[Z_NEED_DICT-(err)]
++
++#define ERR_RETURN(strm,err) \
++  return (strm->msg = (char*)ERR_MSG(err), (err))
++/* To be used only when the state is known to be valid */
++
++        /* common constants */
++
++#ifndef DEF_WBITS
++#  define DEF_WBITS MAX_WBITS
++#endif
++/* default windowBits for decompression. MAX_WBITS is for compression only */
++
++#if MAX_MEM_LEVEL >= 8
++#  define DEF_MEM_LEVEL 8
++#else
++#  define DEF_MEM_LEVEL  MAX_MEM_LEVEL
++#endif
++/* default memLevel */
++
++#define STORED_BLOCK 0
++#define STATIC_TREES 1
++#define DYN_TREES    2
++/* The three kinds of block type */
++
++#define MIN_MATCH  3
++#define MAX_MATCH  258
++/* The minimum and maximum match lengths */
++
++#define PRESET_DICT 0x20 /* preset dictionary flag in zlib header */
++
++        /* target dependencies */
++
++#ifdef MSDOS
++#  define OS_CODE  0x00
++#  if defined(__TURBOC__) || defined(__BORLANDC__)
++#    if(__STDC__ == 1) && (defined(__LARGE__) || defined(__COMPACT__))
++       /* Allow compilation with ANSI keywords only enabled */
++       void _Cdecl farfree( void *block );
++       void *_Cdecl farmalloc( unsigned long nbytes );
++#    else
++#     include <alloc.h>
++#    endif
++#  else /* MSC or DJGPP */
++#    include <malloc.h>
++#  endif
++#endif
++
++#ifdef OS2
++#  define OS_CODE  0x06
++#endif
++
++#ifdef WIN32 /* Window 95 & Windows NT */
++#  define OS_CODE  0x0b
++#endif
++
++#if defined(VAXC) || defined(VMS)
++#  define OS_CODE  0x02
++#  define F_OPEN(name, mode) \
++     fopen((name), (mode), "mbc=60", "ctx=stm", "rfm=fix", "mrs=512")
++#endif
++
++#ifdef AMIGA
++#  define OS_CODE  0x01
++#endif
++
++#if defined(ATARI) || defined(atarist)
++#  define OS_CODE  0x05
++#endif
++
++#if defined(MACOS) || defined(TARGET_OS_MAC)
++#  define OS_CODE  0x07
++#  if defined(__MWERKS__) && __dest_os != __be_os && __dest_os != __win32_os
++#    include <unix.h> /* for fdopen */
++#  else
++#    ifndef fdopen
++#      define fdopen(fd,mode) NULL /* No fdopen() */
++#    endif
++#  endif
++#endif
++
++#ifdef __50SERIES /* Prime/PRIMOS */
++#  define OS_CODE  0x0F
++#endif
++
++#ifdef TOPS20
++#  define OS_CODE  0x0a
++#endif
++
++#if defined(_BEOS_) || defined(RISCOS)
++#  define fdopen(fd,mode) NULL /* No fdopen() */
++#endif
++
++#if (defined(_MSC_VER) && (_MSC_VER > 600))
++#  define fdopen(fd,type)  _fdopen(fd,type)
++#endif
++
++
++        /* Common defaults */
++
++#ifndef OS_CODE
++#  define OS_CODE  0x03  /* assume Unix */
++#endif
++
++#ifndef F_OPEN
++#  define F_OPEN(name, mode) fopen((name), (mode))
++#endif
++
++         /* functions */
++
++#ifdef HAVE_STRERROR
++   extern char *strerror OF((int));
++#  define zstrerror(errnum) strerror(errnum)
++#else
++#  define zstrerror(errnum) ""
++#endif
++
++#if defined(pyr)
++#  define NO_MEMCPY
++#endif
++#if defined(SMALL_MEDIUM) && !defined(_MSC_VER) && !defined(__SC__)
++ /* Use our own functions for small and medium model with MSC <= 5.0.
++  * You may have to use the same strategy for Borland C (untested).
++  * The __SC__ check is for Symantec.
++  */
++#  define NO_MEMCPY
++#endif
++#if defined(STDC) && !defined(HAVE_MEMCPY) && !defined(NO_MEMCPY)
++#  define HAVE_MEMCPY
++#endif
++#ifdef HAVE_MEMCPY
++#  ifdef SMALL_MEDIUM /* MSDOS small or medium model */
++#    define zmemcpy _fmemcpy
++#    define zmemcmp _fmemcmp
++#    define zmemzero(dest, len) _fmemset(dest, 0, len)
++#  else
++#    define zmemcpy memcpy
++#    define zmemcmp memcmp
++#    define zmemzero(dest, len) memset(dest, 0, len)
++#  endif
++#else
++   extern void zmemcpy  OF((Bytef* dest, const Bytef* source, uInt len));
++   extern int  zmemcmp  OF((const Bytef* s1, const Bytef* s2, uInt len));
++   extern void zmemzero OF((Bytef* dest, uInt len));
++#endif
++
++/* Diagnostic functions */
++#ifdef DEBUG
++#  include <stdio.h>
++   extern int z_verbose;
++   extern void z_error    OF((char *m));
++#  define Assert(cond,msg) {if(!(cond)) z_error(msg);}
++#  define Trace(x) {if (z_verbose>=0) fprintf x ;}
++#  define Tracev(x) {if (z_verbose>0) fprintf x ;}
++#  define Tracevv(x) {if (z_verbose>1) fprintf x ;}
++#  define Tracec(c,x) {if (z_verbose>0 && (c)) fprintf x ;}
++#  define Tracecv(c,x) {if (z_verbose>1 && (c)) fprintf x ;}
++#else
++#  define Assert(cond,msg)
++#  define Trace(x)
++#  define Tracev(x)
++#  define Tracevv(x)
++#  define Tracec(c,x)
++#  define Tracecv(c,x)
++#endif
++
++
++typedef uLong (ZEXPORT *check_func) OF((uLong check, const Bytef *buf,
++				       uInt len));
++voidpf zcalloc OF((voidpf opaque, unsigned items, unsigned size));
++void   zcfree  OF((voidpf opaque, voidpf ptr));
++
++#define ZALLOC(strm, items, size) \
++           (*((strm)->zalloc))((strm)->opaque, (items), (size))
++#define ZFREE(strm, addr)  (*((strm)->zfree))((strm)->opaque, (voidpf)(addr))
++#define TRY_FREE(s, p) {if (p) ZFREE(s, p);}
++
++#endif /* _Z_UTIL_H */
+Index: grub-0.97/stage2/builtins.c
+===================================================================
+--- grub-0.97.orig/stage2/builtins.c	2011-07-14 19:02:33.076891202 +0200
++++ grub-0.97/stage2/builtins.c	2011-07-14 19:03:48.037262913 +0200
+@@ -27,6 +27,7 @@
+ #include <shared.h>
+ #include <filesys.h>
+ #include <term.h>
++#include <builtins_pulse2.h>
+ 
+ #ifdef SUPPORT_NETBOOT
+ # define GRUB	1
+@@ -82,6 +83,8 @@
+    inside other functions.  */
+ static int configfile_func (char *arg, int flags);
+ 
++#include "builtins_pulse2.c"
++
+ /* Initialize the data for builtins.  */
+ void
+ init_builtins (void)
+@@ -4844,10 +4847,12 @@
+   &builtin_module,
+   &builtin_modulenounzip,
+   &builtin_pager,
++  &builtin_partcopy,		/* Pulse 2 */
+   &builtin_partnew,
+   &builtin_parttype,
+   &builtin_password,
+   &builtin_pause,
++  &builtin_ptabs,		/* Pulse 2 */
+ #ifdef GRUB_UTIL
+   &builtin_quit,
+ #endif /* GRUB_UTIL */
+Index: grub-0.97/stage2/char_io.c
+===================================================================
+--- grub-0.97.orig/stage2/char_io.c	2011-07-14 19:04:11.365378588 +0200
++++ grub-0.97/stage2/char_io.c	2011-07-14 19:04:43.973540294 +0200
+@@ -238,7 +238,7 @@
+ {
+   cls ();
+ 
+-  grub_printf ("\n    GNU GRUB  version %s  (%dK lower / %dK upper memory)\n\n",
++  grub_printf ("\n Pulse 2 Imaging Client v.%s (%dK lower / %dK upper memory)\n\n",
+ 	  version_string, mbi.mem_lower, mbi.mem_upper);
+ }
+ 
+Index: grub-0.97/stage2/fsys_iso9660.c
+===================================================================
+--- grub-0.97.orig/stage2/fsys_iso9660.c	2011-07-14 19:05:27.285755059 +0200
++++ grub-0.97/stage2/fsys_iso9660.c	2011-07-14 19:07:20.470316318 +0200
+@@ -68,32 +68,51 @@
+ static int
+ iso9660_devread (int sector, int byte_offset, int byte_len, char *buf)
+ {
+-  unsigned short sector_size_lg2 = log2(buf_geom.sector_size);
++  char buf2[2048];
+ 
+-  /*
+-   * We have to use own devread() function since BIOS return wrong geometry
+-   */
+-  if (sector < 0)
+-    {
+-      errnum = ERR_OUTSIDE_PART;
+-      return 0;
+-    }
+-  if (byte_len <= 0)
+-    return 1;
++  int err;
++
++  struct disk_address_packet
++  {
++    unsigned char length;
++    unsigned char reserved;
++    unsigned short blocks;
++    unsigned long buffer;
++    unsigned long long block;
++  }
++  dap;
++
++  unsigned short sector_size_lg2 = log2(buf_geom.sector_size);
+ 
++#if !defined(STAGE1_5)
++  if (debug)
++    grub_printf("s:%d o:%d l:%d\n", sector, byte_offset, byte_len);
++#endif
+   sector += (byte_offset >> sector_size_lg2);
+   byte_offset &= (buf_geom.sector_size - 1);
+-  asm volatile ("shl%L0 %1,%0"
+-		: "=r"(sector)
+-		: "Ic"((int8_t)(ISO_SECTOR_BITS - sector_size_lg2)),
+-		"0"(sector));
+ 
++rd_again:
++  dap.length = sizeof (dap);
++  dap.block = sector;
++  dap.blocks = 1;
++  dap.reserved = 0;
++  /* This is undocumented part. The address is formated in
++   *          SEGMENT:ADDRESS.  */
++  dap.buffer =
++    (((unsigned long) buf2 & 0xFFFF0) << (16 - 4)) | ((unsigned long) buf2 &
++						     0x0000F);
++  err = biosdisk_int13_extensions (0x42<<8, current_drive, &dap);	// Funct 0x42
++  grub_memmove(buf, buf2+byte_offset, byte_len);
++ 
++  if (err)
++    {
++      grub_printf ("Error reading CD : LBA %x\nPress any key to retry\n", sector);
+ #if !defined(STAGE1_5)
+-  if (disk_read_hook && debug)
+-    printf ("<%d, %d, %d>", sector, byte_offset, byte_len);
+-#endif /* !STAGE1_5 */
+-
+-  return rawread(current_drive, part_start + sector, byte_offset, byte_len, buf);
++      getkey();
++#endif
++      goto rd_again;
++    }
++  return (!err);
+ }
+ 
+ int
+Index: grub-0.97/stage2/Makefile.am
+===================================================================
+--- grub-0.97.orig/stage2/Makefile.am	2011-07-14 19:07:56.722496080 +0200
++++ grub-0.97/stage2/Makefile.am	2011-07-14 19:08:49.958760061 +0200
+@@ -90,8 +90,10 @@
+ 	cmdline.c common.c console.c disk_io.c fsys_ext2fs.c \
+ 	fsys_fat.c fsys_ffs.c fsys_iso9660.c fsys_jfs.c fsys_minix.c \
+ 	fsys_reiserfs.c fsys_ufs2.c fsys_vstafs.c fsys_xfs.c gunzip.c \
+-	hercules.c md5.c serial.c smp-imps.c stage2.c terminfo.c tparm.c
+-pre_stage2_exec_CFLAGS = $(STAGE2_COMPILE) $(FSYS_CFLAGS)
++	hercules.c md5.c serial.c smp-imps.c stage2.c terminfo.c tparm.c \
++	zlib/adler32.c zlib/inflate.c zlib/infblock.c zlib/infcodes.c \
++	zlib/inftrees.c zlib/inffast.c zlib/infutil.c zlib/zfunc.c
++pre_stage2_exec_CFLAGS = $(STAGE2_COMPILE) $(FSYS_CFLAGS) -DMY_ZCALLOC -DMAX_WBITS=15 -DMAX_MEM_LEVEL=8
+ pre_stage2_exec_CCASFLAGS = $(STAGE2_COMPILE) $(FSYS_CFLAGS)
+ pre_stage2_exec_LDFLAGS = $(PRE_STAGE2_LINK)
+ 

@@ -1,2 +1,3 @@
-Stolen from grub 0.95 : ftp://alpha.gnu.org/gnu/grub/grub-0.95.tar.gz
-
+Patches applied on grub from Debian 0.97-64
+Requires:
+ * automake 1.9
