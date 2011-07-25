@@ -1,5 +1,5 @@
 #
-# (c) 2010 Mandriva, http://www.mandriva.com
+# (c) 2010-2011 Mandriva, http://www.mandriva.com
 #
 # $Id$
 #
@@ -20,34 +20,32 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 #
+topdir = $(abspath ..)
 
-CC		:= gcc-3.4
-SVNREV		:=$(shell echo $Rev: 4491 $ | tr -cd [[:digit:]])
+extra_bin = $(extra_srcdir)/stage2/stage2_eltorito
+extra_version = 0.97
+extra_archive = grub-$(extra_version).tar.gz
+extra_uri = ftp://alpha.gnu.org/gnu/grub/$(extra_archive)
+patch_srcdir = $(extra_srcdir)
 
-BUILD_FOLDER	= $(shell pwd)/build
-3RDPARTY_FOLDER	= $(shell pwd)/3rd_party
+include $(topdir)/common.mk
+include $(topdir)/extra.mk
+include $(topdir)/patch.mk
 
-GRUB_VERSION	= 0.95
-GRUB_URI	= ftp://alpha.gnu.org/gnu/grub/
-GRUB_FOLDER	= grub-$(GRUB_VERSION)
-GRUB_TARBALL	= grub-$(GRUB_VERSION).tar.gz
+CLEANFILES += $(extra_bin)
 
-all:
-	[ -e $(GRUB_TARBALL) ] || wget $(GRUB_URI)/$(GRUB_TARBALL) -P .
-	[ -d $(GRUB_FOLDER) ] || tar zxf $(GRUB_TARBALL)
-	(for file in builtins_pulse2.c builtins_pulse2.h shared-pulse2.h zlib ;\
-		do \
-		[ -e $(GRUB_FOLDER)/stage2/"$$file" ] || cp -a "$$file" $(GRUB_FOLDER)/stage2/ ;\
-		done \
-	)
-	-cat pulse2.diff | patch -N -p1 -d $(GRUB_FOLDER)
-	[ -f  $(GRUB_FOLDER)/Makefile ] || (cd $(GRUB_FOLDER); CC=$(CC) ./configure)
-	$(MAKE) -C $(GRUB_FOLDER)/stage2/ CC=$(CC) stage2_size.h stage2_eltorito
-	cp -a $(GRUB_FOLDER)/stage2/stage2_eltorito stage2_eltorito-$(SVNREV)
+all-local: $(extra_bin)
 
-clean:
-	rm -fr $(GRUB_FOLDER)
-	rm -f stage2_eltorito-*
+$(extra_bin): $(extra_srcdir)/Makefile
+	$(MAKE) -C $(extra_srcdir)/stage2 stage2_size.h
+	$(MAKE) -C $(extra_srcdir)/stage2 stage2_eltorito
 
-distclean:
-	$(MAKE) distclean -C $(GRUB_FOLDER)
+$(extra_srcdir)/Makefile:
+	$(MAKE) patched-srcdir
+	cd $(extra_srcdir) && \
+	  aclocal-1.9 && automake-1.9 && autoconf && \
+	  ./configure
+
+install-local:
+	mkdir -p $(bootloaderdir)
+	$(install_ro_DATA) $(extra_bin) $(bootloaderdir)/cdrom_boot
