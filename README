@@ -1,0 +1,20 @@
+Pulse2
+---------------------
+
+Pulse 2 helps organizations ranging from a few computers to 100 000+
+heterogeneous computers to inventory, maintain, update and take full
+control on their IT assets. It has been designed to handle 100 000+
+computers spread on many sites.  It supports heterogeneous platforms
+such as MS Windows, GNU/Linux (Mandriva, Redhat, Debian, Ubuntu.,
+etc.), Mac OSX, HP-UX, IBM AIX and Solaris systems.
+
+Pulse2 imaging client
+---------------------
+
+Imaging client consists of i386 environments to be run from network or CDROM,
+in order to create bare-metal images of Pulse2 client nodes.
+
+Network environment must be served through TFTP by the Pulse2 server.
+CDROM environment consists mainly of a kernel and an initrd which are placed
+together with the hard disk image onto an bootable iso image by the Pulse2 
+system.

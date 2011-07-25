@@ -1,13 +1,48 @@
-Manual install :
- - install atftpd (it *must* serve files from /var/lib/tftpboot)
- - create tree :
-   mkdir -p /var/lib/tftpboot/pulse2/cfg /var/lib/tftpboot/pulse2/kernel /var/lib/tftpboot/pulse2/background
- - create some symlinks :
-   link /var/lib/tftpboot/pulse2/cfg/default to contrib/pxe_cfgs/default
-   link /var/lib/tftpboot/pulse2/background/mandriva.xpm to contrib/logo/mandriva.xpm
-   link /var/lib/tftpboot/pulse2/kernel/bzImage to kernel/build/bzImage
-   link /var/lib/tftpboot/pulse2/kernel/initrd.img to build/initrd.img
-   link /var/lib/tftpboot/pulse2/revoboot.pxe to bootloader/revoboot.pxe
- - (install and) configure dhcp to serve the "filename" option as "/pulse2/revoboot.pxe", and next-server if required.
+Installation Instructions
+*************************
 
-You're done. Any PXE client should now be able to boot, d/l revoboot.pxe, its configuration, then crash.
+Copyright (C) 2011 Mandriva, http://www.mandriva.com
+
+   Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.  This file is offered as-is,
+without warranty of any kind.
+
+Pre-requisites
+==============
+
+Of course, Pulse2 server is needed in order to leverage all these marvellouse
+tools. However, build and installation does not requires Pulse2 server.
+
+To build and install, following tools are needed:
+ - unzip
+ - bzip2
+ - wget
+ - gcc
+ - make
+ - patch
+ - libnewt-dev
+ - zlib1g-dev
+ - e2fslibs-dev
+ - quilt
+
+Quick installation
+==================
+
+Build must be done in an i386 environment.
+
+$ make
+# As root
+$ make install
+
+Cross-environment installation
+==============================
+
+You may want to install the imaging client in an environment which is different 
+from the one where it was built. To achieve this, you may share the source tree 
+through NFS between both env (build and install) then:
+
+# From the build environment 
+$ make
+# From the install environment, as root
+$ make install-nobuild
