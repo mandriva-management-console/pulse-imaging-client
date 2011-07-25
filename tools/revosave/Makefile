@@ -57,12 +57,12 @@ CLEANFILES = $(bin_all) $(obj_all) lvm.o liblrs.so*
 all-local: $(liblrs_so) $(bin_all)
 
 install-local:
-	mkdir -p $(revobindir)
+	mkdir -p $(DESTDIR)$(revobindir)
 	for file in $(bin_revo) $(script_revo); do \
-	  cp -a $$file $(revobindir)/; \
+	  $(install_BIN) $$file $(DESTDIR)$(revobindir)/; \
 	done
-	mkdir -p $(libdir)
-	cp -a liblrs.so liblrs.so.1 $(libdir)/
+	mkdir -p $(DESTDIR)$(libdir)
+	$(install_DATA) liblrs.so liblrs.so.1 $(DESTDIR)$(libdir)/
 
 image_e2fs: image_e2fs.o $(liblrs_so)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(lrs_LDFLAGS) $(e2fs_LDFLAGS)
@@ -120,5 +120,3 @@ $(reiserfssrcdir)/lib/misc.o:
 	$(CC) -M $(CFLAGS) *.c > .depend
 
 include .depend
-
-.PHONY += lib bin

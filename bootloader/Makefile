@@ -48,8 +48,8 @@ CLEANFILES = $(zlib_OBJS) $(revoboot_OBJS) \
 all-local: revoboot.pxe
 
 install-local:
-	mkdir -p $(bootloaderdir)
-	$(install_ro_DATA) revoboot.pxe $(bootloaderdir)/pxe_boot
+	mkdir -p $(DESTDIR)$(bootloaderdir)
+	$(install_DATA) revoboot.pxe $(DESTDIR)$(bootloaderdir)/pxe_boot
 
 revoboot.pxe.exec: adjust_length asm.o $(revoboot_OBJS) $(zlib_OBJS)
 	$(CC) $(CFLAGS) -o $@ -nostdlib -Wl,-N -Wl,-Ttext -Wl,7C00 -Wl,--build-id=none \

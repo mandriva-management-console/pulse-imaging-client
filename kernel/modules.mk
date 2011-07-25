@@ -57,10 +57,10 @@ $(module_path):
 	$(MAKE_MODULE)
 
 install-local:
-	mkdir -p $(initramfsdir)/lib/modules
-	$(install_DATA) $(module_path) $(initramfsdir)/lib/modules/
-	mkdir -p $(initcdfsdir)/lib/modules
-	$(install_DATA) $(module_path) $(initcdfsdir)/lib/modules/
+	mkdir -p $(DESTDIR)$(initramfsdir)/lib/modules
+	$(install_DATA) $(module_path) $(DESTDIR)$(initramfsdir)/lib/modules/
+	mkdir -p $(DESTDIR)$(initcdfsdir)/lib/modules
+	$(install_DATA) $(module_path) $(DESTDIR)$(initcdfsdir)/lib/modules/
 
 clean-local:
 	if test -d "$(abs_builddir)"; then \

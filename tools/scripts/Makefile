@@ -24,7 +24,7 @@ topdir = $(abspath ../..)
 include $(topdir)/common.mk
 
 install-local:
-	mkdir -p $(initramfsdir)/bin
-	cp -a mount.sh $(initramfsdir)/bin
-	cp -a mount-nfs.sh $(initramfsdir)/bin
-	cp -a postinst.sh $(initramfsdir)/bin
+	mkdir -p $(DESTDIR)$(initramfsdir)/bin
+	$(install_BIN) mount.sh $(DESTDIR)$(initramfsdir)/bin
+	$(install_BIN) mount-nfs.sh $(DESTDIR)$(initramfsdir)/bin
+	$(install_BIN) postinst.sh $(DESTDIR)$(initramfsdir)/bin

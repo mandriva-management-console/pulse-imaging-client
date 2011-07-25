@@ -40,10 +40,10 @@ $(extra_srcdir)/Makefile:
 	cd $(extra_srcdir) && ./configure --disable-device-mapper --without-readline
 
 install-local:
-	mkdir -p $(postinstdir)/bin
-	$(install_ro_BIN) $(extra_bin) $(postinstdir)/bin/parted
-	mkdir -p $(postinstdir)/lib
-	$(install_ro_DATA) $(extra_srcdir)/libparted/.libs/libparted.so.0.0.1 \
-	  $(postinstdir)/lib/libparted.so.0.0.1
-	ln -sf libparted.so.0.0.1 $(postinstdir)/lib/libparted.so
-	ln -sf libparted.so.0.0.1 $(postinstdir)/lib/libparted.so.0
+	mkdir -p $(DESTDIR)$(postinstdir)/bin
+	$(install_BIN) $(extra_bin) $(DESTDIR)$(postinstdir)/bin/parted
+	mkdir -p $(DESTDIR)$(postinstdir)/lib
+	$(install_DATA) $(extra_srcdir)/libparted/.libs/libparted.so.0.0.1 \
+	  $(DESTDIR)$(postinstdir)/lib/libparted.so.0.0.1
+	ln -sf libparted.so.0.0.1 $(DESTDIR)$(postinstdir)/lib/libparted.so
+	ln -sf libparted.so.0.0.1 $(DESTDIR)$(postinstdir)/lib/libparted.so.0

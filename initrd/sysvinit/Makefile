@@ -40,9 +40,9 @@ $(extra_bin):
 	$(MAKE) -C $(extra_srcdir)/src
 
 install-local:
-	mkdir -p $(initramfsdir)/sbin
+	mkdir -p $(DESTDIR)$(initramfsdir)/sbin
 	for tool in $(tools); do \
-	  cp -a $(extra_srcdir)/src/$$tool $(initramfsdir)/sbin/; \
+	  $(install_BIN) $(extra_srcdir)/src/$$tool $(DESTDIR)$(initramfsdir)/sbin/; \
 	done
 
 CLEANFILES += $(patsubst %,$(extra_srcdir)/src/%,$(tools))

@@ -39,7 +39,7 @@ $(extra_bin):
 	$(MAKE) -C $(extra_srcdir)
 
 install-local:
-	mkdir -p $(disklessdir)
-	$(install_ro_DATA) $(extra_srcdir)/memtest $(disklessdir)/memtest
+	mkdir -p $(DESTDIR)$(disklessdir)
+	$(install_DATA) $(extra_srcdir)/memtest $(DESTDIR)$(disklessdir)/memtest
 
 CLEANFILES += $(extra_bin)

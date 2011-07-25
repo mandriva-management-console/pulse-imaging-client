@@ -37,5 +37,5 @@ ntblfix: ntblfix.c vm86.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -DNOT_IN_X_SERVER -o $@ $^
 
 install-local:
-	mkdir -p $(bindir)
-	cp -a ntblfix $(bindir)/
+	mkdir -p $(DESTDIR)$(bindir)
+	$(install_BIN) ntblfix $(DESTDIR)$(bindir)/

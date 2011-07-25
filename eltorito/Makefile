@@ -47,5 +47,5 @@ $(extra_srcdir)/Makefile:
 	  ./configure
 
 install-local:
-	mkdir -p $(bootloaderdir)
-	$(install_ro_DATA) $(extra_bin) $(bootloaderdir)/cdrom_boot
+	mkdir -p $(DESTDIR)$(bootloaderdir)
+	$(install_DATA) $(extra_bin) $(DESTDIR)$(bootloaderdir)/cdrom_boot

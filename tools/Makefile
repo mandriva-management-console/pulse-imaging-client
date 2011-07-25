@@ -27,10 +27,10 @@ topdir = $(abspath ..)
 include $(topdir)/common.mk
 
 install-local:
-	mkdir -p $(libdir) $(usrbindir)
-	cp -a /usr/lib/libnewt.so* $(libdir)/
-	cp -a /lib/libslang.so* $(libdir)/
-	cp -a /usr/lib/libz.so* $(libdir)/
-	cp -a /usr/bin/whiptail $(usrbindir)/
-	cp -a /lib/libext2fs.so.* /usr/lib/libext2fs.so $(libdir)/
-	cp -a /lib/libcom_err.so.2* $(libdir)/
+	mkdir -p $(DESTDIR)$(libdir) $(DESTDIR)$(usrbindir)
+	$(install_DATA) /usr/lib/libnewt.so* $(DESTDIR)$(libdir)/
+	$(install_DATA) /lib/libslang.so* $(DESTDIR)$(libdir)/
+	$(install_DATA) /usr/lib/libz.so* $(DESTDIR)$(libdir)/
+	$(install_BIN) /usr/bin/whiptail $(DESTDIR)$(usrbindir)/
+	$(install_DATA) /lib/libext2fs.so.* /usr/lib/libext2fs.so $(DESTDIR)$(libdir)/
+	$(install_DATA) /lib/libcom_err.so.2* $(DESTDIR)$(libdir)/

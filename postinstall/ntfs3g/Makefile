@@ -40,10 +40,10 @@ $(extra_srcdir)/Makefile:
 	cd $(extra_srcdir) && ./configure --enable-mtab=no
 
 install-local:
-	mkdir -p $(postinstdir)/bin
-	$(install_ro_BIN) $(extra_bin) $(postinstdir)/bin/ntfs-3g
-	mkdir -p $(postinstdir)/lib
-	$(install_ro_DATA) $(extra_srcdir)/libntfs-3g/.libs/libntfs-3g.so.76.0.0 \
-	  $(postinstdir)/lib/libntfs-3g.so.76.0.0
-	ln -sf libntfs-3g.so.76.0.0 $(postinstdir)/lib/libntfs-3g.so.76
-	ln -sf libntfs-3g.so.76.0.0 $(postinstdir)/lib/libntfs-3g.so
+	mkdir -p $(DESTDIR)$(postinstdir)/bin
+	$(install_BIN) $(extra_bin) $(DESTDIR)$(postinstdir)/bin/ntfs-3g
+	mkdir -p $(DESTDIR)$(postinstdir)/lib
+	$(install_DATA) $(extra_srcdir)/libntfs-3g/.libs/libntfs-3g.so.76.0.0 \
+	  $(DESTDIR)$(postinstdir)/lib/libntfs-3g.so.76.0.0
+	ln -sf libntfs-3g.so.76.0.0 $(DESTDIR)$(postinstdir)/lib/libntfs-3g.so.76
+	ln -sf libntfs-3g.so.76.0.0 $(DESTDIR)$(postinstdir)/lib/libntfs-3g.so

@@ -42,8 +42,8 @@ $(extra_srcdir)/Makefile: $(extra_srcdir)
 	cd $(@D) && ./configure
 
 install-local:
-	mkdir -p $(initramfsdir)/lib
-	cp $(extra_srcdir)/lib/ioctl/libdevmapper.so $(initramfsdir)/lib/
-	ln -sf libdevmapper.so $(initramfsdir)/lib/libdevmapper.so.$(so_version)
+	mkdir -p $(DESTDIR)$(initramfsdir)/lib
+	$(install_DATA) $(extra_srcdir)/lib/ioctl/libdevmapper.so $(DESTDIR)$(initramfsdir)/lib/
+	ln -sf libdevmapper.so $(DESTDIR)$(initramfsdir)/lib/libdevmapper.so.$(so_version)
 
 CLEANFILES += $(extra_bin)

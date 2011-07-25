@@ -40,5 +40,5 @@ $(extra_srcdir)/Makefile:
 	cd $(extra_srcdir) && ./configure
 
 install-local:
-	mkdir -p $(postinstdir)/bin
-	$(install_ro_BIN) $(extra_bin) $(postinstdir)/bin/fusermount
+	mkdir -p $(DESTDIR)$(postinstdir)/bin
+	$(install_BIN) $(extra_bin) $(DESTDIR)$(postinstdir)/bin/fusermount

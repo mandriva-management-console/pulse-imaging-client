@@ -38,6 +38,6 @@ bench: $(obj_all)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
 
 install-local:
-	mkdir -p $(bindir)
-	cp -a bench $(bindir)
-	cp -a bench.ping $(bindir)
+	mkdir -p $(DESTDIR)$(bindir)
+	$(install_BIN) bench $(DESTDIR)$(bindir)
+	$(install_BIN) bench.ping $(DESTDIR)$(bindir)

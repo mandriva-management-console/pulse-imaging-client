@@ -30,9 +30,9 @@ include $(topdir)/common.mk
 include $(topdir)/consts.mk
 
 install-local:
-	mkdir -p $(postinstalldir)/bin
-	$(install_ro_BIN) bin/mountwin $(postinstalldir)/bin/mountwin
-	mkdir -p $(postinstalldir)/lib
-	$(install_ro_DATA) lib/libpostinst.sh $(postinstalldir)/lib/libpostinst.sh
-	mkdir -p $(postinstalldir)/winutils
-	$(install_ro_DATA) winutils/newsid.exe $(postinstalldir)/winutils/newsid.exe
+	mkdir -p $(DESTDIR)$(postinstalldir)/bin
+	$(install_BIN) bin/mountwin $(DESTDIR)$(postinstalldir)/bin/mountwin
+	mkdir -p $(DESTDIR)$(postinstalldir)/lib
+	$(install_DATA) lib/libpostinst.sh $(DESTDIR)$(postinstalldir)/lib/libpostinst.sh
+	mkdir -p $(DESTDIR)$(postinstalldir)/winutils
+	$(install_DATA) winutils/newsid.exe $(DESTDIR)$(postinstalldir)/winutils/newsid.exe

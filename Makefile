@@ -28,8 +28,9 @@ topdir = $(abspath .)
 include $(topdir)/common.mk
 
 install-local:
-	mkdir -p $(bootloaderdir) $(computersdir) $(mastersdir)
-	$(install_ro_DATA) contrib/bootsplash/bootsplash.xpm $(bootloaderdir)/bootsplash.xpm
+	mkdir -p $(DESTDIR)$(bootloaderdir) $(DESTDIR)$(computersdir) $(DESTDIR)$(mastersdir)
+	$(install_DATA) contrib/bootsplash/bootsplash.xpm \
+	  $(DESTDIR)$(bootloaderdir)/bootsplash.xpm
 	@echo "###"
 	@echo "### WARNING: this is not finished !"
 	@echo "###"

@@ -52,7 +52,7 @@ $(dm_srcdir)/Makefile:
 	$(MAKE) -C $(topdir)/initrd/dm
 
 install-local:
-	mkdir -p $(initramfsdir)/bin
-	cp $(extra_srcdir)/tools/lvm $(initramfsdir)/bin/
+	mkdir -p $(DESTDIR)$(initramfsdir)/bin
+	$(install_BIN) $(extra_srcdir)/tools/lvm $(DESTDIR)$(initramfsdir)/bin/
 
 CLEANFILES += $(extra_bin)

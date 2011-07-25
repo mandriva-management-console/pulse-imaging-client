@@ -42,7 +42,7 @@ $(extra_srcdir)/Makefile: $(extra_srcdir)
 	cd $(@D) && ./configure
 
 install-local:
-	mkdir -p $(initramfsdir)/lib
-	cp -a $(extra_srcdir)/.libs/$(extra_base)* $(initramfsdir)/lib/
+	mkdir -p $(DESTDIR)$(initramfsdir)/lib
+	$(install_DATA) $(extra_srcdir)/.libs/$(extra_base)* $(DESTDIR)$(initramfsdir)/lib/
 
 CLEANFILES += $(extra_bin)*

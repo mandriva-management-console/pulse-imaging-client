@@ -50,14 +50,14 @@ $(linux_config): $(linux_configdir)/dot-config-$(linux_version)
 	$(MAKE) -C $(@D) ARCH=$(ARCHITECTURE) silentoldconfig
 
 install-local: /dev/ram0
-	mkdir -p $(disklessdir)
+	mkdir -p $(DESTDIR)$(disklessdir)
 	$(install_DATA) $(extra_srcdir)/arch/$(ARCHITECTURE)/boot/bzImage \
-	  $(disklessdir)/kernel
-	$(rdev) $(disklessdir)/kernel /dev/ram0
+	  $(DESTDIR)$(disklessdir)/kernel
+	$(rdev) $(DESTDIR)$(disklessdir)/kernel /dev/ram0
 
-	mkdir -p $(initcdfsdir)/lib/modules
-	mkdir -p $(initramfsdir)/lib/modules
-	mkdir -p $(postinstdir)/lib/modules
+	mkdir -p $(DESTDIR)$(initcdfsdir)/lib/modules
+	mkdir -p $(DESTDIR)$(initramfsdir)/lib/modules
+	mkdir -p $(DESTDIR)$(postinstdir)/lib/modules
 
 	# initrd and initrdcd common modules
 	for mod in `find $(extra_srcdir) \
@@ -68,8 +68,8 @@ install-local: /dev/ram0
 	     -o -path '$(extra_srcdir)/drivers/uio/*.ko' \
 	     -o -path '$(extra_srcdir)/crypto/*.ko' \
 	     -o -path '$(extra_srcdir)/lib/*.ko'`; do \
-	       $(install_DATA) $$mod $(initramfsdir)/lib/modules/; \
-	       $(install_DATA) $$mod $(initcdfsdir)/lib/modules/; \
+	       $(install_DATA) $$mod $(DESTDIR)$(initramfsdir)/lib/modules/; \
+	       $(install_DATA) $$mod $(DESTDIR)$(initcdfsdir)/lib/modules/; \
 	done
 
 	# initrdcd only modules
@@ -79,9 +79,10 @@ install-local: /dev/ram0
 	  -o -path $(extra_srcdir)/fs/isofs/isofs.ko \
 	  -o -path $(extra_srcdir)/drivers/scsi/sr_mod.ko \
 	  -o -path $(extra_srcdir)/drivers/usb/storage/usb-storage.ko`; do \
-	  $(install_DATA) $$mod $(initcdfsdir)/lib/modules/; \
+	  $(install_DATA) $$mod $(DESTDIR)$(initcdfsdir)/lib/modules/; \
 	done
-	mv $(initcdfsdir)/lib/modules/ide-cd_mod.ko $(initcdfsdir)/lib/modules/ide-cd.ko 
+	mv $(DESTDIR)$(initcdfsdir)/lib/modules/ide-cd_mod.ko \
+	  $(DESTDIR)$(initcdfsdir)/lib/modules/ide-cd.ko 
 
 	# postinst modules
 	for mod in `find $(extra_srcdir) \
@@ -95,7 +96,7 @@ install-local: /dev/ram0
 	  -o -path $(extra_srcdir)/fs/jbd/jbd.ko \
 	  -o -path $(extra_srcdir)/fs/jbd2/jbd2.ko \
 	  -o -path $(extra_srcdir)/fs/exportfs/exportfs.ko`; do \
-	  $(install_DATA) $$mod $(postinstdir)/lib/modules/; \
+	  $(install_DATA) $$mod $(DESTDIR)$(postinstdir)/lib/modules/; \
 	done
 
 clean-local:

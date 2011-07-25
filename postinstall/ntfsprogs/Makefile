@@ -43,10 +43,10 @@ $(extra_srcdir)/Makefile:
 	cd $(extra_srcdir) && ./configure $(configure_opts)
 
 install-local:
-	mkdir -p $(postinstdir)/bin
-	$(install_ro_BIN) $(extra_bin) $(postinstdir)/bin/ntfsresize
-	mkdir -p $(postinstdir)/lib
-	$(install_ro_DATA) $(extra_srcdir)/libntfs/.libs/libntfs.so.10.0.0 \
-	  $(postinstdir)/lib/libntfs.so.10.0.0
-	ln -sf libntfs.so.10.0.0 $(postinstdir)/lib/libntfs.so.10
-	ln -sf libntfs.so.10.0.0 $(postinstdir)/lib/libntfs.so
+	mkdir -p $(DESTDIR)$(postinstdir)/bin
+	$(install_BIN) $(extra_bin) $(DESTDIR)$(postinstdir)/bin/ntfsresize
+	mkdir -p $(DESTDIR)$(postinstdir)/lib
+	$(install_DATA) $(extra_srcdir)/libntfs/.libs/libntfs.so.10.0.0 \
+	  $(DESTDIR)$(postinstdir)/lib/libntfs.so.10.0.0
+	ln -sf libntfs.so.10.0.0 $(DESTDIR)$(postinstdir)/lib/libntfs.so.10
+	ln -sf libntfs.so.10.0.0 $(DESTDIR)$(postinstdir)/lib/libntfs.so

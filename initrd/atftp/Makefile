@@ -43,7 +43,7 @@ $(extra_srcdir)/Makefile: patched-srcdir
 	cd $(extra_srcdir) && ./configure --disable-libreadline
 
 install-local:
-	mkdir -p $(initramfsdir)/bin
-	cp $(extra_srcdir)/atftp $(initramfsdir)/bin/
+	mkdir -p $(DESTDIR)$(initramfsdir)/bin
+	$(install_BIN) $(extra_srcdir)/atftp $(DESTDIR)$(initramfsdir)/bin/
 
 CLEANFILES += $(extra_bin)

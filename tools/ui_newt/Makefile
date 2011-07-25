@@ -38,5 +38,5 @@ ui_newt: $(obj_all)
 	$(CC) $(CFLAGS) $(CPPFLASG) $(LDFLAGS) -o $@ $^
 
 install-local:
-	mkdir -p $(bindir)
-	cp -a ui_newt $(bindir)/uinewt
+	mkdir -p $(DESTDIR)$(bindir)
+	$(install_BIN) ui_newt $(bindir)/uinewt

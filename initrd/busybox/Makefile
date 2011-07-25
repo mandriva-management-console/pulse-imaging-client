@@ -59,17 +59,17 @@ $(extra_srcdir)/.config: $(busybox_config) patched-srcdir
 
 install-local:
 	for dir in sbin bin usr/bin; do \
-	  mkdir -p $(initramfsdir)/$$dir; \
+	  mkdir -p $(DESTDIR)$(initramfsdir)/$$dir; \
 	done 
-	cp $(extra_srcdir)/busybox $(initramfsdir)/bin/
+	$(install_BIN) $(extra_srcdir)/busybox $(DESTDIR)$(initramfsdir)/bin/
 	for dest in $(links_bin); do \
-	  ln -fs busybox $(initramfsdir)/bin/$$dest; \
+	  ln -fs busybox $(DESTDIR)$(initramfsdir)/bin/$$dest; \
 	done
 	for dest in $(links_usr_bin); do \
-	  ln -fs ../../bin/busybox $(initramfsdir)/usr/bin/$$dest; \
+	  ln -fs ../../bin/busybox $(DESTDIR)$(initramfsdir)/usr/bin/$$dest; \
 	done
 	for dest in $(links_sbin); do \
-	  ln -fs ../bin/busybox $(initramfsdir)/sbin/$$dest; \
+	  ln -fs ../bin/busybox $(DESTDIR)$(initramfsdir)/sbin/$$dest; \
 	done
 
 CLEANFILES += $(extra_bin)

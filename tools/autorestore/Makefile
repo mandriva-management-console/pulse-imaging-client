@@ -40,13 +40,13 @@ all-local: $(bin_all)
 	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ $^
 
 install-local:
-	mkdir -p $(bindir)
+	mkdir -p $(DESTDIR)$(bindir)
 	for i in $(bin_all); do \
-	  cp -a $$i $(bindir); \
+	  $(install_BIN) $$i $(DESTDIR)$(bindir); \
 	done
-	mkdir -p $(rcdir)
-	cp -a revoboot $(rcdir)/
-	mkdir -p $(usrlibdir)
-	cp -a revolib.sh $(usrlibdir)/revolib.sh
+	mkdir -p $(DESTDIR)$(rcdir)
+	$(install_BIN) revoboot $(DESTDIR)$(rcdir)/
+	mkdir -p $(DESTDIR)$(usrlibdir)
+	$(install_BIN) revolib.sh $(DESTDIR)$(usrlibdir)/revolib.sh
 
 .PHONY += check-syntax

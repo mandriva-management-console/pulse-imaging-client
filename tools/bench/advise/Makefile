@@ -37,4 +37,6 @@ bench-advise: bench-advise.o
 bench-advise.o: bench-advise.c timespec.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-# TODO: install somewhere ?
+install-local:
+	mkdir -p $(DESTDIR)$(bindir)
+	$(install_BIN) bench-advise $(DESTDIR)$(bindir)

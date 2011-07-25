@@ -40,6 +40,6 @@ $(lrs_topdir)/liblrs.so:
 	$(MAKE) -C $(lrs_topdir)
 
 install-local:
-	mkdir -p $(bindir)
-	cp -a autosave $(bindir)/
-	cp -a floppysave $(bindir)/
+	mkdir -p $(DESTDIR)$(bindir)
+	$(install_BIN) autosave $(DESTDIR)$(bindir)/
+	$(install_BIN) floppysave $(DESTDIR)$(bindir)/

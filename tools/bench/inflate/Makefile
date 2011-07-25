@@ -50,4 +50,8 @@ bench-inflate-zpipe.o: bench-inflate.c timespec.h
 zpipe.o: zpipe.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-# TODO: install somwhere ?
+install-local:
+	mkdir -p $(DESTDIR)$(bindir)
+	for bin in $(bin_all); do \
+	  $(install_BIN) $$bin $(DESTDIR)$(bindir)/; \
+	done

@@ -59,9 +59,7 @@ revobindir = $(initramfsdir)/revobin
 #
 install = $(shell which install)
 install_DATA = $(install) -m 644
-install_ro_DATA = $(install) -m 444
 install_BIN = $(install) -m 755
-install_ro_BIN = $(install) -m 555
 
 #
 # Some useful rules

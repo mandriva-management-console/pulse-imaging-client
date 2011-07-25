@@ -48,7 +48,7 @@ $(popt_srcdir)/.libs/libpopt.so:
 	$(MAKE) -C $(topdir)/initrd/popt
 
 install-local:
-	mkdir -p $(initramfsdir)/bin
-	cp $(extra_srcdir)/pump $(initramfsdir)/bin/
+	mkdir -p $(DESTDIR)$(initramfsdir)/bin
+	$(install_BIN) $(extra_srcdir)/pump $(DESTDIR)$(initramfsdir)/bin/
 
 CLEANFILES += $(extra_bin)

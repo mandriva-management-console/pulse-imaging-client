@@ -37,5 +37,5 @@ $(extra_bin):
 	$(MAKE) $(extra_srcdir)
 
 install-local:
-	mkdir -p $(postinstdir)/bin
-	$(install_ro_BIN) $(extra_bin) $(postinstdir)/bin/chntpw
+	mkdir -p $(DESTDIR)$(postinstdir)/bin
+	$(install_BIN) $(extra_bin) $(DESTDIR)$(postinstdir)/bin/chntpw
