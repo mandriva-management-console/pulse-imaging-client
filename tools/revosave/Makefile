@@ -1,5 +1,5 @@
 # (c) 2003-2007 Linbox FAS, http://linbox.com
-# (c) 2008-2009 Mandriva, http://www.mandriva.com
+# (c) 2008-2011 Mandriva, http://www.mandriva.com
 #
 # $Id$
 #
@@ -19,88 +19,106 @@
 # along with Pulse 2; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
+topdir = $(abspath ../..)
+include $(topdir)/common.mk
+include $(topdir)/extra.mk
 
-OBJ			= compress.o
-LIBOBJ		= compress.o easy_sock.o client.o
-OBJS		= decompress-bitmap.o decompress.o decompress-test.o image_e2fs.o image_fat.o image_jfs.o image_lvm.o image_ntfs.o image_raw.o image_swap.o image_xfs.o lvm.o image_lvmreiserfs.o
-IMGFILES	= image_swap image_fat image_ntfs image_e2fs image_xfs image_jfs image_lvm decompress decompress-test image_raw decompress-bitmap image_lvmreiserfs
+bin_revo = image_e2fs image_fat image_jfs image_lvm image_lvmreiserfs image_ntfs image_raw image_swap image_xfs
+script_revo = image_ufs
+bin_all = $(bin_revo) decompress decompress-test decompress-bitmap
+obj_all = $(patsubst %,%.o,$(bin_all))
+
+liblrs_so = liblrs.so
+liblrs_DEPS = compress.o easy_sock.o client.o
+
+c_sources = $(wildcard *.c)
 
 CFLAGS	= -Wall -O2 -DLBLIMAGEVER='1.2'
 LDFLAGS	= 
-LIBLRS	= -L. -llrs
-LIBZ	= -lz
-RFSLIBS	= -L$(RFS_DIR)/reiserfscore -lcore -L$(RFS_DIR)/lib -lmisc
-LIBE2FS	= -lext2fs -lcom_err
+
+lrs_LDFLAGS = -L. -llrs
+
+z_LDFLAGS = -lz
+
+reiserfsbasedir = $(topdir)/tools/reiserfsprogs
+reiserfssrcdir = $(reiserfsbasedir)/$(extra_srcdir)
+reiserfs_LDFLAGS = -L$(reiserfssrcdir)/reiserfscore -lcore -L$(reiserfssrcdir)/lib -lmisc
+reiserfs_CPPFLAGS = -I$(reiserfssrcdir)
+
+e2fs_LDFLAGS	= -lext2fs -lcom_err
+
+CLEANFILES = $(bin_all) $(obj_all) lvm.o liblrs.so*
 
 #
 # XXX in order to build a shared library, 
 # XXX flags -DPIC -fPIC should be used
 #
 
-# ugly hack to allow some parallel build (make -jX)
-all: 
-	$(MAKE) lib
-	$(MAKE) bin
+all-local: $(liblrs_so) $(bin_all)
 
-lib: liblrs.so
-bin: lib $(IMGFILES)
+install-local:
+	mkdir -p $(revobindir)
+	for file in $(bin_revo) $(script_revo); do \
+	  cp -a $$file $(revobindir)/; \
+	done
+	mkdir -p $(libdir)
+	cp -a liblrs.so liblrs.so.1 $(libdir)/
 
-depend:
-	$(CC) -M $(CFLAGS) *.c >.depend
+image_e2fs: image_e2fs.o $(liblrs_so)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(lrs_LDFLAGS) $(e2fs_LDFLAGS)
 
-image_fat: image_fat.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
+image_fat: image_fat.o $(liblrs_so)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(lrs_LDFLAGS)
 
-image_swap: image_swap.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
+image_jfs: image_jfs.o $(liblrs_so)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(lrs_LDFLAGS)
 
-image_raw: image_raw.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
+image_lvm: image_lvm.o lvm.o $(liblrs_so)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(lrs_LDFLAGS)
 
-image_ntfs: image_ntfs.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
+image_lvmreiserfs: lvm.o image_lvmreiserfs.o $(reiserfssrcdir)/lib/misc.o $(liblrs_so)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(lrs_LDFLAGS) $(reiserfs_LDFLAGS)
 
-image_e2fs: image_e2fs.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS) $(LIBE2FS)
+image_ntfs: image_ntfs.o $(liblrs_so)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(lrs_LDFLAGS)
 
-image_xfs: image_xfs.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
+image_raw: image_raw.o $(liblrs_so)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(lrs_LDFLAGS)
 
-image_jfs: image_jfs.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
+image_swap: image_swap.o $(liblrs_so)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(lrs_LDFLAGS)
 
-image_lvm: image_lvm.o lvm.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS)
+image_xfs: image_xfs.o $(liblrs_so)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(lrs_LDFLAGS)
 
-image_lvmreiserfs: lvm.o image_lvmreiserfs.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS) $(RFSLIBS)
+decompress: decompress.o $(liblrs_so)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(lrs_LDFLAGS) $(z_LDFLAGS)
 
-decompress: decompress.o
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBLRS) $(LIBZ)
+decompress-test: decompress-test.o compress.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< $(z_LDFLAGS)
 
-decompress-test: decompress-test.o $(OBJ)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< $(LIBZ)
+decompress-bitmap: decompress-bitmap.o compress.o
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< $(z_LDFLAGS)
 
-decompress-bitmap: decompress-bitmap.o $(OBJ)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $< $(LIBZ)
+image_lvmreiserfs.o: image_lvmreiserfs.c $(reiserfssrcdir)/lib/misc.o
+	$(CC) $(CFLAGS) $(reiserfs_CPPFLAGS) -o $@ -c $<
 
-image_lvmreiserfs.o: image_lvmreiserfs.c
-	$(CC) $(CFLAGS) -I$(RFS_DIR) -o $@ -c $<
-
-liblrs.so.1: $(LIBOBJ)
-	$(CC) -shared -Wl,-soname,$@ -o $@ $^ $(LIBZ)
+liblrs.so.1: $(liblrs_DEPS)
+	$(CC) -shared -Wl,-soname,$@ -o $@ $^ $(z_LDFLAGS)
 
 liblrs.so: liblrs.so.1
 	ln -sf $< $@
 
-liblrs.a: $(LIBOBJ)
-	ar rc $@ $^ $(LIBOBJ)
+liblrs.a: $(liblrs_DEPS)
+	ar rc $@ $^ $(liblrs_DEPS)
 	ranlib $@
+
+$(reiserfssrcdir)/lib/misc.o:
+	$(MAKE) -C $(reiserfsbasedir)
+
+.depend: $(c_sources)
+	$(CC) -M $(CFLAGS) *.c > .depend
 
 include .depend
 
-check-syntax:
-	$(CC) $(CFLAGS) -pedantic -fsyntax-only *.c
-
-clean:
-	$(RM) -f liblrs.so.1 liblrs.so $(IMGFILES) liblrs.a $(LIBOBJ)  $(OBJS) $(OBJ)
+.PHONY += lib bin
