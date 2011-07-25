@@ -18,11 +18,18 @@
 # along with Pulse 2; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
+topdir = $(abspath ../../..)
+include $(topdir)/common.mk
+
+bin_all = bench-advise
+obj_all = $(patsubst %,%.o,$(bin_all))
 
 CFLAGS	= -O2 -g -Wall -Wextra
 LDFLAGS	=
 
-all: bench-advise
+CLEANFILES += $(bin_all) $(obj_all)
+
+all-local: bench-advise
 
 bench-advise: bench-advise.o
 	$(CC) $(LDFLAGS) -o $@ $^ -lrt
@@ -30,5 +37,4 @@ bench-advise: bench-advise.o
 bench-advise.o: bench-advise.c timespec.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-clean:
-	rm  -f bench-advise bench-advise.o
+# TODO: install somewhere ?

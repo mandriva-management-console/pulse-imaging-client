@@ -18,11 +18,18 @@
 # along with Pulse 2; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
+topdir = $(abspath ../../..)
+include $(topdir)/common.mk
+
+bin_all = zpipe bench-inflate bench-inflate-zpipe
+obj_all = $(patsubst %,%.o,$(bin_all))
 
 CFLAGS	= -O2 -g -Wall -Wextra
 LDFLAGS	=
 
-all: zpipe bench-inflate bench-inflate-zpipe
+CLEANFILES += $(bin_all) $(obj_all)
+
+all-local: $(bin_all) 
 
 zpipe: zpipe.o
 	$(CC) $(LDFLAGS) -o $@ $^ -lz
@@ -43,5 +50,4 @@ bench-inflate-zpipe.o: bench-inflate.c timespec.h
 zpipe.o: zpipe.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-clean:
-	rm  -f zpipe bench-inflate bench-inflate-zpipe zpipe.o bench-inflate.o bench-inflate-zpipe.o 
+# TODO: install somwhere ?

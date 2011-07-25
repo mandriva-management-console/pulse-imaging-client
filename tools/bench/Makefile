@@ -1,5 +1,5 @@
 # (c) 2003-2007 Linbox FAS, http://linbox.com
-# (c) 2008-2009 Mandriva, http://www.mandriva.com
+# (c) 2008-2011 Mandriva, http://www.mandriva.com
 #
 # $Id$
 #
@@ -19,14 +19,25 @@
 # along with Pulse 2; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
+SUBDIRS = advise inflate
+
+topdir = $(abspath ../..)
+include $(topdir)/common.mk
+
+bin_all = bench
+obj_all = main.o compress.o disk.o nfs.o
 
 CFLAGS	= -O2 -Wall -DBENCH
-LIBS	= -lz
-OBJS	= main.o compress.o disk.o nfs.o
-LDFLAGS	=
+LDFLAGS = -lz
 
-bench: $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
+CLEANFILES += $(bin_all) $(obj_all)
 
-clean:
-	rm  -f $(OBJS) bench
+all-local: $(bin_all)
+
+bench: $(obj_all)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^
+
+install-local:
+	mkdir -p $(bindir)
+	cp -a bench $(bindir)
+	cp -a bench.ping $(bindir)
