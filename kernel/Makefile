@@ -21,7 +21,7 @@
 #
 topdir = $(abspath ..)
 
-SUBDIRS = rdev .
+SUBDIRS = rdev . modules
 
 linux_version = 2.6.32.43
 extra_archive = linux-$(linux_version).tar.bz2
