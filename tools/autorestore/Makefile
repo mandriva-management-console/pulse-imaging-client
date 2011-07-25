@@ -1,6 +1,6 @@
 #
 # (c) 2003-2007 Linbox FAS, http://linbox.com
-# (c) 2008-2009 Mandriva, http://www.mandriva.com
+# (c) 2008-2011 Mandriva, http://www.mandriva.com
 #
 # $Id$
 #
@@ -21,18 +21,32 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 #
+topdir = $(abspath ../..)
+include $(topdir)/common.mk
 
-CFLAGS	= -DLBLIMAGEVER='1.4' -Os -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wall -I$(LRS_DIR)
-LIBS	= -L$(LRS_DIR) -llrs  -lz
-SRC	= autorestore.c
+bin_all = autorestore
+script_all = revosendlog revowait revodoneimage revogetname \
+	revogetuuid revosetdefault revoinc revoinv
 
-autorestore: $(SRC)
-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
+CLEANFILES = $(bin_all)
 
-check-syntax:
-	$(CC) $(CFLAGS) -pedantic -fsyntax-only $(SRC)
+CFLAGS = -DLBLIMAGEVER='1.4' -Os -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wall
+CPPFLAGS = -I$(lrs_topdir)
+LDFLAGS = -L$(lrs_topdir) -llrs  -lz
 
-clean:
-	rm -f autorestore
+all-local: $(bin_all)
 
-.PHONY: syntax
+%: %.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) $(LDFLAGS) -o $@ $^
+
+install-local:
+	mkdir -p $(bindir)
+	for i in $(bin_all); do \
+	  cp -a $$i $(bindir); \
+	done
+	mkdir -p $(rcdir)
+	cp -a revoboot $(rcdir)/
+	mkdir -p $(usrlibdir)
+	cp -a revolib.sh $(usrlibdir)/revolib.sh
+
+.PHONY += check-syntax
