@@ -63,6 +63,14 @@ tools/bench/compress.o
 tools/bench/disk.o
 tools/bench/main.o
 tools/bench/nfs.o
+tools/bench/advise/bench-advise
+tools/bench/advise/bench-advise.o
+tools/bench/inflate/bench-inflate
+tools/bench/inflate/bench-inflate-zpipe
+tools/bench/inflate/bench-inflate-zpipe.o
+tools/bench/inflate/bench-inflate.o
+tools/bench/inflate/zpipe
+tools/bench/inflate/zpipe.o
 tools/ntblfix/ntblfix
 tools/ui_newt/server.o
 tools/ui_newt/ui_newt

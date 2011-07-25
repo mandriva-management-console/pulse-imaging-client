@@ -70,18 +70,30 @@ dist: distdir
 #  create archive from archivebase
 distcheck: dist
 	mkdir -p $(archivebase)/_inst
-	make -C $(archivebase) install DESTDIR=$(archivebase)/_inst
-	make -C $(archivebase) dist
+	$(MAKE) -C $(archivebase) install DESTDIR=$(archivebase)/_inst
+	$(MAKE) -C $(archivebase) dist
 	@echo "###"
 	@echo "### Your archive is checked and ready at:"
 	@echo "###   $(archivebase).tar.gz"
 	@echo "###"
 
 distdir:
-	rm -rf $(archivebase) $(archivebase).tar.gz
+	rm -rf $(archivebase)
 	mkdir -p $(archivebase)
 	tar -c \
 	  --exclude=\.svn --exclude=\.git --exclude=_inst \
 	  --exclude=$(project)-\* --exclude=sources \
 	  . | tar xC $(archivebase)
-	make -C $(archivebase) distclean
+	$(MAKE) -C $(archivebase) distclean
+
+binary: binarydir
+	rm -f $(binarybase).tar.gz
+	tar -c -f - -C $(binarybase) . | gzip -c > $(binarybase).tar.gz
+
+binarydir: check-root
+	rm -rf $(binarybase)
+	mkdir -p $(binarybase)
+	$(MAKE) install DESTDIR=$(binarybase)
+	$(binarybase)$(imaginglibdir)/update-initrd all DESTDIR=$(binarybase)
+
+PHONY += initcheck dist distcheck distdir binarydir binary

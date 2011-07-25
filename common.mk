@@ -21,19 +21,20 @@
 #
 include $(topdir)/version.mk
 
-archivebase = $(project)-$(version)
-
 .DEFAULT_GOAL = all
 DISTCLEANFILES = 
 CLEANFILES = *~
 ARCHITECTURE = i386
 CC = gcc
 
+archivebase = $(project)-$(version)
+binarybase = $(project)-$(version)_$(ARCHITECTURE)
+
 #
 # Paths
 #
-imaginglibdir = $(DESTDIR)/usr/lib/pulse2/imaging
-imagingdir = $(DESTDIR)/var/lib/pulse2/imaging
+imaginglibdir = /usr/lib/pulse2/imaging
+imagingdir = /var/lib/pulse2/imaging
 
 bootloaderdir = $(imagingdir)/bootloader
 disklessdir = $(imagingdir)/diskless

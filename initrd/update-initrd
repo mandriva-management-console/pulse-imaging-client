@@ -25,7 +25,7 @@
 #
 .DEFAULT_GOAL=help
 
-basedir=/var/lib/pulse2/imaging
+basedir=$(DESTDIR)/var/lib/pulse2/imaging
 initrddir=$(basedir)/initramfs/initrd
 initrdcddir=$(basedir)/initramfs/initrdcd
 disklessdir=$(basedir)/diskless

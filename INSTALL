@@ -38,6 +38,8 @@ $ make install
 Cross-environment installation
 ==============================
 
+- Method 1: build and install in different dirs
+
 You may want to install the imaging client in an environment which is different 
 from the one where it was built. To achieve this, you may share the source tree 
 through NFS between both env (build and install) then:
@@ -46,3 +48,9 @@ through NFS between both env (build and install) then:
 $ make
 # From the install environment, as root
 $ make install-nobuild
+
+- Method 2: create binary tarball
+
+The target 'binary' creates a tarball with pre-compiled binaries which can be 
+decompressed on '/'.
+
