@@ -71,7 +71,7 @@ dist: distdir
 #  create archive from archivebase
 distcheck: dist
 	mkdir -p $(archivebase)/_inst
-	$(MAKE) -C $(archivebase) install DESTDIR=$(archivebase)/_inst
+	$(MAKE) -C $(archivebase) install DESTDIR=$(topdir)/$(archivebase)/_inst
 	$(MAKE) -C $(archivebase) dist
 	@echo "###"
 	@echo "### Your archive is checked and ready at:"
@@ -94,7 +94,7 @@ binary: binarydir
 binarydir: check-root
 	rm -rf $(binarybase)
 	mkdir -p $(binarybase)
-	$(MAKE) install DESTDIR=$(binarybase)
-	$(binarybase)$(imaginglibdir)/update-initrd all DESTDIR=$(binarybase)
+	$(MAKE) install DESTDIR=$(topdir)/$(binarybase)
+	$(binarybase)$(imaginglibdir)/update-initrd all DESTDIR=$(topdir)/$(binarybase)
 
 PHONY += initcheck dist distcheck distdir binarydir binary

@@ -28,7 +28,7 @@ ARCHITECTURE = i386
 CC = gcc
 
 archivebase = $(project)-$(version)
-binarybase = $(project)-$(version)_$(ARCHITECTURE)
+binarybase = $(project)-binary-$(version)_$(ARCHITECTURE)
 
 #
 # Paths
