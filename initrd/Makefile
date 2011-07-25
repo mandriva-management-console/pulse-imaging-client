@@ -1,7 +1,7 @@
 #
-# (c) 2009 Mandriva, http://www.mandriva.com
+# (c) 2011 Mandriva, http://www.mandriva.com
 #
-# $Id: Makefile 4505 2009-09-23 13:42:56Z nrueff $
+# $Id$
 #
 # This file is part of Pulse 2, http://pulse2.mandriva.org
 #
@@ -20,110 +20,76 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 #
+SUBDIRS = atftp busybox dm lvm popt pump sysvinit tinylogin
 
-CC=gcc-3.4
+topdir = $(abspath ..)
+include $(topdir)/common.mk
 
-BUILD_FOLDER =  $(shell pwd)/build
-3RDPARTY_FOLDER = $(shell pwd)/3rd_party
-include consts.mk
+install-local:
+	mkdir -p $(initramfsdir)
+	tar c --exclude=\.svn -C tree . | tar xC $(initramfsdir)
+	$(MAKE) symlinks
+	mkdir -p $(imaginglibdir)
+	$(install_BIN) update-initrd $(imaginglibdir)/
 
-all: load
+symlinks:
+	# Create directories
+	for dir in sbin bin lib var usr/bin usr/lib \
+	  etc/rc0.d etc/rc2.d etc/rc6.d etc/rcS.d; do \
+	  mkdir -p $(initramfsdir)/$$dir; \
+	done 
 
-load: lvm atftp pump busybox sysvinit
-	# dev summoning
-	-(cd tree/dev; ../../MAKEDEV console ptyp std hda hdb hdc hdd hde hdf hdg hdh sda sdb sdc sdd sde sdf sdg sdh fd0 cciss.0 cciss.1 ida.0 scd0 scd1 input; mknod -m 600 initctl p; mknod -m 600 log p)
-	# symlinks summoning
-	(cd tree; ../symlinks)
+	# Misc symlinks
+	ln -sf sbin/init $(initramfsdir)/init
+	ln -sf halt $(initramfsdir)/sbin/reboot
+	ln -sf ae $(initramfsdir)/bin/vi
+	ln -sf ../sbin/route $(initramfsdir)/bin/route
 
-atftp:
-	[ -e $(3RDPARTY_FOLDER)/$(ATFTP_TARBALL) ] || wget $(ATFTP_URI)/$(ATFTP_TARBALL) -P $(3RDPARTY_FOLDER)
-	[ -e $(3RDPARTY_FOLDER)/$(ATFTP_PATCH) ] || wget $(ATFTP_URI)/$(ATFTP_PATCH) -P $(3RDPARTY_FOLDER)
-	[ -d $(BUILD_FOLDER)/$(ATFTP_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(ATFTP_TARBALL) -C $(BUILD_FOLDER)
-	-zcat $(3RDPARTY_FOLDER)/$(ATFTP_PATCH) | patch -N -p1 -d $(BUILD_FOLDER)/$(ATFTP_FOLDER)
-	[ -f $(BUILD_FOLDER)/$(ATFTP_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(ATFTP_FOLDER); CC=$(CC) ./configure --disable-libreadline)
-	$(MAKE) -C $(BUILD_FOLDER)/$(ATFTP_FOLDER) CC=$(CC) atftp
-	cp -a $(BUILD_FOLDER)/$(ATFTP_FOLDER)/atftp tree/bin
-	strip tree/bin/atftp
+	# Init tree
+	ln -sf ../init.d/umountfs $(initramfsdir)/etc/rc0.d/S40umountfs
+	ln -sf ../init.d/netbase $(initramfsdir)/etc/rc0.d/K04netbase
+	ln -sf ../init.d/sendsigs $(initramfsdir)/etc/rc0.d/S20sendsigs
+	ln -sf ../init.d/sysklogd $(initramfsdir)/etc/rc0.d/K16sysklogd
+	ln -sf ../init.d/halt $(initramfsdir)/etc/rc0.d/S99halt
+	ln -sf ../init.d/urandom $(initramfsdir)/etc/rc0.d/S30urandom
+	ln -sf ../init.d/modutils $(initramfsdir)/etc/rc2.d/S20modutils
+	ln -sf ../init.d/network $(initramfsdir)/etc/rc2.d/S40network
+	ln -sf ../init.d/revoboot $(initramfsdir)/etc/rc2.d/S99revoboot
+	ln -sf ../init.d/rmnologin $(initramfsdir)/etc/rc2.d/S16rmnologin
+	ln -sf ../init.d/netbase $(initramfsdir)/etc/rc2.d/S03netbase
+	ln -sf ../init.d/sysklogd $(initramfsdir)/etc/rc2.d/S00sysklogd
+	ln -sf ../init.d/umountfs $(initramfsdir)/etc/rc6.d/S40umountfs
+	ln -sf ../init.d/netbase $(initramfsdir)/etc/rc6.d/K04netbase
+	ln -sf ../init.d/sendsigs $(initramfsdir)/etc/rc6.d/S20sendsigs
+	ln -sf ../init.d/sysklogd $(initramfsdir)/etc/rc6.d/K16sysklogd
+	ln -sf ../init.d/reboot $(initramfsdir)/etc/rc6.d/S99reboot
+	ln -sf ../init.d/urandom $(initramfsdir)/etc/rc6.d/S30urandom
+	ln -sf ../init.d/tz $(initramfsdir)/etc/rcS.d/S50tz
+	ln -sf ../init.d/dm $(initramfsdir)/etc/rcS.d/S60dm
+	ln -sf ../init.d/checkroot $(initramfsdir)/etc/rcS.d/S10checkroot
+	ln -sf ../init.d/bootmisc.sh $(initramfsdir)/etc/rcS.d/S55bootmisc
+	ln -sf ../init.d/mountall $(initramfsdir)/etc/rcS.d/S35mountall
+	ln -sf ../init.d/hostname $(initramfsdir)/etc/rcS.d/S40hostname
 
-lvm: dm
-	[ -e $(3RDPARTY_FOLDER)/$(LVM_TARBALL) ] || wget $(LVM_URI)/$(LVM_TARBALL) -P $(3RDPARTY_FOLDER)
-	[ -d $(BUILD_FOLDER)/$(LVM_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(LVM_TARBALL) -C $(BUILD_FOLDER)
-	[ -f $(BUILD_FOLDER)/$(LVM_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(LVM_FOLDER); LDFLAGS='-L../$(DM_FOLDER)/lib/ioctl -L../../$(DM_FOLDER)/lib/ioctl' CFLAGS='-I../$(DM_FOLDER)/include -I../../$(DM_FOLDER)/include' CPPFLAGS='-I../$(DM_FOLDER)/include -I../../$(DM_FOLDER)/include' CC=$(CC) ./configure --disable-selinux --disable-readline)
-	$(MAKE) -C $(BUILD_FOLDER)/$(LVM_FOLDER) CC=$(CC) tools
-	cp -a $(BUILD_FOLDER)/$(LVM_FOLDER)/tools/lvm tree/bin
-	strip tree/bin/lvm
+	# LibC files
+	ln -sf libm-2.3.6.so $(initramfsdir)/lib/libm.so.6
+	ln -sf libnss_files-2.3.6.so $(initramfsdir)/lib/libnss_files.so.2
+	ln -sf libresolv-2.3.6.so $(initramfsdir)/lib/libresolv.so.2
+	ln -sf libnsl-2.3.6.so $(initramfsdir)/lib/libnsl.so.1
+	ln -sf libutil-2.3.6.so $(initramfsdir)/lib/libutil.so.1
+	ln -sf libcrypt-2.3.6.so $(initramfsdir)/lib/libcrypt.so.1
+	ln -sf ld-2.3.6.so $(initramfsdir)/lib/ld-linux.so.2
+	ln -sf libdl-2.3.6.so $(initramfsdir)/lib/libdl.so.2
+	ln -sf libnss_dns-2.3.6.so $(initramfsdir)/lib/libnss_dns.so.2
+	ln -sf libc-2.3.6.so $(initramfsdir)/lib/libc.so.6
 
-dm:
-	[ -e $(3RDPARTY_FOLDER)/$(DM_TARBALL) ] || wget $(DM_URI)/$(DM_TARBALL) -P $(3RDPARTY_FOLDER)
-	[ -d $(BUILD_FOLDER)/$(DM_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(DM_TARBALL) -C $(BUILD_FOLDER)
-	[ -f $(BUILD_FOLDER)/$(DM_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(DM_FOLDER); CC=$(CC) ./configure)
-	$(MAKE) -C $(BUILD_FOLDER)/$(DM_FOLDER) CC=$(CC) lib
-	cp -a $(BUILD_FOLDER)/$(DM_FOLDER)/lib/ioctl/libdevmapper.so tree/lib
-	strip tree/lib/libdevmapper.so
-	ln -sf libdevmapper.so tree/lib/libdevmapper.so.1.01
+	# libPThread
+	ln -sf libpthread-0.10.so $(initramfsdir)/lib/libpthread.so.0
 
-pump: popt
-	[ -e $(3RDPARTY_FOLDER)/$(PUMP_TARBALL) ] || wget $(PUMP_URI)/$(PUMP_TARBALL) -P $(3RDPARTY_FOLDER)
-	[ -d $(BUILD_FOLDER)/$(PUMP_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(PUMP_TARBALL) -C $(BUILD_FOLDER)
-	-cat $(3RDPARTY_FOLDER)/$(PUMP_PATCH_01) | patch -N -p1 -d $(BUILD_FOLDER)/$(PUMP_FOLDER)
-	-cat $(3RDPARTY_FOLDER)/$(PUMP_PATCH_02) | patch -N -p1 -d $(BUILD_FOLDER)/$(PUMP_FOLDER)
-	$(MAKE) -C $(BUILD_FOLDER)/$(PUMP_FOLDER) CC=$(CC) LDFLAGS='-L../$(POPT_FOLDER)/.libs' DEB_CFLAGS='-I../$(POPT_FOLDER)'
-	cp -a $(BUILD_FOLDER)/$(PUMP_FOLDER)/pump tree/bin
-	strip tree/bin/pump
+	# Other stuff
+	ln -sf /tmp $(initramfsdir)/var/
 
-popt:
-	[ -e $(3RDPARTY_FOLDER)/$(POPT_TARBALL) ] || wget $(POPT_URI)/$(POPT_TARBALL) -P $(3RDPARTY_FOLDER)
-	[ -d $(BUILD_FOLDER)/$(POPT_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(POPT_TARBALL) -C $(BUILD_FOLDER)
-	[ -f $(BUILD_FOLDER)/$(POPT_FOLDER)/Makefile ] || (cd $(BUILD_FOLDER)/$(POPT_FOLDER); CC=$(CC) ./configure)
-	$(MAKE) -C $(BUILD_FOLDER)/$(POPT_FOLDER) CC=$(CC)
-	cp -a $(BUILD_FOLDER)/$(POPT_FOLDER)/.libs/libpopt.so* tree/lib
+	ln -sf nc $(initramfsdir)/usr/bin/netcat
+	ln -sf /usr/share/terminfo $(initramfsdir)/usr/lib/
 
-busybox:
-	[ -e $(3RDPARTY_FOLDER)/$(BUSYBOX_TARBALL) ] || wget $(BUSYBOX_URI)/$(BUSYBOX_TARBALL) -P $(3RDPARTY_FOLDER)
-	[ -d $(BUILD_FOLDER)/$(BUSYBOX_FOLDER) ] || tar jxf $(3RDPARTY_FOLDER)/$(BUSYBOX_TARBALL) -C $(BUILD_FOLDER)
-	[ -e $(BUILD_FOLDER)/$(BUSYBOX_FOLDER)/.config ] || cp -a $(3RDPARTY_FOLDER)/$(BUSYBOX_CONFIG) $(BUILD_FOLDER)/$(BUSYBOX_FOLDER)/.config
-	$(MAKE) -C $(BUILD_FOLDER)/$(BUSYBOX_FOLDER) CC=$(CC)
-	cp -a $(BUILD_FOLDER)/$(BUSYBOX_FOLDER)/busybox tree/bin
-
-sysvinit:
-	[ -e $(3RDPARTY_FOLDER)/$(SYSV_TARBALL) ] || wget $(SYSV_URI)/$(SYSV_TARBALL) -P $(3RDPARTY_FOLDER)
-	[ -e $(3RDPARTY_FOLDER)/$(SYSV_PATCH_DEBIAN) ] || wget $(SYSV_URI)/$(SYSV_PATCH_DEBIAN) -P $(3RDPARTY_FOLDER)
-	[ -d $(BUILD_FOLDER)/$(SYSV_FOLDER) ] || tar zxf $(3RDPARTY_FOLDER)/$(SYSV_TARBALL) -C $(BUILD_FOLDER)
-	-zcat $(3RDPARTY_FOLDER)/$(SYSV_PATCH_DEBIAN) | patch -N -p1 -d $(BUILD_FOLDER)/$(SYSV_FOLDER)/..
-	-cat $(3RDPARTY_FOLDER)/$(SYSV_PATCH_SILENT) | patch -N -p1 -d $(BUILD_FOLDER)/$(SYSV_FOLDER)/..
-	$(MAKE) -C $(BUILD_FOLDER)/$(SYSV_FOLDER) CC=$(CC)
-	for n in halt init killall5 runlevel shutdown; do cp -a $(BUILD_FOLDER)/$(SYSV_FOLDER)/$$n tree/sbin; done
-
-clean:
-	-$(MAKE) clean -C $(BUILD_FOLDER)/$(POPT_FOLDER)
-	rm -f $(BUILD_FOLDER)/$(POPT_FOLDER)/Makefile
-	-$(MAKE) clean -C $(BUILD_FOLDER)/$(BUSYBOX_FOLDER)
-	-$(MAKE) clean -C $(BUILD_FOLDER)/$(SYSV_FOLDER)
-	-$(MAKE) clean -C $(BUILD_FOLDER)/$(PUMP_FOLDER)
-	-$(MAKE) clean -C $(BUILD_FOLDER)/$(ATFTP_FOLDER)
-	rm -f $(BUILD_FOLDER)/$(ATFTP_FOLDER)/Makefile
-	-$(MAKE) clean -C $(BUILD_FOLDER)/$(BUSYBOX_FOLDER)
-	-$(MAKE) clean -C $(BUILD_FOLDER)/$(SYSV_FOLDER)
-	find tree/dev -type b -delete
-	find tree/dev -type c -delete
-	find tree/dev -type l -delete
-	find tree/dev -type p -delete
-	rm -fr tree/dev/cciss
-	rm -fr tree/dev/ida
-	rm -fr tree/dev/input
-	find tree/ -type l -delete
-	rm -f tree/bin/atftp
-	rm -f tree/bin/lvm
-	rm -f tree/bin/pump
-	rm -f tree/bin/busybox
-	rm -f tree/lib/libdevmapper.so
-	for n in halt init killall5 runlevel shutdown; do rm -f tree/sbin/$$n; done
-
-dist-clean: clean
-	rm -fr $(BUILD_FOLDER)/$(SYSV_FOLDER)
-	rm -fr $(BUILD_FOLDER)/$(BUSYBOX_FOLDER)
-	rm -fr $(BUILD_FOLDER)/$(POPT_FOLDER)
-	rm -fr $(BUILD_FOLDER)/$(PUMP_FOLDER)
-	rm -fr $(BUILD_FOLDER)/$(LVM_FOLDER)
-	rm -fr $(BUILD_FOLDER)/$(DM_FOLDER)
-	rm -fr $(BUILD_FOLDER)/$(ATFTP_FOLDER)
+.PHONY += symlinks

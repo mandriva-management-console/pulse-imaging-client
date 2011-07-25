@@ -1,0 +1,61 @@
+#!/usr/bin/make -f
+#
+# (c) 2011 Mandriva, http://www.mandriva.com
+#
+# $Id$
+#
+# This file is part of Pulse 2, http://pulse2.mandriva.org
+#
+# Pulse 2 is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# Pulse 2 is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Pulse 2; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+# MA 02110-1301, USA.
+#
+# This scripts build pulse2 imaging initrd and intrdcd images.
+#
+.DEFAULT_GOAL=help
+
+basedir=/var/lib/pulse2/imaging
+initrddir=$(basedir)/initramfs/initrd
+initrdcddir=$(basedir)/initramfs/initrdcd
+disklessdir=$(basedir)/diskless
+
+devnods = console ptyp std hda hdb hdc hdd hde hdf hdg hdh sda sdb \
+	sdc sdd sde sdf sdg sdh fd0 cciss.0 cciss.1 ida.0 scd0 scd1 input
+
+all: initrd initrdcd
+
+initrd:
+	( cd $(initrddir); find . | cpio -o -H newc ) | \
+	  gzip -c -9 > $(disklessdir)/initrd
+
+initrdcd:
+	( cd $(initrdcddir); find . | cpio -o -H newc ) | \
+	  gzip -c -9 > $(disklessdir)/initrdcd
+
+dev:
+	cd $(initrddir)/dev && \
+	  ./MAKEDEV $(devnods) && \
+	  mknod -m 600 initctl p && \
+	  mknod -m 600 log p
+
+help:
+	@echo "Usage: update-initrd [target]"
+	@echo ""
+	@echo "Targets:"
+	@echo -e "\tall:      build both initrd images"
+	@echo -e "\tinitrd:   build initrd image for network boot"
+	@echo -e "\tinitrcd:  build  initrd image for cd boot"
+	@echo -e "\tdev:      update dev nodes in initrd tree"
+
+.PHONY: all help dev initrd initrdcd
