@@ -1,5 +1,5 @@
 # (c) 2003-2007 Linbox FAS, http://linbox.com
-# (c) 2008-2009 Mandriva, http://www.mandriva.com
+# (c) 2008-2011 Mandriva, http://www.mandriva.com
 #
 # $Id$
 #
@@ -19,14 +19,27 @@
 # along with Pulse 2; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
+topdir = $(abspath ../..)
+include $(topdir)/common.mk
+
+CLEANFILES = autosave
 
 CFLAGS=-Os -Wall
+LDFLAGS = -L$(lrs_topdir) -llrs
+CPPFLAGS = -I$(lrs_topdir)
 
-autosave: autosave.c
-	$(CC) $(CFLAGS) -o $@ autosave.c -L$(LRS_DIR) -I$(LRS_DIR) -llrs
+all-local: autosave
+
+autosave: autosave.c $(lrs_topdir)
+	$(CC) $(CFLAGS) $(LDFLAGS) $(CPPFLAGS) -o $@ $<
 
 check-syntax:
 	$(CC) $(CFLAGS) -pedantic -fsyntax-only autosave.c
 
-clean:
-	rm -f autosave
+$(lrs_topdir)/liblrs.so:
+	$(MAKE) -C $(lrs_topdir)
+
+install-local:
+	mkdir -p $(bindir)
+	cp -a autosave $(bindir)/
+	cp -a floppysave $(bindir)/
