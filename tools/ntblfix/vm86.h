@@ -54,6 +54,16 @@ THE SOFTWARE.
 #include <sys/vm86.h>
 #include <sys/io.h>
 
+/* JP: IOPL_FLAGS and IF_MASK have been replaced:
+ * http://lists.busybox.net/pipermail/buildroot/2009-July/028415.html
+ */
+#ifndef IF_MASK
+#define IF_MASK X86_EFLAGS_IF
+#endif
+#ifndef IOPL_MASK
+#define IOPL_MASK X86_EFLAGS_IOPL
+#endif
+
 #ifdef NOT_IN_X_SERVER
 #include <stdio.h>
 #include <stdarg.h>

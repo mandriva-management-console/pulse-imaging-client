@@ -19,14 +19,23 @@
 # along with Pulse 2; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
-
 #
 # NT bootloader fix
 #
+topdir = $(abspath ../..)
+include $(topdir)/common.mk
+
+bin_all = ntblfix
+
 CFLAGS=-Os -Wall -fpic
+
+CLEANFILES = $(bin_all)
+
+all-local: $(bin_all)
 
 ntblfix: ntblfix.c vm86.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -DNOT_IN_X_SERVER -o $@ $^
 
-clean:
-	rm -f ntblfix
+install-local:
+	mkdir -p $(bindir)
+	cp -a ntblfix $(bindir)/
