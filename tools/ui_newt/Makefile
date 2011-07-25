@@ -1,5 +1,5 @@
 # (c) 2003-2007 Linbox FAS, http://linbox.com
-# (c) 2008-2009 Mandriva, http://www.mandriva.com
+# (c) 2008-2011 Mandriva, http://www.mandriva.com
 #
 # $Id$
 #
@@ -19,21 +19,24 @@
 # along with Pulse 2; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
+topdir = $(abspath ../..)
+include $(topdir)/common.mk
 
-CFLAGS	= -DLBLIMAGEVER=\"2.0\" -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wall -I$(LRS_DIR)
-LIBS	= -lnewt -L$(LRS_DIR) -llrs
+bin_all = ui_newt
+obj_all = ui_newt.o server.o
+
+CFLAGS	= -DLBLIMAGEVER=\"2.0\" -O2 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -Wall 
+CPPFLAGS = -I$(lrs_topdir)
+LDFLAGS = -lnewt -L$(lrs_topdir) -llrs
 SRC	= ui_newt.c server.c
-OBJS	= ui_newt.o server.o
 
-all: ui_newt
+CLEANFILES = $(bin_all) $(obj_all)
 
-check-syntax:
-	$(CC) $(CFLAGS) -pedantic -fsyntax-only $(SRC)
+all-local: ui_newt
 
-ui_newt: $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LIBS)
+ui_newt: $(obj_all)
+	$(CC) $(CFLAGS) $(CPPFLASG) $(LDFLAGS) -o $@ $^
 
-clean:
-	rm -f ui_newt $(OBJS)
-
-.PHONY:	check-syntax
+install-local:
+	mkdir -p $(bindir)
+	cp -a ui_newt $(bindir)/uinewt
