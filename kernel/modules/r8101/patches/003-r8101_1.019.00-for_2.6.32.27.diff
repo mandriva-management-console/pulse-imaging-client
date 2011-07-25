@@ -1,0 +1,11 @@
+diff -Nru r8101-1.019.00.dist/src//rtltool.c r8101-1.019.00/src//rtltool.c
+--- r8101-1.019.00.dist/src//rtltool.c  2010-04-09 09:41:10.000000000 +0200
++++ r8101-1.019.00/src//rtltool.c       2011-01-21 16:57:06.509754103 +0100
+@@ -2,6 +2,7 @@
+ #include <linux/version.h>
+ #include <linux/pci.h>
+ #include <linux/netdevice.h>
++#include <linux/capability.h>  /* MDV/NR : seems missing when building against 2.6.32, can't see why */
+ #include "r8101.h"
+ #include "rtltool.h"
+
