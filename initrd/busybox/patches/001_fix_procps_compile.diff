@@ -1,0 +1,12 @@
+Index: sources/libbb/procps.c
+===================================================================
+--- sources.orig/libbb/procps.c	2011-06-30 20:25:37.047799492 +0200
++++ sources/libbb/procps.c	2011-06-30 20:25:46.071844240 +0200
+@@ -12,7 +12,6 @@
+ #include <string.h>
+ #include <stdlib.h>
+ #include <unistd.h>
+-#include <asm/page.h>
+ #include <fcntl.h>
+ 
+ #include "libbb.h"
