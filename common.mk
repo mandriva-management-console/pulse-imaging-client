@@ -29,11 +29,6 @@ CLEANFILES = *~
 ARCHITECTURE = i386
 CC = gcc
 
-linux_version = 2.6.32.27
-kernel_version = $(linux_version)-$(revision)
-fsmodules = exportfs.ko	ext2.ko	ext3.ko	ext4.ko fuse.ko	jbd.ko \
-	jbd2.ko	mbcache.ko reiserfs.ko xfs.ko
-
 #
 # Paths
 #
