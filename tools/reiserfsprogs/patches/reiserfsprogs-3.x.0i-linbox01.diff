@@ -7,9 +7,10 @@ with newer kernel headers, c library, compiler.
 
 This patch try to fix such problems.
 
-diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/debugreiserfs/debugreiserfs.c reiserfsprogs-3.x.0i-linbox01-patch02/debugreiserfs/debugreiserfs.c
---- reiserfsprogs-3.x.0i-linbox01/debugreiserfs/debugreiserfs.c	2002-07-25 11:57:48.000000000 -0400
-+++ reiserfsprogs-3.x.0i-linbox01-patch02/debugreiserfs/debugreiserfs.c	2010-02-19 09:49:51.000000000 -0500
+Index: reiserfsprogs-3.x.0i-linbox01/debugreiserfs/debugreiserfs.c
+===================================================================
+--- reiserfsprogs-3.x.0i-linbox01.orig/debugreiserfs/debugreiserfs.c	2002-07-25 17:57:48.000000000 +0200
++++ reiserfsprogs-3.x.0i-linbox01/debugreiserfs/debugreiserfs.c	2011-07-07 13:43:20.247007216 +0200
 @@ -341,6 +341,7 @@
  	    }
  	}
@@ -27,9 +28,10 @@ diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/debugreiserfs/debugreiserfs.c re
  	    if (fd == -1)
  		die ("recover_file: could not create file %s: %s",
  		     name,strerror (errno));
-diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/debugreiserfs/debugreiserfs.h reiserfsprogs-3.x.0i-linbox01-patch02/debugreiserfs/debugreiserfs.h
---- reiserfsprogs-3.x.0i-linbox01/debugreiserfs/debugreiserfs.h	2002-07-25 11:57:48.000000000 -0400
-+++ reiserfsprogs-3.x.0i-linbox01-patch02/debugreiserfs/debugreiserfs.h	2010-02-19 09:49:51.000000000 -0500
+Index: reiserfsprogs-3.x.0i-linbox01/debugreiserfs/debugreiserfs.h
+===================================================================
+--- reiserfsprogs-3.x.0i-linbox01.orig/debugreiserfs/debugreiserfs.h	2002-07-25 17:57:48.000000000 +0200
++++ reiserfsprogs-3.x.0i-linbox01/debugreiserfs/debugreiserfs.h	2011-07-07 13:43:20.267007216 +0200
 @@ -3,6 +3,8 @@
   */
  
@@ -39,9 +41,10 @@ diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/debugreiserfs/debugreiserfs.h re
  #include <stdio.h>
  #include <unistd.h>
  #include <stdlib.h>
-diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/debugreiserfs/pack.c reiserfsprogs-3.x.0i-linbox01-patch02/debugreiserfs/pack.c
---- reiserfsprogs-3.x.0i-linbox01/debugreiserfs/pack.c	2002-07-25 11:57:48.000000000 -0400
-+++ reiserfsprogs-3.x.0i-linbox01-patch02/debugreiserfs/pack.c	2010-02-19 09:49:51.000000000 -0500
+Index: reiserfsprogs-3.x.0i-linbox01/debugreiserfs/pack.c
+===================================================================
+--- reiserfsprogs-3.x.0i-linbox01.orig/debugreiserfs/pack.c	2002-07-25 17:57:48.000000000 +0200
++++ reiserfsprogs-3.x.0i-linbox01/debugreiserfs/pack.c	2011-07-07 13:43:20.275007216 +0200
 @@ -686,7 +686,7 @@
      char * buf;
      int fd;
@@ -60,9 +63,10 @@ diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/debugreiserfs/pack.c reiserfspro
      if (fd == -1) {
  	perror ("open failed");
  	return 0;
-diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/debugreiserfs/unpack.c reiserfsprogs-3.x.0i-linbox01-patch02/debugreiserfs/unpack.c
---- reiserfsprogs-3.x.0i-linbox01/debugreiserfs/unpack.c	2002-07-25 11:57:48.000000000 -0400
-+++ reiserfsprogs-3.x.0i-linbox01-patch02/debugreiserfs/unpack.c	2010-02-19 09:49:51.000000000 -0500
+Index: reiserfsprogs-3.x.0i-linbox01/debugreiserfs/unpack.c
+===================================================================
+--- reiserfsprogs-3.x.0i-linbox01.orig/debugreiserfs/unpack.c	2002-07-25 17:57:48.000000000 +0200
++++ reiserfsprogs-3.x.0i-linbox01/debugreiserfs/unpack.c	2011-07-07 13:43:20.287007216 +0200
 @@ -545,7 +545,7 @@
      if (is_mounted (argv[optind]))
  	reiserfs_panic ("%s seems mounted, umount it first\n", argv[optind]);
@@ -72,9 +76,10 @@ diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/debugreiserfs/unpack.c reiserfsp
      if (fd == -1) {
  	perror ("open failed");
  	return 0;
-diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/fsck/check.c reiserfsprogs-3.x.0i-linbox01-patch02/fsck/check.c
---- reiserfsprogs-3.x.0i-linbox01/fsck/check.c	2002-07-25 11:57:48.000000000 -0400
-+++ reiserfsprogs-3.x.0i-linbox01-patch02/fsck/check.c	2010-02-19 09:49:51.000000000 -0500
+Index: reiserfsprogs-3.x.0i-linbox01/fsck/check.c
+===================================================================
+--- reiserfsprogs-3.x.0i-linbox01.orig/fsck/check.c	2002-07-25 17:57:48.000000000 +0200
++++ reiserfsprogs-3.x.0i-linbox01/fsck/check.c	2011-07-07 13:43:20.299007216 +0200
 @@ -277,6 +277,10 @@
  #include <sys/mount.h>
  
@@ -112,9 +117,10 @@ diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/fsck/check.c reiserfsprogs-3.x.0
  
  int is_internal_bad (struct buffer_head * bh)
  {
-diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/fsck/fsck.h reiserfsprogs-3.x.0i-linbox01-patch02/fsck/fsck.h
---- reiserfsprogs-3.x.0i-linbox01/fsck/fsck.h	2002-07-25 11:57:48.000000000 -0400
-+++ reiserfsprogs-3.x.0i-linbox01-patch02/fsck/fsck.h	2010-03-03 10:59:55.000000000 -0500
+Index: reiserfsprogs-3.x.0i-linbox01/fsck/fsck.h
+===================================================================
+--- reiserfsprogs-3.x.0i-linbox01.orig/fsck/fsck.h	2002-07-25 17:57:48.000000000 +0200
++++ reiserfsprogs-3.x.0i-linbox01/fsck/fsck.h	2011-07-07 13:43:20.307007216 +0200
 @@ -3,6 +3,7 @@
   */
  
@@ -141,9 +147,10 @@ diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/fsck/fsck.h reiserfsprogs-3.x.0i
  {
     return (version == 1)?0:1;
  }
-diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/fsck/pass0.c reiserfsprogs-3.x.0i-linbox01-patch02/fsck/pass0.c
---- reiserfsprogs-3.x.0i-linbox01/fsck/pass0.c	2002-07-25 11:57:48.000000000 -0400
-+++ reiserfsprogs-3.x.0i-linbox01-patch02/fsck/pass0.c	2010-02-19 09:49:51.000000000 -0500
+Index: reiserfsprogs-3.x.0i-linbox01/fsck/pass0.c
+===================================================================
+--- reiserfsprogs-3.x.0i-linbox01.orig/fsck/pass0.c	2002-07-25 17:57:48.000000000 +0200
++++ reiserfsprogs-3.x.0i-linbox01/fsck/pass0.c	2011-07-07 13:43:20.319007216 +0200
 @@ -587,6 +587,7 @@
  
  		default:
@@ -160,9 +167,10 @@ diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/fsck/pass0.c reiserfsprogs-3.x.0
  		}
  		fsck_log ("pass0: which of these items looks better (other will be deleted)?\n"
  			  "%H\n%H\n", ih - 1, ih);
-diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/fsck/pass4.c reiserfsprogs-3.x.0i-linbox01-patch02/fsck/pass4.c
---- reiserfsprogs-3.x.0i-linbox01/fsck/pass4.c	2002-07-25 11:57:48.000000000 -0400
-+++ reiserfsprogs-3.x.0i-linbox01-patch02/fsck/pass4.c	2010-02-19 09:49:51.000000000 -0500
+Index: reiserfsprogs-3.x.0i-linbox01/fsck/pass4.c
+===================================================================
+--- reiserfsprogs-3.x.0i-linbox01.orig/fsck/pass4.c	2002-07-25 17:57:48.000000000 +0200
++++ reiserfsprogs-3.x.0i-linbox01/fsck/pass4.c	2011-07-07 13:43:20.331007216 +0200
 @@ -68,6 +68,7 @@
  	pathrelse (&path);
  
@@ -171,9 +179,10 @@ diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/fsck/pass4.c reiserfsprogs-3.x.0
      }
  
      pathrelse (&path);
-diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/include/reiserfs_fs.h reiserfsprogs-3.x.0i-linbox01-patch02/include/reiserfs_fs.h
---- reiserfsprogs-3.x.0i-linbox01/include/reiserfs_fs.h	2002-07-25 11:57:48.000000000 -0400
-+++ reiserfsprogs-3.x.0i-linbox01-patch02/include/reiserfs_fs.h	2010-03-05 09:56:19.000000000 -0500
+Index: reiserfsprogs-3.x.0i-linbox01/include/reiserfs_fs.h
+===================================================================
+--- reiserfsprogs-3.x.0i-linbox01.orig/include/reiserfs_fs.h	2002-07-25 17:57:48.000000000 +0200
++++ reiserfsprogs-3.x.0i-linbox01/include/reiserfs_fs.h	2011-07-07 13:43:20.375007216 +0200
 @@ -270,14 +270,14 @@
  #define REISERFS_SUPER_MAGIC_STRING "ReIsErFs"
  #define REISER2FS_SUPER_MAGIC_STRING "ReIsEr2Fs"
@@ -403,9 +412,10 @@ diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/include/reiserfs_fs.h reiserfspr
 +/*static hashf_t hashes [];*/
  
  
-diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/lib/io.c reiserfsprogs-3.x.0i-linbox01-patch02/lib/io.c
---- reiserfsprogs-3.x.0i-linbox01/lib/io.c	2002-07-25 11:57:48.000000000 -0400
-+++ reiserfsprogs-3.x.0i-linbox01-patch02/lib/io.c	2010-02-19 09:49:51.000000000 -0500
+Index: reiserfsprogs-3.x.0i-linbox01/lib/io.c
+===================================================================
+--- reiserfsprogs-3.x.0i-linbox01.orig/lib/io.c	2002-07-25 17:57:48.000000000 +0200
++++ reiserfsprogs-3.x.0i-linbox01/lib/io.c	2011-07-07 13:43:20.387007216 +0200
 @@ -2,7 +2,9 @@
   * Copyright 1996, 1997 Hans Reiser, see reiserfs/README for licensing and copyright details
   */
@@ -463,9 +473,10 @@ diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/lib/io.c reiserfsprogs-3.x.0i-li
  	fprintf (stderr, "bwrite: lseek to position %Ld (block=%lu, dev=%d): %s\n",
  		 offset, bh->b_blocknr, bh->b_dev, strerror (errno));
  	exit (4); /* File system errors left uncorrected */
-diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/lib/misc.c reiserfsprogs-3.x.0i-linbox01-patch02/lib/misc.c
---- reiserfsprogs-3.x.0i-linbox01/lib/misc.c	2002-07-25 11:57:48.000000000 -0400
-+++ reiserfsprogs-3.x.0i-linbox01-patch02/lib/misc.c	2010-03-05 09:59:20.000000000 -0500
+Index: reiserfsprogs-3.x.0i-linbox01/lib/misc.c
+===================================================================
+--- reiserfsprogs-3.x.0i-linbox01.orig/lib/misc.c	2002-07-25 17:57:48.000000000 +0200
++++ reiserfsprogs-3.x.0i-linbox01/lib/misc.c	2011-07-07 13:43:20.399007216 +0200
 @@ -1,8 +1,9 @@
  /*
   * Copyright 1996, 1997, 1998 Hans Reiser
@@ -642,9 +653,10 @@ diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/lib/misc.c reiserfsprogs-3.x.0i-
  	opened_here = 1;
      }
      if (fd < 0)
-diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/mkreiserfs/mkreiserfs.c reiserfsprogs-3.x.0i-linbox01-patch02/mkreiserfs/mkreiserfs.c
---- reiserfsprogs-3.x.0i-linbox01/mkreiserfs/mkreiserfs.c	2002-07-25 11:57:48.000000000 -0400
-+++ reiserfsprogs-3.x.0i-linbox01-patch02/mkreiserfs/mkreiserfs.c	2010-02-19 09:49:51.000000000 -0500
+Index: reiserfsprogs-3.x.0i-linbox01/mkreiserfs/mkreiserfs.c
+===================================================================
+--- reiserfsprogs-3.x.0i-linbox01.orig/mkreiserfs/mkreiserfs.c	2002-07-25 17:57:48.000000000 +0200
++++ reiserfsprogs-3.x.0i-linbox01/mkreiserfs/mkreiserfs.c	2011-07-07 13:43:20.411007216 +0200
 @@ -14,6 +14,8 @@
  //
  // FIXME: not 'not-i386' safe
@@ -702,9 +714,10 @@ diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/mkreiserfs/mkreiserfs.c reiserfs
  	    printf ("mkreiserfs: %s is entire device, not just one partition! Continue? (y/n) ", 
  		   device_name); 
  	    if (!user_confirmed ("Continue (y/n)", "y"))
-diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/reiserfscore/includes.h reiserfsprogs-3.x.0i-linbox01-patch02/reiserfscore/includes.h
---- reiserfsprogs-3.x.0i-linbox01/reiserfscore/includes.h	2002-07-25 11:57:48.000000000 -0400
-+++ reiserfsprogs-3.x.0i-linbox01-patch02/reiserfscore/includes.h	2010-02-19 09:49:51.000000000 -0500
+Index: reiserfsprogs-3.x.0i-linbox01/reiserfscore/includes.h
+===================================================================
+--- reiserfsprogs-3.x.0i-linbox01.orig/reiserfscore/includes.h	2002-07-25 17:57:48.000000000 +0200
++++ reiserfsprogs-3.x.0i-linbox01/reiserfscore/includes.h	2011-07-07 13:43:20.419007216 +0200
 @@ -1,7 +1,11 @@
  /*
   * Copyright 2000 by Hans Reiser, licensing governed by reiserfs/README
@@ -717,9 +730,10 @@ diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/reiserfscore/includes.h reiserfs
  #include <stdio.h>
  #include <string.h>
  #include <errno.h>
-diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/reiserfscore/prints.c reiserfsprogs-3.x.0i-linbox01-patch02/reiserfscore/prints.c
---- reiserfsprogs-3.x.0i-linbox01/reiserfscore/prints.c	2002-07-25 11:57:48.000000000 -0400
-+++ reiserfsprogs-3.x.0i-linbox01-patch02/reiserfscore/prints.c	2010-02-19 09:49:51.000000000 -0500
+Index: reiserfsprogs-3.x.0i-linbox01/reiserfscore/prints.c
+===================================================================
+--- reiserfsprogs-3.x.0i-linbox01.orig/reiserfscore/prints.c	2002-07-25 17:57:48.000000000 +0200
++++ reiserfsprogs-3.x.0i-linbox01/reiserfscore/prints.c	2011-07-07 13:43:20.431007216 +0200
 @@ -747,6 +747,7 @@
  
  	    j --;
@@ -736,9 +750,10 @@ diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/reiserfscore/prints.c reiserfspr
  	}
      }
  
-diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/reiserfscore/reiserfslib.c reiserfsprogs-3.x.0i-linbox01-patch02/reiserfscore/reiserfslib.c
---- reiserfsprogs-3.x.0i-linbox01/reiserfscore/reiserfslib.c	2002-07-25 11:57:48.000000000 -0400
-+++ reiserfsprogs-3.x.0i-linbox01-patch02/reiserfscore/reiserfslib.c	2010-02-19 09:49:51.000000000 -0500
+Index: reiserfsprogs-3.x.0i-linbox01/reiserfscore/reiserfslib.c
+===================================================================
+--- reiserfsprogs-3.x.0i-linbox01.orig/reiserfscore/reiserfslib.c	2002-07-25 17:57:48.000000000 +0200
++++ reiserfsprogs-3.x.0i-linbox01/reiserfscore/reiserfslib.c	2011-07-07 13:43:20.443007216 +0200
 @@ -95,7 +95,7 @@
      struct reiserfs_super_block * rs;
      int fd, i;
@@ -757,9 +772,10 @@ diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/reiserfscore/reiserfslib.c reise
      if (fs->s_dev == -1)
  	die ("reiserfs_reopen: could not reopen device: %m");
  }
-diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/reiserfscore/stree.c reiserfsprogs-3.x.0i-linbox01-patch02/reiserfscore/stree.c
---- reiserfsprogs-3.x.0i-linbox01/reiserfscore/stree.c	2002-07-25 11:57:48.000000000 -0400
-+++ reiserfsprogs-3.x.0i-linbox01-patch02/reiserfscore/stree.c	2010-03-03 10:56:16.000000000 -0500
+Index: reiserfsprogs-3.x.0i-linbox01/reiserfscore/stree.c
+===================================================================
+--- reiserfsprogs-3.x.0i-linbox01.orig/reiserfscore/stree.c	2002-07-25 17:57:48.000000000 +0200
++++ reiserfsprogs-3.x.0i-linbox01/reiserfscore/stree.c	2011-07-07 13:43:20.451007216 +0200
 @@ -58,7 +58,7 @@
              0 if key1 = key2
              1 if key1 > key2
@@ -805,9 +821,10 @@ diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/reiserfscore/stree.c reiserfspro
      struct path         * p_s_chk_path,
      struct super_block  * p_s_sb
      ) {
-diff -urN -x '*~' reiserfsprogs-3.x.0i-linbox01/resize_reiserfs/resize.h reiserfsprogs-3.x.0i-linbox01-patch02/resize_reiserfs/resize.h
---- reiserfsprogs-3.x.0i-linbox01/resize_reiserfs/resize.h	2002-07-25 11:57:48.000000000 -0400
-+++ reiserfsprogs-3.x.0i-linbox01-patch02/resize_reiserfs/resize.h	2010-02-19 09:49:51.000000000 -0500
+Index: reiserfsprogs-3.x.0i-linbox01/resize_reiserfs/resize.h
+===================================================================
+--- reiserfsprogs-3.x.0i-linbox01.orig/resize_reiserfs/resize.h	2002-07-25 17:57:48.000000000 +0200
++++ reiserfsprogs-3.x.0i-linbox01/resize_reiserfs/resize.h	2011-07-07 13:43:20.463007216 +0200
 @@ -2,6 +2,7 @@
   * Copyright 2000 by Hans Reiser, licensing governed by reiserfs/README
   */
