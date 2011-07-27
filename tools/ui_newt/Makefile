@@ -39,4 +39,4 @@ ui_newt: $(obj_all)
 
 install-local:
 	mkdir -p $(DESTDIR)$(bindir)
-	$(install_BIN) ui_newt $(bindir)/uinewt
+	$(install_BIN) ui_newt $(DESTDIR)$(bindir)/uinewt
