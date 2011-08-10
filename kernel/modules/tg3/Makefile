@@ -23,7 +23,7 @@ topdir = $(abspath ../../..)
 
 module = tg3.ko
 module_path = $(extra_srcdir)/$(module)
-module_version = 3.105h
+module_version = 3.116j
 extra_archive = tg3-$(module_version).tar.gz
 extra_uri = http://www.broadcom.com/docs/driver_download/570x/$(extra_archive)
 
