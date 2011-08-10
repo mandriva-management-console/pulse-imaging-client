@@ -26,6 +26,7 @@ To build and install, following tools are needed:
  - e2fslibs-dev
  - libgcrypt11-dev
  - quilt
+ - automake1.9
 
 Quick installation
 ==================
