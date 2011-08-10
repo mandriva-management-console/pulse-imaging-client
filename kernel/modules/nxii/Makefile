@@ -23,9 +23,9 @@
 topdir = $(abspath ../../..)
 
 module = bnx2.ko
-module_version = 2.0.8e
+module_version = 2.0.23b
 module_path = $(extra_srcdir)/bnx2-$(module_version)/src/$(module)
-extra_archive = netxtreme2-5.2.55.tar.gz
+extra_archive = netxtreme2-6.2.23.tar.gz
 extra_uri = http://www.broadcom.com/docs/driver_download/NXII/$(extra_archive)
 module_builddir = bnx2/src
 EXTRA_MAKEFLAGS = LINUXSRC=$(linux_srcdir)
