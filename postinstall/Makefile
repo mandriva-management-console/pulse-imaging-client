@@ -27,7 +27,6 @@ SUBDIRS = chntpw fuse ntfs3g parted ntfsprogs ddrescue
 
 topdir = $(abspath ..)
 include $(topdir)/common.mk
-include $(topdir)/consts.mk
 
 install-local:
 	mkdir -p $(DESTDIR)$(postinstalldir)/bin
