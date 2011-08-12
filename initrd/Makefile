@@ -72,19 +72,21 @@ symlinks:
 	ln -sf ../init.d/hostname $(DESTDIR)$(initramfsdir)/etc/rcS.d/S40hostname
 
 	# LibC files
-	ln -sf libm-2.3.6.so $(DESTDIR)$(initramfsdir)/lib/libm.so.6
-	ln -sf libnss_files-2.3.6.so $(DESTDIR)$(initramfsdir)/lib/libnss_files.so.2
-	ln -sf libresolv-2.3.6.so $(DESTDIR)$(initramfsdir)/lib/libresolv.so.2
-	ln -sf libnsl-2.3.6.so $(DESTDIR)$(initramfsdir)/lib/libnsl.so.1
-	ln -sf libutil-2.3.6.so $(DESTDIR)$(initramfsdir)/lib/libutil.so.1
-	ln -sf libcrypt-2.3.6.so $(DESTDIR)$(initramfsdir)/lib/libcrypt.so.1
-	ln -sf ld-2.3.6.so $(DESTDIR)$(initramfsdir)/lib/ld-linux.so.2
-	ln -sf libdl-2.3.6.so $(DESTDIR)$(initramfsdir)/lib/libdl.so.2
-	ln -sf libnss_dns-2.3.6.so $(DESTDIR)$(initramfsdir)/lib/libnss_dns.so.2
-	ln -sf libc-2.3.6.so $(DESTDIR)$(initramfsdir)/lib/libc.so.6
-
-	# libPThread
-	ln -sf libpthread-0.10.so $(DESTDIR)$(initramfsdir)/lib/libpthread.so.0
+	ln -sf libm-2.11.2.so $(DESTDIR)$(initramfsdir)/lib/libm.so.6
+	ln -sf libnss_files-2.11.2.so $(DESTDIR)$(initramfsdir)/lib/libnss_files.so.2
+	ln -sf libresolv-2.11.2.so $(DESTDIR)$(initramfsdir)/lib/libresolv.so.2
+	ln -sf libnsl-2.11.2.so $(DESTDIR)$(initramfsdir)/lib/libnsl.so.1
+	ln -sf libutil-2.11.2.so $(DESTDIR)$(initramfsdir)/lib/libutil.so.1
+	ln -sf libcrypt-2.11.2.so $(DESTDIR)$(initramfsdir)/lib/libcrypt.so.1
+	ln -sf ld-2.11.2.so $(DESTDIR)$(initramfsdir)/lib/ld-linux.so.2
+	ln -sf libdl-2.11.2.so $(DESTDIR)$(initramfsdir)/lib/libdl.so.2
+	ln -sf libnss_dns-2.11.2.so $(DESTDIR)$(initramfsdir)/lib/libnss_dns.so.2
+	ln -sf libc-2.11.2.so $(DESTDIR)$(initramfsdir)/lib/libc.so.6
+	ln -sf libpthread-2.11.2.so $(DESTDIR)$(initramfsdir)/lib/libpthread.so.0
+	# Other libs
+	ln -sf libblkid.so.1.1.0 $(DESTDIR)$(initramfsdir)/lib/libblkid.so.1
+	ln -sf libuuid.so.1.3.0 $(DESTDIR)$(initramfsdir)/lib/libuuid.so.1
+	ln -sf libwrap.so.0.7.6 $(DESTDIR)$(initramfsdir)/lib/libwrap.so.0
 
 	# Other stuff
 	ln -sf /tmp $(DESTDIR)$(initramfsdir)/var/

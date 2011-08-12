@@ -43,6 +43,7 @@ $(extra_srcdir)/Makefile: $(extra_srcdir)
 
 install-local:
 	mkdir -p $(DESTDIR)$(initramfsdir)/lib
-	$(install_DATA) $(extra_srcdir)/.libs/$(extra_base)* $(DESTDIR)$(initramfsdir)/lib/
+	$(install_DATA) $(extra_bin) $(DESTDIR)$(initramfsdir)/lib/
+	ln -sf libpopt.so.0.0.0 $(DESTDIR)$(initramfsdir)/lib/libpopt.so.0
 
 CLEANFILES += $(extra_bin)*

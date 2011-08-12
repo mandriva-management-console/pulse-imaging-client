@@ -62,7 +62,7 @@ install-local:
 	  $(install_BIN) $$file $(DESTDIR)$(revobindir)/; \
 	done
 	mkdir -p $(DESTDIR)$(libdir)
-	$(install_DATA) liblrs.so liblrs.so.1 $(DESTDIR)$(libdir)/
+	$(install_DATA) liblrs.so.1 $(DESTDIR)$(libdir)/
 
 image_e2fs: image_e2fs.o $(liblrs_so)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(lrs_LDFLAGS) $(e2fs_LDFLAGS)

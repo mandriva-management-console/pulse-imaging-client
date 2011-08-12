@@ -28,9 +28,14 @@ include $(topdir)/common.mk
 
 install-local:
 	mkdir -p $(DESTDIR)$(libdir) $(DESTDIR)$(usrbindir)
-	$(install_DATA) /usr/lib/libnewt.so* $(DESTDIR)$(libdir)/
-	$(install_DATA) /lib/libslang.so* $(DESTDIR)$(libdir)/
-	$(install_DATA) /usr/lib/libz.so* $(DESTDIR)$(libdir)/
+	$(install_DATA) /usr/lib/libnewt.so.0.52.11 $(DESTDIR)$(libdir)/
+	ln -sf libnewt.so.0.52.11 $(DESTDIR)$(libdir)/libnewt.so.0.52
+	$(install_DATA) /lib/libslang.so.2.2.2 $(DESTDIR)$(libdir)/
+	ln -sf libslang.so.2.2.2 $(DESTDIR)$(libdir)/libslang.so.2
+	$(install_DATA) /usr/lib/libz.so.1.2.3.4 $(DESTDIR)$(libdir)/
+	ln -sf libz.so.1.2.3.4 $(DESTDIR)$(libdir)/libz.so.1
 	$(install_BIN) /usr/bin/whiptail $(DESTDIR)$(usrbindir)/
-	$(install_DATA) /lib/libext2fs.so.* /usr/lib/libext2fs.so $(DESTDIR)$(libdir)/
-	$(install_DATA) /lib/libcom_err.so.2* $(DESTDIR)$(libdir)/
+	$(install_DATA) /lib/libext2fs.so.2.4 $(DESTDIR)$(libdir)/
+	ln -sf libext2fs.so.2.4 $(DESTDIR)$(libdir)/libext2fs.so.2
+	$(install_DATA) /lib/libcom_err.so.2.1 $(DESTDIR)$(libdir)/
+	ln -sf libcom_err.so.2.1 $(DESTDIR)$(libdir)/libcom_err.so.2
