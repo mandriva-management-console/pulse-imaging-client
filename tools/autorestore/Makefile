@@ -44,6 +44,9 @@ install-local:
 	for i in $(bin_all); do \
 	  $(install_BIN) $$i $(DESTDIR)$(bindir); \
 	done
+	for i in $(script_all); do \
+	  $(install_BIN) $$i $(DESTDIR)$(bindir); \
+	done
 	mkdir -p $(DESTDIR)$(rcdir)
 	$(install_BIN) revoboot $(DESTDIR)$(rcdir)/
 	mkdir -p $(DESTDIR)$(usrlibdir)
