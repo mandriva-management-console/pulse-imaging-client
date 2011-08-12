@@ -55,11 +55,11 @@ install-local: /dev/ram0
 	  $(DESTDIR)$(disklessdir)/kernel
 	$(rdev) $(DESTDIR)$(disklessdir)/kernel /dev/ram0
 
-	mkdir -p $(DESTDIR)$(initcdfsdir)/lib/modules
+	mkdir -p $(DESTDIR)$(initcdfsdir)/lib/modules/cd
 	mkdir -p $(DESTDIR)$(initramfsdir)/lib/modules
 	mkdir -p $(DESTDIR)$(postinstdir)/lib/modules
 
-	# initrd and initrdcd common modules
+	# initrd common modules
 	for mod in `find $(extra_srcdir) \
 	     -path '$(extra_srcdir)/drivers/net/*.ko' \
 	     -o -path '$(extra_srcdir)/drivers/pcmcia/*.ko' \
@@ -69,7 +69,6 @@ install-local: /dev/ram0
 	     -o -path '$(extra_srcdir)/crypto/*.ko' \
 	     -o -path '$(extra_srcdir)/lib/*.ko'`; do \
 	       $(install_DATA) $$mod $(DESTDIR)$(initramfsdir)/lib/modules/; \
-	       $(install_DATA) $$mod $(DESTDIR)$(initcdfsdir)/lib/modules/; \
 	done
 
 	# initrdcd only modules
@@ -79,10 +78,10 @@ install-local: /dev/ram0
 	  -o -path $(extra_srcdir)/fs/isofs/isofs.ko \
 	  -o -path $(extra_srcdir)/drivers/scsi/sr_mod.ko \
 	  -o -path $(extra_srcdir)/drivers/usb/storage/usb-storage.ko`; do \
-	  $(install_DATA) $$mod $(DESTDIR)$(initcdfsdir)/lib/modules/; \
+	  $(install_DATA) $$mod $(DESTDIR)$(initcdfsdir)/lib/modules/cd; \
 	done
-	mv $(DESTDIR)$(initcdfsdir)/lib/modules/ide-cd_mod.ko \
-	  $(DESTDIR)$(initcdfsdir)/lib/modules/ide-cd.ko 
+	mv $(DESTDIR)$(initcdfsdir)/lib/modules/cd/ide-cd_mod.ko \
+	  $(DESTDIR)$(initcdfsdir)/lib/modules/cd/ide-cd.ko 
 
 	# postinst modules
 	for mod in `find $(extra_srcdir) \
