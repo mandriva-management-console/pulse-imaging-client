@@ -20,10 +20,12 @@
 # MA 02110-1301, USA.
 #
 project = pulse2-imaging-client
+baseversion=1.3.1
 revision := $(shell if [ -d $(PWD)/.svn ]; then \
 		      rev=`echo $Rev$ | tr -cd [[:digit:]]`; \
 		    elif [ -d $(topdir)/.git ]; then \
 		      rev=`git describe --always`; \
+		      rev=$(shell echo $$rev | sed -e 's/'$(baseversion)'//'); \
 		    fi; \
 	            echo $${rev:+-$${rev}})
-version = 1.3.1$(revision)
+version = $(baseversion)$(revision)
