@@ -108,8 +108,12 @@ distclean-local:
 	test -L $(extra_archive) && rm -f $(extra_archive) || true
 
 /dev/ram0:
-	@echo "###"
-	@echo "### /dev/ram0 is needed. Please create it with the following command, as root:"
-	@echo "### mknod /dev/ram0 b 1 0"
-	@echo "###"
-	@false
+	@if test `id -u` -eq 0; then \
+	  mknod $(DESTDIR)/dev/ram0 b 1 0; \
+	else \
+	  echo "###"; \
+	  echo "### /dev/ram0 is needed. Please create it with the following command, as root:"; \
+	  echo "### mknod /dev/ram0 b 1 0"; \
+	  echo "###"; \
+	  false; \
+	fi
