@@ -37,8 +37,8 @@ links_bin = [ ash basename bash cat chgrp chmod chown cp cut date dd df dirname 
 links_usr_bin = chvt clear env find free id killall logger date tail touch tty \
 	wc which whoami yes
 
-links_sbin = chvt clear env find free id killall logger rdate tail touch tty \
-	wc which whoami yes
+links_sbin = chvt clear env find free id killall kologd logger rdate syslogd tail \
+	touch tty wc which whoami yes klogd
 
 include $(topdir)/common.mk
 include $(topdir)/extra.mk
