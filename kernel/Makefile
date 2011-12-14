@@ -25,7 +25,7 @@ SUBDIRS = rdev . modules
 
 linux_version = 3.0
 extra_archive = linux-$(linux_version).tar.bz2
-extra_uri = http://www.kernel.org/pub/linux/kernel/v3.0/$(extra_archive)
+extra_uri = http://www.kernel.org/pub/linux/kernel/v3.x/$(extra_archive)
 linux_configdir = dot-configs
 linux_config = $(extra_srcdir)/.config
 linux_image = $(extra_srcdir)/arch/$(ARCHITECTURE)/boot/bzImage
@@ -109,7 +109,7 @@ distclean-local:
 
 /dev/ram0:
 	@if test `id -u` -eq 0; then \
-	  mknod $(DESTDIR)/dev/ram0 b 1 0; \
+	  mknod /dev/ram0 b 1 0; \
 	else \
 	  echo "###"; \
 	  echo "### /dev/ram0 is needed. Please create it with the following command, as root:"; \
