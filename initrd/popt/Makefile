@@ -46,4 +46,7 @@ install-local:
 	$(install_DATA) $(extra_bin) $(DESTDIR)$(initramfsdir)/lib/
 	ln -sf libpopt.so.0.0.0 $(DESTDIR)$(initramfsdir)/lib/libpopt.so.0
 
+clean:
+	$(MAKE) -C $(extra_srcdir) clean
+
 CLEANFILES += $(extra_bin)*
