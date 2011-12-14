@@ -30,15 +30,16 @@ patch_srcdir = $(extra_srcdir)
 
 links_bin = [ ash basename bash cat chgrp chmod chown cp cut date dd df dirname \
 	dmesg dos2unix du dutmp echo false grep gunzip gzip head hostname kill \
-	ln ls mkdir mknod more mount mv pidof ping ps pwd reset rm rmdir run-parts \
-	sed sh sleep sort stty sync tar tee telnet test touch tr true umount \
-	uname uniq unix2dos wget zcat
+	ln ls mkdir mknod more mount mv pidof ping ps pwd reset rm rmdir route \
+	run-parts sed sh sleep sort stty sync tar tee telnet test touch tr true \
+	umount uname uniq unix2dos vi wget zcat
 
-links_usr_bin = chvt clear env find free id killall logger date tail touch tty \
+links_usr_bin = chvt clear env find free id killall logger rdate tail touch tty \
 	wc which whoami yes
 
-links_sbin = chvt clear env find free id killall kologd logger rdate syslogd tail \
-	touch tty wc which whoami yes klogd
+links_sbin = chroot chvt clear env find free id ifconfig killall klogd loadkmap \
+	logger poweroff rdate route syslogd tail telinit touch tty update wc which \
+	whoami yes
 
 include $(topdir)/common.mk
 include $(topdir)/extra.mk
