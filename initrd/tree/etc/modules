@@ -36,6 +36,7 @@ igb
 igbvf
 ixgb
 ixgbe
+ixgbevf
 
 # Davicom
 dmfe
@@ -93,8 +94,10 @@ atl1e
 atl2
 
 # Chelsio
-cxgb3
 cxgb
+cxgb3
+cxgb4
+cxgb4vf
 
 # D-Link
 dl2k
@@ -121,6 +124,7 @@ netxen_nic
 niu
 
 # QLogic
+qlcnic
 qla3xxx
 qlge
 
@@ -170,6 +174,13 @@ jme
 # Timberdale
 ks8842
 ks8851_mll
+ksz884x
+
+# Brocade 10G PCIe
+bna
+
+# EG20T PCH
+pch_gbe
 
 # PCI NE2000 clone driver
 ne2k-pci
@@ -180,5 +191,9 @@ pcnet32
 # ???
 s2io
 
+# STMMAC
+stmmac
+
 # can be required by other modules (filesystems, etc ...)
 crc16
+
