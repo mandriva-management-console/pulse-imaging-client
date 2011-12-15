@@ -42,7 +42,6 @@ symlinks:
 	# Misc symlinks
 	ln -sf sbin/init $(DESTDIR)$(initramfsdir)/init
 	ln -sf halt $(DESTDIR)$(initramfsdir)/sbin/reboot
-	ln -sf ae $(DESTDIR)$(initramfsdir)/bin/vi
 	ln -sf ../sbin/route $(DESTDIR)$(initramfsdir)/bin/route
 
 	# Init tree
