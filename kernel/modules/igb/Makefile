@@ -24,7 +24,7 @@ topdir = $(abspath ../../..)
 
 module = igb.ko
 module_path = $(extra_srcdir)/src/$(module)
-module_version = 3.1.16
+module_version = 3.2.10
 extra_archive = igb-$(module_version).tar.gz
 extra_uri = http://downloadmirror.intel.com/13663/eng/$(extra_archive)
 module_builddir = src
