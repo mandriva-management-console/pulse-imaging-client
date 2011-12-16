@@ -24,7 +24,7 @@ topdir = $(abspath ../../..)
 
 module = e1000.ko
 module_path = $(extra_srcdir)/src/$(module)
-module_version = 8.0.30
+module_version = 8.0.35
 extra_archive = e1000-$(module_version).tar.gz
 extra_uri = http://downloadmirror.intel.com/9180/eng/$(extra_archive)
 module_builddir = src
