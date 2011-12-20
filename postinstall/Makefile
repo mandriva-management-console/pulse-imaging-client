@@ -27,11 +27,12 @@ SUBDIRS = chntpw fuse ntfs3g parted ntfsprogs ddrescue
 
 topdir = $(abspath ..)
 include $(topdir)/common.mk
+include $(topdir)/extra.mk
 
 install-local:
-	mkdir -p $(DESTDIR)$(postinstalldir)/bin
-	$(install_BIN) bin/mountwin $(DESTDIR)$(postinstalldir)/bin/mountwin
-	mkdir -p $(DESTDIR)$(postinstalldir)/lib
-	$(install_DATA) lib/libpostinst.sh $(DESTDIR)$(postinstalldir)/lib/libpostinst.sh
-	mkdir -p $(DESTDIR)$(postinstalldir)/winutils
-	$(install_DATA) winutils/newsid.exe $(DESTDIR)$(postinstalldir)/winutils/newsid.exe
+	mkdir -p $(DESTDIR)$(postinstdir)/bin
+	$(install_BIN) bin/mountwin $(DESTDIR)$(postinstdir)/bin/mountwin
+	mkdir -p $(DESTDIR)$(postinstdir)/lib
+	$(install_DATA) lib/libpostinst.sh $(DESTDIR)$(postinstdir)/lib/libpostinst.sh
+	mkdir -p $(DESTDIR)$(postinstdir)/winutils
+	$(install_DATA) winutils/newsid.exe $(DESTDIR)$(postinstdir)/winutils/newsid.exe
