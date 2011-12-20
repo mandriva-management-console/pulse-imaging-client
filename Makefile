@@ -22,7 +22,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Pulse 2. If not, see <http://www.gnu.org/licenses/>.
 #
-SUBDIRS = kernel initrd tools bootloader eltorito
+SUBDIRS = kernel initrd tools bootloader eltorito postinstall
 
 topdir = $(abspath .)
 include $(topdir)/common.mk
@@ -88,8 +88,8 @@ distdir:
 	$(MAKE) -C $(archivebase) distclean
 
 binary: binarydir
-	rm -f $(binarybase).tar.gz
 	tar -c -f - -C $(binarybase) . | gzip -c > $(binarybase).tar.gz
+	rm -fr $(binarybase)
 
 binarydir: check-root
 	rm -rf $(binarybase)
