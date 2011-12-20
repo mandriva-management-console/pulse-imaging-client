@@ -34,8 +34,12 @@ include $(topdir)/extra.mk
 all-local: $(extra_bin)
 
 $(extra_bin):
-	$(MAKE) $(extra_srcdir)
+	$(MAKE) -C $(extra_srcdir)
 
 install-local:
 	mkdir -p $(DESTDIR)$(postinstdir)/bin
 	$(install_BIN) $(extra_bin) $(DESTDIR)$(postinstdir)/bin/chntpw
+
+clean:
+	$(MAKE) -C $(extra_srcdir) clean
+

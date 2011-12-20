@@ -42,3 +42,7 @@ $(extra_srcdir)/Makefile:
 install-local:
 	mkdir -p $(DESTDIR)$(postinstdir)/bin
 	$(install_BIN) $(extra_bin) $(DESTDIR)$(postinstdir)/bin/fusermount
+
+clean:
+	$(MAKE) -C $(extra_srcdir) clean
+

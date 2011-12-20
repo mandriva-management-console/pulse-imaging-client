@@ -50,3 +50,7 @@ install-local:
 	  $(DESTDIR)$(postinstdir)/lib/libntfs.so.10.0.0
 	ln -sf libntfs.so.10.0.0 $(DESTDIR)$(postinstdir)/lib/libntfs.so.10
 	ln -sf libntfs.so.10.0.0 $(DESTDIR)$(postinstdir)/lib/libntfs.so
+
+clean:
+	$(MAKE) -C $(extra_srcdir) clean
+

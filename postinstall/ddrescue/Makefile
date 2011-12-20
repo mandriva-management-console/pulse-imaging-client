@@ -39,3 +39,7 @@ $(extra_bin):
 install-local:
 	mkdir -p $(DESTDIR)$(postinstdir)/bin
 	$(install_BIN) $(extra_bin) $(DESTDIR)$(postinstdir)/bin/dd_rescue
+
+clean:
+	$(MAKE) -C $(extra_srcdir) clean
+

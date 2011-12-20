@@ -47,3 +47,8 @@ install-local:
 	  $(DESTDIR)$(postinstdir)/lib/libparted.so.0.0.1
 	ln -sf libparted.so.0.0.1 $(DESTDIR)$(postinstdir)/lib/libparted.so
 	ln -sf libparted.so.0.0.1 $(DESTDIR)$(postinstdir)/lib/libparted.so.0
+
+clean:
+	$(MAKE) -C $(extra_srcdir) clean
+
+

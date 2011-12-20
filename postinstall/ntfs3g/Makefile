@@ -47,3 +47,8 @@ install-local:
 	  $(DESTDIR)$(postinstdir)/lib/libntfs-3g.so.76.0.0
 	ln -sf libntfs-3g.so.76.0.0 $(DESTDIR)$(postinstdir)/lib/libntfs-3g.so.76
 	ln -sf libntfs-3g.so.76.0.0 $(DESTDIR)$(postinstdir)/lib/libntfs-3g.so
+
+clean:
+	$(MAKE) -C $(extra_srcdir) clean
+
+
