@@ -23,7 +23,8 @@ topdir = $(abspath ..)
 
 SUBDIRS = rdev . modules
 
-linux_version = 3.0
+include $(topdir)/version.mk
+
 extra_archive = linux-$(linux_version).tar.bz2
 extra_uri = http://www.kernel.org/pub/linux/kernel/v3.x/$(extra_archive)
 linux_configdir = dot-configs
