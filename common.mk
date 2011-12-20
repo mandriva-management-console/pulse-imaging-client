@@ -27,8 +27,9 @@ CLEANFILES = *~
 ARCHITECTURE = i386
 CC = gcc
 
-archivebase = $(project)-$(version)
-binarybase = $(project)-binary-$(version)_$(ARCHITECTURE)
+archivebase = $(project)-$(version)-source
+archivedate := $(shell date +%Y%m%d%H%M%S)
+binarybase := $(project)-$(linux_version)+$(archivedate)
 
 #
 # Paths
