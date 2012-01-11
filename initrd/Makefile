@@ -53,10 +53,10 @@ symlinks:
 	ln -sf ../init.d/sysklogd	$(DESTDIR)$(initramfsdir)/etc/rc0.d/K16sysklogd
 
 	ln -sf ../init.d/sysklogd	$(DESTDIR)$(initramfsdir)/etc/rc2.d/S00sysklogd
-	ln -sf ../init.d/netbase	$(DESTDIR)$(initramfsdir)/etc/rc2.d/S03netbase
 	ln -sf ../init.d/rmnologin	$(DESTDIR)$(initramfsdir)/etc/rc2.d/S16rmnologin
 	ln -sf ../init.d/modutils	$(DESTDIR)$(initramfsdir)/etc/rc2.d/S20modutils
-	ln -sf ../init.d/network	$(DESTDIR)$(initramfsdir)/etc/rc2.d/S40network
+	ln -sf ../init.d/network	$(DESTDIR)$(initramfsdir)/etc/rc2.d/S30network
+	ln -sf ../init.d/netbase	$(DESTDIR)$(initramfsdir)/etc/rc2.d/S40netbase
 	ln -sf ../init.d/revoboot	$(DESTDIR)$(initramfsdir)/etc/rc2.d/S99revoboot
 
 	ln -sf ../init.d/sendsigs	$(DESTDIR)$(initramfsdir)/etc/rc6.d/S20sendsigs
