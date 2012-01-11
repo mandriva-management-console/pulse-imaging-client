@@ -18,9 +18,6 @@ case "$1" in
     stop)
 	start-stop-daemon --stop --quiet --oknodo --exec /sbin/portmap
 	;;
-    reload)
-	start-stop-daemon --stop --quiet --oknodo --pidfile /var/run/inetd.pid --signal 1 --exec /usr/sbin/inetd
-	;;
     restart)
 	pmap_dump >/var/run/portmap.state
 	start-stop-daemon --stop --quiet --oknodo --exec /sbin/portmap
@@ -33,7 +30,7 @@ case "$1" in
 	rm -f /var/run/portmap.upgrade-state /var/run/portmap.state
 	;;
     *)
-	echo "Usage: /etc/init.d/netbase {start|stop|reload|restart}"
+	echo "Usage: /etc/init.d/netbase {start|stop|restart}"
 	exit 1
 	;;
 esac
