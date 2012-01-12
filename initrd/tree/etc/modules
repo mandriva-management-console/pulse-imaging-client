@@ -68,9 +68,9 @@ forcedeth
 # keep the following two in that order !
 8139too
 8139cp
-r8101
 r8168
 r8169
+r8101
 
 # Texas Instrument
 tlan
