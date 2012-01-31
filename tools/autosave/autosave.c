@@ -28,7 +28,7 @@
  * How it works:
  * - open /proc/partitions
  * - for each entry:
- *   - save the 63 first sectors of the partition
+ *   - save the 2048 first sectors of the partition
  *   - save the 63 sectors BEFORE the partition if the minor nbr is >=5 && major != 58 && major != 109
  *     (because it contains extended DOS part info)
  *   - save recovery info in 'CONF' (for CDs) and 'conf.txt' (for Grub)
@@ -541,11 +541,11 @@ int save(void)
                 } else {
                     pi_start = geo.start;
                 }
-                pi_end = geo.start + 62;
+                pi_end = geo.start + 2047; // 1 MB boundary (was 62 sectors before)
                 if (!isdm)
                     save_raw(pi_start, pi_end, fmajor, dnum);
 
-                if (s <= 63) {
+                if (s <= 2048) { // don't backup parts smaller than 1 MB, because it was already backuped in raw mode above
                     dontsave = 1;
                 }
 
