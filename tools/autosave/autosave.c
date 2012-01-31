@@ -478,7 +478,7 @@ int save(void)
                         dontsave = 1;
                     } else if (!isdm) {
                         /* try now to get part type with sfdisk */
-                        sprintf(command, "/sbin/sfdisk --id %s %d", majorn,
+                        sprintf(command, "/sbin/sfdisk --id %s %d 2>/dev/null", majorn,
                                 poff[0]);
                         foerr = popen(command, "r");
                         /* get the last hexadecimal number found */
