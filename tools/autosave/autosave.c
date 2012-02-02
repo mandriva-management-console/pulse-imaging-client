@@ -81,6 +81,8 @@ unsigned char buf[80];
 unsigned char command[120];
 char hostname[32] = "";
 
+int LVM_MAJOR = 253;
+
 /* do we have the bios HD map ? */
 int has_hdmap = 0;
 unsigned int hdmap[65536];
@@ -278,7 +280,7 @@ void save_raw(__u32 start, __u32 end, int fdin, int dnum)
 
     if ((fP = fopen(tmprintf("%s/%sTABS", revosave, dnum2pre(dnum)), "a"))) {
 
-        myprintf("Saving partition info from : %u , to : %u\n", start, end);
+        myprintf("Saving partition info from sector %u to sector %u\n", start, end);
         for (s = start; s <= end; s++) {
             lseek64(fdin, (__u64) 512 * (__off64_t) s, SEEK_SET);
             read(fdin, buffer, 512);
@@ -322,7 +324,7 @@ int get_nextpart(struct part *part)
             if (sscanf
                 (buffer2, "%d %d %*d %s", &part->major, &part->minor,
                  part->device) == 3) {
-                if (part->major != 254) {       /* ignore device mapper entries */
+                if (part->major != LVM_MAJOR) {       /* ignore device mapper entries */
                     return 1;
                 }
             }
@@ -389,6 +391,7 @@ int save(void)
         "lvmreiserfs", NULL
     };
     char *fs;
+    int align_part_on;
 
     /* fixme */
     s_min = 0;
@@ -420,6 +423,8 @@ int save(void)
                 major = part.major;
                 minor = part.minor;
 
+                align_part_on = 63;
+
                 /* find the major device , REALLY NEEDED ??? */
                 /* /dev/hd[a-h]* and /dev/sd[a-z]* supported */
                 /* compaq /dev/ida/c[01234567]d0->d15 supported */
@@ -430,7 +435,41 @@ int save(void)
                     (((major == 8) || (major == 65) || (major >= 72 && major <= 79)
                       || (major >= 104 && major <= 111))
                      && !(minor & 0xF))) {
+                    /*
+                       Full drive : dont't save it, and try to get the parts bondary
+                       (generally 63 sectors for legacy partitionning, or 2048 for modern
+                       partitionning)
+                    */
                     dontsave = 1;
+
+                    // bondary guess is base on the first partition startig sector
+                    sprintf(device, "/dev/%s%d", part.device, 1);
+                    fi = open(device, O_RDONLY | O_LARGEFILE);
+                    if (fi != -1) { // first partition has been found
+                        if (ioctl(fi, HDIO_GETGEO, &geo) && !isdm) {
+                            perror(device);
+                            myprintf("Can't guess partitions boundary, assuing legacy value of 63\n");
+                            align_part_on = 63;
+                        } else {
+                            if (geo.start == 63) {
+                                myprintf("Partitions boundary seems to be legacy value of 63 sectors\n");
+                                align_part_on = 63;
+                            } else if (geo.start == 2048) {
+                                myprintf("Partitions boundary seems to be modern value of one megabyte\n");
+                                align_part_on = 2048;
+                            } else if (geo.start < 2048) {
+                                myprintf("Partitions boundary seems to be set on the unusual value of %d\n", geo.start);
+                                align_part_on = geo.start;
+                            } else {
+                                myprintf("Partitions boundary seems to be set on the unusually large value of %d, apping it to one megabyte\n", geo.start);
+                                align_part_on = 2048;
+                            }
+                        }
+                        close(fi);
+                    } else {
+                        myprintf("Can't guess partitions boundary, assuing legacy value of 63\n");
+                        align_part_on = 63;
+                    }
                 }
                 /* increment the number of parsed lines */
                 backuped++;
@@ -438,7 +477,7 @@ int save(void)
                 sprintf(device, "/dev/%s", part.device);
 
                 /* LVM volumes are saved with a name which begins by 'a' */
-                if (major == 254) {
+                if (major == LVM_MAJOR) {
                     dnum = 0x1000 + minor;
                     isdm = 1;
                 } else {
@@ -533,19 +572,19 @@ int save(void)
                 /* save partition info */
                 /* where to start and to stop: */
                 if (poff[0] >= 5) {
-                    /* maybe an extended dos partition so backup 63 sectors before */
-                    if (geo.start <= 63)
+                    /* maybe an extended dos partition so backup 2048 sectors before */
+                    if (geo.start <= align_part_on)
                         pi_start = 0;
                     else
-                        pi_start = geo.start - 63;
+                        pi_start = geo.start - align_part_on;
                 } else {
                     pi_start = geo.start;
                 }
-                pi_end = geo.start + 2047; // 1 MB boundary (was 62 sectors before)
+                pi_end = geo.start + align_part_on - 1;
                 if (!isdm)
                     save_raw(pi_start, pi_end, fmajor, dnum);
 
-                if (s <= 2048) { // don't backup parts smaller than 1 MB, because it was already backuped in raw mode above
+                if (s <= align_part_on) {
                     dontsave = 1;
                 }
 
@@ -975,6 +1014,7 @@ int main(int argc, char *argv[])
     mysystem1("cat /proc/partitions");
     mysystem1("cat /proc/bus/pci/devices");
     mysystem1("cat /proc/modules");
+    mysystem1("/sbin/sfdisk -d");
 
     if (!nolrs) {
         system("revosendlog 4");
