@@ -391,7 +391,7 @@ int save(void)
         "lvmreiserfs", NULL
     };
     char *fs;
-    int align_part_on;
+    int align_part_on = 63;
 
     /* fixme */
     s_min = 0;
@@ -423,8 +423,6 @@ int save(void)
                 major = part.major;
                 minor = part.minor;
 
-                align_part_on = 63;
-
                 /* find the major device , REALLY NEEDED ??? */
                 /* /dev/hd[a-h]* and /dev/sd[a-z]* supported */
                 /* compaq /dev/ida/c[01234567]d0->d15 supported */
@@ -448,21 +446,21 @@ int save(void)
                     if (fi != -1) { // first partition has been found
                         if (ioctl(fi, HDIO_GETGEO, &geo) && !isdm) {
                             perror(device);
-                            myprintf("Can't guess partitions boundary, assuing legacy value of 63\n");
+                            myprintf("Can't guess partitions boundary, assuming legacy value of 63\n");
                             align_part_on = 63;
                         } else {
                             if (geo.start == 63) {
-                                myprintf("Partitions boundary seems to be legacy value of 63 sectors\n");
+                                myprintf("Partitions boundary set to 63 sectors\n");
                                 align_part_on = 63;
                             } else if (geo.start == 2048) {
-                                myprintf("Partitions boundary seems to be modern value of one megabyte\n");
+                                myprintf("Partitions boundary set to one megabyte\n");
                                 align_part_on = 2048;
                             } else if (geo.start < 2048) {
-                                myprintf("Partitions boundary seems to be set on the unusual value of %d\n", geo.start);
+                                myprintf("Partitions boundary set to (unusal) %d\n", geo.start);
                                 align_part_on = geo.start;
                             } else {
-                                myprintf("Partitions boundary seems to be set on the unusually large value of %d, apping it to one megabyte\n", geo.start);
-                                align_part_on = 2048;
+                                myprintf("Partitions boundary too large (detected %d), capping it to 63 sectors\n", geo.start);
+                                align_part_on = 63;
                             }
                         }
                         close(fi);
@@ -1014,7 +1012,7 @@ int main(int argc, char *argv[])
     mysystem1("cat /proc/partitions");
     mysystem1("cat /proc/bus/pci/devices");
     mysystem1("cat /proc/modules");
-    mysystem1("/sbin/sfdisk -d");
+    mysystem1("/sbin/sfdisk -d 2>/dev/null");
 
     if (!nolrs) {
         system("revosendlog 4");
