@@ -4,17 +4,20 @@
 . /usr/lib/revolib.sh
 
 mkdir /dev/mapper
+MAJOR=253
 MINOR=`grep device-mapper /proc/misc|tr -dc 0-9`
 mknod /dev/mapper/control c 10 $MINOR
 
 for i in 0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31
 do
-    mknod /dev/dm-$i b 254 $i
+    mknod /dev/dm-$i b $MAJOR $i
 done
 
 grep -q revorestore /proc/cmdline && exit 0
 
-pretty_info "Scanning for LVM volumes"
+pretty_try "Scanning for LVM volumes"
 lvm vgscan 2>/dev/null | logger
-pretty_info "Activating LVM volumes"
+pretty_success
+pretty_try "Activating LVM volumes"
 lvm vgchange -ay 2>/dev/null | logger
+pretty_success
