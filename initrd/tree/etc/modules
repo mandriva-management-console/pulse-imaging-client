@@ -17,6 +17,24 @@ mlx4_core
 ssb
 uio
 
+# PHYs
+libphy
+realtek
+davicom
+national
+ste10Xp
+vitesse
+mdio-bitbang
+cicada
+qsemi
+broadcom
+et1011c
+icplus
+marvell
+lxt
+micrel
+smsc
+
 # 3Com
 3c59x
 
