@@ -23,5 +23,5 @@
 topdir = $(abspath ../..)
 include $(topdir)/common.mk
 
-SUBDIRS = e1000 e1000e r8101 r8168 r8169 igb ixgbe
+SUBDIRS = e1000 e1000e r8101 r8168 r8169 igb ixgbe nxii tg3
 # nxii and tg3 currently unsupported on linux >= 3.0
