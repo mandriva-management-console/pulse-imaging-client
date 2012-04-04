@@ -23,7 +23,7 @@ topdir = $(abspath ../../..)
 
 module = ixgbe.ko
 module_path = $(extra_srcdir)/src/$(module)
-module_version = 3.7.17
+module_version = 3.8.21
 extra_archive = ixgbe-$(module_version).tar.gz
 extra_uri = http://downloadmirror.intel.com/14687/eng/$(extra_archive)
 module_builddir = src
