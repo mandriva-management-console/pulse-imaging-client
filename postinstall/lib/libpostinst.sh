@@ -173,17 +173,28 @@ RegistryAddRunServicesOnce ()
 }
 
 #
-# Copy a sysprep.inf to file and substitute the hostname
-# Example: CopySysprepInf /revoinfo/mysysprep.inf
+# Copy a sysprep configuration to file and substitute the hostname
+# Example: CopySysprepInf /revoinfo/sysprep.inf
+# If the extension is .xml it assumes that the target is Windows Vista/Seven/2008
+# If the extension is .inf the file will be copied to c:\Sysprep.inf (Windows XP)
 #
 CopySysprepInf ()
 {
+    SYSPREP_FILE=$1
+
     # Warning ! There's a ^M after $HOSTNAME for DOS compatibility
     SYSPREP=sysprep
     [ -d /mnt/Sysprep ] && SYSPREP=Sysprep
 
-    rm -f /mnt/$SYSPREP/[Ss]ysprep.inf
-    sed -e "s/^[ 	]*[Cc]omputer[Nn]ame[^\n\r]*/ComputerName=$HOSTNAME"`echo -e "\015"`"/" <$1 >/mnt/$SYSPREP/Sysprep.inf
+    if [ ${SYSPREP_FILE#*.} == "xml" ]; then
+        rm -f /mnt/Windows/System32/sysprep/*.xml
+        sed -e "s/<ComputerName>.*$/<ComputerName>${HOSTNAME}<\/ComputerName>"`echo -e "\015"`"/" < $SYSPREP_FILE > /mnt/Windows/Panther/unattend.xml
+    fi
+
+    if [ ${SYSPREP_FILE#*.} == "inf" ]; then
+        rm -f /mnt/$SYSPREP/[Ss]ysprep.inf
+        sed -e "s/^[	]*[Cc]omputer[Nn]ame[^\n\r]*/ComputerName=$HOSTNAME"`echo -e "\015"`"/" < $SYSPREP_FILE >/mnt/$SYSPREP/Sysprep.inf
+    fi
 }
 
 #
