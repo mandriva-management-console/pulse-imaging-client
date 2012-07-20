@@ -23,7 +23,7 @@ topdir = $(abspath ../../..)
 
 module = r8169.ko
 module_path = $(extra_srcdir)/src/$(module)
-module_version = 6.016.00
+module_version = 6.017.00
 extra_archive = r8169-$(module_version).tar.bz2
 extra_uri = ftp://WebUser:pGL7E6v@218.210.127.132/cn/nic/$(extra_archive)
 module_builddir = src
