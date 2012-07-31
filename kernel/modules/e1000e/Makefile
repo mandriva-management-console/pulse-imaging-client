@@ -24,9 +24,11 @@ topdir = $(abspath ../../..)
 
 module = e1000e.ko
 module_path = $(extra_srcdir)/src/$(module)
-module_version = 2.0.0.1
+module_version = 1.11.3
 extra_archive = e1000e-$(module_version).tar.gz
-extra_uri = http://downloadmirror.intel.com/15817/eng/$(extra_archive)
+# Don't update to 2.X until this bug is closed!
+# https://sourceforge.net/p/e1000/bugs/1/
+extra_uri = http://freefr.dl.sourceforge.net/project/e1000/e1000e%20stable/$(module_version)/$(extra_archive)
 module_builddir = src
 
 include $(topdir)/kernel/modules.mk
