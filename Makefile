@@ -91,6 +91,7 @@ binary: binarydir
 	# remove special files
 	find $(binarybase)$(initramfsdir)/dev -mindepth 1 -not -type f -delete
 	tar -c -f - -C $(binarybase) . | gzip -c > $(binarybase).tar.gz
+	rm -fr $(binarybase)
 
 binarydir: check-root
 	rm -rf $(binarybase)
