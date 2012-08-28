@@ -10,6 +10,7 @@ kernel/modules/atl1e/sources/
 kernel/modules/e1000/sources/
 kernel/modules/e1000e/sources/
 kernel/modules/igb/sources/
+kernel/modules/ixgbe/sources/
 kernel/modules/nxii/sources/
 kernel/modules/r8101/sources/
 kernel/modules/r8168/sources/
