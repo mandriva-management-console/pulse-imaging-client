@@ -34,6 +34,7 @@ include $(topdir)/extra.mk
 all-local: $(extra_bin)
 
 $(extra_bin):
+	$(MAKE) $(extra_srcdir)
 	$(MAKE) -C $(extra_srcdir)
 
 install-local:
