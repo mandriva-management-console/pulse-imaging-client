@@ -21,6 +21,13 @@
 #
 topdir = $(abspath ..)
 
+# Detect number of CPUs
+NPROCS := 1
+OS := $(shell uname -s)
+ifeq ($(OS),Linux)
+	NPROCS = $(shell grep -c ^processor /proc/cpuinfo)
+endif
+
 SUBDIRS = rdev . modules
 
 include $(topdir)/version.mk
@@ -42,8 +49,8 @@ all-local: $(linux_image)
 linux-image: $(linux_image)
 
 $(linux_image): $(linux_config)
-	$(MAKE) -C $(extra_srcdir) ARCH=$(ARCHITECTURE) bzImage
-	$(MAKE) -C $(extra_srcdir) ARCH=$(ARCHITECTURE) modules
+	$(MAKE) -j$(NPROCS) -C $(extra_srcdir) ARCH=$(ARCHITECTURE) bzImage
+	$(MAKE) -j$(NPROCS) -C $(extra_srcdir) ARCH=$(ARCHITECTURE) modules
 
 $(linux_config): $(linux_configdir)/dot-config-$(linux_version)
 	$(MAKE) patched-srcdir
