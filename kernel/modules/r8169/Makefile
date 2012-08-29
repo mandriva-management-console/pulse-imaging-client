@@ -29,3 +29,6 @@ extra_uri = ftp://WebUser:pGL7E6v@218.210.127.132/cn/nic/$(extra_archive)
 module_builddir = src
 
 include $(topdir)/kernel/modules.mk
+
+patched-srcdir:
+	sed -i 's!^#include <asm/system.h>$$!!' sources/src/r8169_n.c
