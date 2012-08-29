@@ -176,8 +176,8 @@ mlx4_en
 # Virtualization
 vmxnet3
 vxge
-virtio-net
-hv-netvsc
+virtio_net
+hv_netvsc
 
 # ServerEngines
 be2net
