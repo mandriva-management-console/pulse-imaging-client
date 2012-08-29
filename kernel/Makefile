@@ -49,6 +49,10 @@ all-local: $(linux_image)
 linux-image: $(linux_image)
 
 $(linux_image): $(linux_config)
+	# Temporary fix for lpfc_scsi
+	# See: http://comments.gmane.org/gmane.linux.kernel/1301034
+	cat $(extra_srcdir)/drivers/scsi/lpfc/Makefile | grep -v "ccflags-y += -Werror" > $(extra_srcdir)/drivers/scsi/lpfc/Makefile.new
+	mv $(extra_srcdir)/drivers/scsi/lpfc/Makefile.new $(extra_srcdir)/drivers/scsi/lpfc/Makefile
 	$(MAKE) -j$(NPROCS) -C $(extra_srcdir) ARCH=$(ARCHITECTURE) bzImage
 	$(MAKE) -j$(NPROCS) -C $(extra_srcdir) ARCH=$(ARCHITECTURE) modules
 
