@@ -177,7 +177,7 @@ mlx4_en
 vmxnet3
 vxge
 virtio-net
-hyperv-net
+hv-netvsc
 
 # ServerEngines
 be2net
