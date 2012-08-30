@@ -23,12 +23,11 @@
 topdir = $(abspath ../..)
 
 extra_bin = $(extra_srcdir)/tools/lvm
-extra_version = 2.01.04
+extra_version = 2.02.97
 extra_archive = LVM2.$(extra_version).tgz
-extra_uri = ftp://sources.redhat.com/pub/lvm2/old/$(extra_archive)
+extra_uri = ftp://sources.redhat.com/pub/lvm2/$(extra_archive)
 
 patch_srcdir = $(extra_srcdir)
-dm_srcdir = $(topdir)/initrd/dm/$(extra_srcdir)
 
 include $(topdir)/common.mk
 include $(topdir)/extra.mk
@@ -41,18 +40,13 @@ $(extra_bin):
 	$(MAKE) -C $(extra_srcdir) tools
 	strip $@
 
-$(extra_srcdir)/Makefile: patched-srcdir $(dm_srcdir)/Makefile
+$(extra_srcdir)/Makefile: patched-srcdir
 	cd $(@D) && \
-	  LDFLAGS='-L$(dm_srcdir)/lib/ioctl' \
-	  CFLAGS='-I$(dm_srcdir)/include' \
-	  CPPFLAGS='-I$(dm_srcdir)/include' \
-	  ./configure --disable-selinux --disable-readline
-
-$(dm_srcdir)/Makefile:
-	$(MAKE) -C $(topdir)/initrd/dm
+	  ./configure --disable-selinux --disable-readline --enable-static_link
 
 install-local:
 	mkdir -p $(DESTDIR)$(initramfsdir)/bin
+	cp $(extra_srcdir)/tools/lvm.static $(extra_srcdir)/tools/lvm
 	$(install_BIN) $(extra_srcdir)/tools/lvm $(DESTDIR)$(initramfsdir)/bin/
 
 CLEANFILES += $(extra_bin)
