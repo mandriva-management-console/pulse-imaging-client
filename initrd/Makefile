@@ -20,7 +20,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 #
-SUBDIRS = atftp busybox dm lvm popt pump sysvinit tinylogin
+SUBDIRS = atftp busybox lvm popt pump sysvinit tinylogin
 
 topdir = $(abspath ..)
 include $(topdir)/common.mk
