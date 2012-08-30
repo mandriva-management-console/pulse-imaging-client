@@ -326,7 +326,11 @@ int get_nextpart(struct part *part)
                  part->device) == 3) {
                 if (part->major != LVM_MAJOR) {       /* ignore device mapper entries */
                     return 1;
-                }
+                } else if (strncmp(part->device, "vd", 2) == 0) {
+                    /* same major as LVM, but /dev/vd... */
+                    /* this is à virtio-blk device */
+                    return 1;
+		}
             }
         }
     }
@@ -428,7 +432,8 @@ int save(void)
                 /* compaq /dev/ida/c[01234567]d0->d15 supported */
                 /* compaq /dev/cciss/c[01234567]d0->d15 supported */
                 /* mylex unsupported */
-                if ((((major == 3) || (major == 22) || (major == 33)
+		/* /dev/vdX (virtio): major=253 */
+                if ((((major == 3) || (major == 22) || (major == 33) || (major == 253)
                       || (major == 34)) && !(minor & 0x3F)) ||
                     (((major == 8) || (major == 65) || (major >= 72 && major <= 79)
                       || (major >= 104 && major <= 111))
@@ -475,7 +480,8 @@ int save(void)
                 sprintf(device, "/dev/%s", part.device);
 
                 /* LVM volumes are saved with a name which begins by 'a' */
-                if (major == LVM_MAJOR) {
+                /* virtio-blk devices (/dev/vdX) use the same major as LVM */
+                if (major == LVM_MAJOR && (!(strncmp(part.device, "vd", 2) == 0))) {
                     dnum = 0x1000 + minor;
                     isdm = 1;
                 } else {
