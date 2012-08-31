@@ -1,0 +1,3 @@
+#!/bin/sh
+
+loadkmap < /usr/share/keymaps/fr-latin1.bmap 
