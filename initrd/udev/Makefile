@@ -51,3 +51,6 @@ install-local:
 	$(install_BIN) $(extra_srcdir)/make_install/sbin/udevadm $(DESTDIR)$(initramfsdir)/sbin/
 	mkdir -p $(DESTDIR)$(initramfsdir)/lib/udev
 	cp -a $(extra_srcdir)/make_install/lib/udev/* $(DESTDIR)$(initramfsdir)/lib/udev/
+	chown -R root:root $(DESTDIR)$(initramfsdir)/lib/udev/
+	find $(DESTDIR)$(initramfsdir)/lib/udev/ -type f -exec chmod 644 {} \;
+	find $(DESTDIR)$(initramfsdir)/lib/udev/ -type d -exec chmod 755 {} \;
