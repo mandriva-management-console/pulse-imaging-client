@@ -850,7 +850,7 @@ static void makehdmap(void)
         if (sscanf(line, " %u %u %u %s\n", &major, &minor, &sec, buf) == 4) {
             if ((((major == 3) || (major == 22) || (major == 33)
                   || (major == 34)) && !(minor & 0x3F)) ||
-                (((major == 8) || (major == 65)
+                (((major == 8) || (major == 65) || (major == 252) || (major = 253) || (major = 254)
                   || (major >= 72 && major <= 79)
                   || (major >= 104 && major <= 111))
                  && !(minor & 0xF))) {
