@@ -427,11 +427,18 @@ int save(void)
                 /* compaq /dev/cciss/c[01234567]d0->d15 supported */
                 /* mylex unsupported */
 		/* /dev/vdX (virtio) and LVM : 252,253,254 (at least...) */
-                if ((((major == 3) || (major == 22) || (major == 33) || (major == 252) || (major == 253) || (major == 254)
-                      || (major == 34)) && !(minor & 0x3F)) ||
-                    (((major == 8) || (major == 65) || (major >= 72 && major <= 79)
-                      || (major >= 104 && major <= 111))
-                     && !(minor & 0xF))) {
+                /* see Documentation/devices.txt */
+                if (
+                    ( ( (major == 3) || (major == 22) || (major == 33) || (major == 34) ) && !(minor & 0x3F) ) /* IDE devices : major in [3, 22, 33, 33] and minor MODULO 64 equals ZERO */
+                    ||
+                    ( ( (major == 8) || (major == 65) ) && !(minor & 0xF) ) /* SCSI devices : major in [8, 65] and minor MODULO 16 equals ZERO */
+                    ||
+                    ( (major >= 72 && major <= 79) && !(minor & 0xF) ) /* Compaq IDA devices : major between 72 and 79 and minor MODULO 16 equals ZERO */
+                    ||
+                    ( (major >= 104 && major <= 111) && !(minor & 0xF) ) /* Compaq CCISS devices : major between 104 and 111 and minor MODULO 16 equals ZERO */
+                    ||
+                    ( (major >= 240 && major <= 254) && (strncmp(part.device, "mapper/", 7) != 0) && !(minor & 0xF) ) /* free block majors : if major between 240 and 254 and not detected as devmapper (/dev/mapper/something) and minor MODULO 16 equals ZERO */
+                    ) {
                     /*
                        Full drive : dont't save it, and try to get the parts bondary
                        (generally 63 sectors for legacy partitionning, or 2048 for modern
