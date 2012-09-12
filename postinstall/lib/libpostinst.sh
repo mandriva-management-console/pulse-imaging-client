@@ -219,11 +219,24 @@ GetNPart ()
 #
 GetPartStart ()
 {
-    DISK=$1
-    NUM=$2
+    DISK=${1}
+    NUM=${2}
 
-    L=`parted -s $DISK unit s print|grep ^$NUM|sed 's/  */,/g'|cut -f 2 -d ,`
-    echo $L
+    FS=`parted -s $DISK unit s print | grep "^[[:space:]]*${NUM}[[:space:]]\+" | sed 's/^\s\+//g' | sed 's/  */,/g' | cut -f 2 -d ,`
+    echo ${FS}
+
+}
+
+#
+# Get the filesystem type for partition NUM on disk DISK
+#
+GetPartFileSystem ()
+{
+    DISK=${1}
+    NUM=${2}
+
+    L=`parted -s $DISK unit s print | grep "^[[:space:]]*${NUM}[[:space:]]\+" | sed 's/^\s\+//g' | sed 's/  */,/g' | cut -f 6 -d ,`
+    echo ${L}
 
 }
 
@@ -235,7 +248,7 @@ IsPartBootable ()
     DISK=$1
     NUM=$2
 
-    parted -s $DISK print|grep ^$NUM|grep -q boot && echo "yes"
+    parted -s $DISK print | grep "^[[:space:]]*${NUM}[[:space:]]\+" | grep -q boot && echo "yes"
 }
 
 #
@@ -250,7 +263,7 @@ SetPartBootable ()
 }
 
 #
-# Resize the Nth partition of the 1st disk (not ntfs compatible)
+# Resize the Nth partition
 #
 Resize ()
 {
@@ -260,11 +273,37 @@ Resize ()
     P=`GetNPart $NUM`
     D=`PartToDisk $P`
     S=`GetPartStart $D $NUM`
-    parted -s $D resize $NUM $S $SZ
+    FS=`GetPartFileSystem $D $NUM`
+    BOOT=`IsPartBootable $D $NUM`
+    if [ -z $P ]; then
+      echo "*** ERROR: Partition number is empty. Aborting resize."
+      return 1
+    elif [ -z $D ]; then
+      echo "*** ERROR: Unable to find disk corresponding to partition ${P}. Aborting resize."
+      return 1
+    elif [ -z $S ]; then
+      echo "*** ERROR: Unable to get start sector of partition ${P}. Aborting resize."
+      return 1
+    elif [ -z $FS ]; then
+      echo "*** ERROR: Unable to identify filesystem of partition ${FS}. Aborting resize."
+      return 1
+    elif [ -z $BOOT ]; then
+      echo "*** ERROR: Unable to figure out if partition ${FS} is bootable or not. Aborting resize."
+      return 1
+    else
+      if [ "$FS" = "ntfs" ]; then
+        parted -s $D rm $NUM mkpart primary ntfs $S $SZ
+        [ "$BOOT" = "yes" ] && SetPartBootable $D $NUM
+        yes|ntfsresize -f $P
+        ntfsresize --info --force $P
+      else
+        parted -s $D resize $NUM $S $SZ
+      fi
+    fi
 }
 
 #
-# Maximize the Nth partition of the 1st disk (not ntfs compatible)
+# Maximize the Nth partition
 #
 ResizeMax ()
 {
@@ -288,19 +327,51 @@ Mount ()
 {
   # Check if parameter is a real number
   if echo "${1}" | grep -q "^[0-9]\+" ;then
-    # Get partition name according to it's number
-    partname=`grep '[a-z]\+[0-9]\+$' /proc/partitions | head -n ${1} | tail -n 1 | awk '{print $NF}'`
-    # Looks being a real block device ?
-    if [ -b /dev/${partname} ]; then
-      mountdisk /dev/${partname}
+    # Check if ${1} is lower or equal than numbers of partitions and not zero
+    partnumber=`grep '[a-z]\+[0-9]\+$' /proc/partitions | wc -l | sed 's/ //g'`
+    if [ ${1} -le ${partnumber} ] && [ ${1} -gt 0 ]; then
+      # Get partition name according to it's number
+      partname=`grep '[a-z]\+[0-9]\+$' /proc/partitions | head -n ${1} | tail -n 1 | awk '{print $NF}'`
+      # Looks being a real block device ?
+      if [ -b /dev/${partname} ]; then
+        mountdisk /dev/${partname}
+      else
+        echo "*** ERROR: partition number ${1} (resolved as ${partname}) not found"
+        return 1
+      fi
     else
-      echo "*** ERROR: partition number ${1} (resolved as ${partname}) not found"
+      echo "*** ERROR: partition number ${1} invalid (from 1 to ${partnumber})"
       return 1
     fi
   else
     echo "*** ERROR: Invalid partition number (${1})"
     return 1
   fi
+}
+
+#
+# Try to find and mount the "system" disk
+#
+MountSystem ()
+{
+  # Number of partitions
+  partnumber=`grep '[a-z]\+[0-9]\+$' /proc/partitions | wc -l | sed 's/ //g'`
+  for num in `seq 1 ${partnumber}`; do
+    Mount ${num}
+    # Does it looks like being a Windows ?
+    if [ -d /mnt/WINDOWS ]; then
+      echo "*** INFO: WINDOWS found on partition number ${num}"
+      return 0
+    # Or some Unix disk ?
+    elif [ -d /mnt/bin ] && [ -d /mnt/etc ] && [ -d /mnt/var ] && [ -d /mnt/home ]; then
+      echo "*** INFO: Unix found on partition number ${num}"
+      return
+    fi
+  done
+  # Got there ? Nothing found...
+  echo "*** ERROR: Unable to find a system disk"
+  umount /mnt >/dev/null 2>&1
+  return 1
 }
 
 #
