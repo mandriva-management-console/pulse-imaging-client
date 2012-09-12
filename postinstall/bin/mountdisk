@@ -25,15 +25,32 @@
 # NTFS / VFAT Mounting
 #
 
-cd /opt
+# Time to load fuse kids...
+grep -q '^fuse' /proc/modules || insmod /opt/lib/modules/fuse.ko
 
-image=$1
+device=${1}
 
-# try a VFAT mount
-mount -t vfat $image /mnt 2>/dev/null && echo "*** $image mounted (vfat) ***" && exit 0
-
-export PATH=$PATH:`pwd`/bin
-
-ntfs-3g $image /mnt
-
-echo "*** $image mounted ***"
+# Is there a parameter ?
+if [ ! -z ${device} ]; then
+  # Does it looks like being a block device ?
+  if [ -b ${device} ]; then
+    # Clean mountpoint first
+    umount /mnt >/dev/null 2>&1
+    # Try to mount as ntfs first (mount.ntfs is a symlink to ntfs-3g binary)
+    if mount.ntfs ${device} /mnt; then
+      echo "*** INFO: ${device} successfully mounted as /mnt (NTFS-3G)"
+    # Use regular mount command (linux stuff)
+    elif mount ${device} /mnt; then
+      echo "*** INFO: ${device} successfully mounted as /mnt"
+    else
+      echo "*** ERROR: Unable to mount device ${device}"
+      exit 1
+    fi
+  else
+    echo "*** ERROR: Paramater isn't a block device (trying to mount ${device})" 
+    exit 1
+  fi
+else
+  echo "*** ERROR: No parameter" 
+  exit 1
+fi
