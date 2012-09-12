@@ -286,25 +286,21 @@ PartToDisk ()
 #
 Mount ()
 {
-    if echo "$1" | grep -q "^[0-9]" ;then
-	# mount the Nth partition
-	I=1
-	# read /proc/partitions and find the Nth entry
-	while [ $I -le $1 ] ;do
-	    read C1 C2 C3 C4 C5 || break
-	    if echo "$C4"|grep -q "^[a-z]*[0-9]$"; then
-		I=$(($I+1))
-	    fi
-	done < /proc/partitions
-	if [ "$C4" = "" ]; then
-	    echo "*** ERROR: partition $1 not found"
-	    exit 1
-	fi
-	mountwin /dev/$C4
+  # Check if parameter is a real number
+  if echo "${1}" | grep -q "^[0-9]\+" ;then
+    # Get partition name according to it's number
+    partname=`grep '[a-z]\+[0-9]\+$' /proc/partitions | head -n ${1} | tail -n 1 | awk '{print $NF}'`
+    # Looks being a real block device ?
+    if [ -b /dev/${partname} ]; then
+      mountdisk /dev/${partname}
     else
-	# windows ntfs/fat mount
-	mountwin $1
+      echo "*** ERROR: partition number ${1} (resolved as ${partname}) not found"
+      return 1
     fi
+  else
+    echo "*** ERROR: Invalid partition number (${1})"
+    return 1
+  fi
 }
 
 #
