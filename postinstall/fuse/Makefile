@@ -23,9 +23,9 @@
 topdir = $(abspath ../..)
 
 extra_bin = $(extra_srcdir)/util/fusermount
-extra_version = 2.8.4
+extra_version = 2.9.1
 extra_archive = fuse-$(extra_version).tar.gz
-extra_uri = http://downloads.sourceforge.net/project/fuse/fuse-2.X/$(extra_archive)
+extra_uri = http://downloads.sourceforge.net/project/fuse/fuse-2.X/$(extra_version)/$(extra_archive)
 
 include $(topdir)/common.mk
 include $(topdir)/extra.mk
@@ -41,7 +41,7 @@ $(extra_srcdir)/Makefile:
 
 install-local:
 	mkdir -p $(DESTDIR)$(postinstdir)/bin
-	$(install_BIN) $(extra_bin) $(DESTDIR)$(postinstdir)/bin/fusermount
+	$(install_BIN) --strip $(extra_bin) $(DESTDIR)$(postinstdir)/bin/fusermount
 
 clean:
 	$(MAKE) -C $(extra_srcdir) clean
