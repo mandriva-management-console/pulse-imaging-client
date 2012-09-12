@@ -24,7 +24,7 @@ topdir = $(abspath ../..)
 
 # Offline NT password and registry editor
 extra_bin = $(extra_srcdir)/chntpw.static
-extra_version = 100627
+extra_version = 110511
 extra_archive = chntpw-source-$(extra_version).zip
 extra_uri = http://pogostick.net/~pnh/ntpasswd/$(extra_archive)
 
@@ -39,7 +39,7 @@ $(extra_bin):
 
 install-local:
 	mkdir -p $(DESTDIR)$(postinstdir)/bin
-	$(install_BIN) $(extra_bin) $(DESTDIR)$(postinstdir)/bin/chntpw
+	$(install_BIN) --strip $(extra_bin) $(DESTDIR)$(postinstdir)/bin/chntpw
 
 clean:
 	$(MAKE) -C $(extra_srcdir) clean
