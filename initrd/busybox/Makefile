@@ -32,7 +32,7 @@ links_bin = [ ash basename bash cat chgrp chmod chown cp cut date dd df dirname 
 	dmesg dos2unix du dutmp echo false grep gunzip gzip head hostname kill \
 	ln ls mkdir mknod more mount mv pidof ping ps pwd reset rm rmdir route \
 	run-parts sed sh sleep sort stty sync tar tee telnet test touch tr true \
-	umount uname uniq unix2dos vi wget zcat
+	umount uname uniq unix2dos vi wget zcat awk
 
 links_usr_bin = chvt clear env find free id killall logger rdate tail touch tty \
 	wc which whoami yes
