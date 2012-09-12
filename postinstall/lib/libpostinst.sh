@@ -272,35 +272,6 @@ ResizeMax ()
 }
 
 #
-# Resize the Nth primary partition of the 1st disk (ntfs only)
-# Should be the last one
-#
-NtfsResize ()
-{
-    NUM=$1
-    SZ=$2
-
-    P=`GetNPart $NUM`
-    D=`PartToDisk $P`
-    S=`GetPartStart $D $NUM`
-    BOOT=`IsPartBootable $D $NUM`
-    #
-    parted -s $D rm $NUM mkpart primary ntfs $S $SZ
-    [ "$BOOT" = "yes" ] && SetPartBootable $D $NUM
-    yes|ntfsresize -f $P
-    ntfsresize --info --force $P
-}
-
-#
-# Maximize the Nth primary partition of the 1st disk (ntfs only)
-# Should be the last one
-#
-NtfsResizeMax ()
-{
-    NtfsResize $1 100%
-}
-
-#
 # return the disk device related to the part device
 # /dev/hda1 -> /dev/hda
 #
