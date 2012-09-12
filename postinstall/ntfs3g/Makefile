@@ -22,9 +22,9 @@
 #
 topdir = $(abspath ../..)
 
-extra_bin = $(extra_srcdir)/src/.libs/ntfs-3g
-extra_version = 2010.5.22
-extra_archive = ntfs-3g-$(extra_version).tgz
+extra_bin = $(extra_srcdir)/src/ntfs-3g
+extra_version = 2012.1.15
+extra_archive = ntfs-3g_ntfsprogs-$(extra_version).tgz
 extra_uri = http://tuxera.com/opensource/$(extra_archive)
 
 include $(topdir)/common.mk
@@ -37,16 +37,12 @@ $(extra_bin): $(extra_srcdir)/Makefile
 
 $(extra_srcdir)/Makefile:
 	$(MAKE) $(extra_srcdir)
-	cd $(extra_srcdir) && ./configure --enable-mtab=no
+	cd $(extra_srcdir) && ./configure --enable-mtab=no --disable-library
 
 install-local:
 	mkdir -p $(DESTDIR)$(postinstdir)/bin
-	$(install_BIN) $(extra_bin) $(DESTDIR)$(postinstdir)/bin/ntfs-3g
-	mkdir -p $(DESTDIR)$(postinstdir)/lib
-	$(install_DATA) $(extra_srcdir)/libntfs-3g/.libs/libntfs-3g.so.76.0.0 \
-	  $(DESTDIR)$(postinstdir)/lib/libntfs-3g.so.76.0.0
-	ln -sf libntfs-3g.so.76.0.0 $(DESTDIR)$(postinstdir)/lib/libntfs-3g.so.76
-	ln -sf libntfs-3g.so.76.0.0 $(DESTDIR)$(postinstdir)/lib/libntfs-3g.so
+	$(install_BIN) --strip $(extra_bin) $(DESTDIR)$(postinstdir)/bin/ntfs-3g
+	$(install_BIN) --strip $(extra_srcdir)/ntfsprogs/ntfsresize $(DESTDIR)$(postinstdir)/bin/ntfsresize
 
 clean:
 	$(MAKE) -C $(extra_srcdir) clean
