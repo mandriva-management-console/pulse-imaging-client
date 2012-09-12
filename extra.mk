@@ -40,6 +40,8 @@ extract = $(shell \
 	      echo 'tar zxCf'; \
 	    elif test "$$mime" = "application/x-bzip2"; then \
 	      echo 'tar jxCf'; \
+	    elif test "$$mime" = "application/x-xz"; then \
+	      echo 'tar JxCf'; \
 	    else \
 	      echo 'echo Unknown archive mimetype; exit 1'; \
 	    fi)
