@@ -22,9 +22,9 @@
 #
 topdir = $(abspath ../..)
 
-extra_bin = $(extra_srcdir)/parted/.libs/parted
-extra_version = 2.3
-extra_archive = parted-$(extra_version).tar.gz
+extra_bin = $(extra_srcdir)/parted/parted
+extra_version = 3.1
+extra_archive = parted-$(extra_version).tar.xz
 extra_uri = http://ftp.gnu.org/gnu/parted/$(extra_archive)
 
 include $(topdir)/common.mk
@@ -37,16 +37,11 @@ $(extra_bin): $(extra_srcdir)/Makefile
 
 $(extra_srcdir)/Makefile:
 	$(MAKE) $(extra_srcdir)
-	cd $(extra_srcdir) && ./configure --disable-device-mapper --without-readline
+	cd $(extra_srcdir) && ./configure --disable-device-mapper --without-readline --disable-shared
 
 install-local:
 	mkdir -p $(DESTDIR)$(postinstdir)/bin
-	$(install_BIN) $(extra_bin) $(DESTDIR)$(postinstdir)/bin/parted
-	mkdir -p $(DESTDIR)$(postinstdir)/lib
-	$(install_DATA) $(extra_srcdir)/libparted/.libs/libparted.so.0.0.1 \
-	  $(DESTDIR)$(postinstdir)/lib/libparted.so.0.0.1
-	ln -sf libparted.so.0.0.1 $(DESTDIR)$(postinstdir)/lib/libparted.so
-	ln -sf libparted.so.0.0.1 $(DESTDIR)$(postinstdir)/lib/libparted.so.0
+	$(install_BIN) --strip $(extra_bin) $(DESTDIR)$(postinstdir)/bin/parted
 
 clean:
 	$(MAKE) -C $(extra_srcdir) clean
