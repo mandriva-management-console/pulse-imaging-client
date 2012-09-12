@@ -23,7 +23,7 @@
 topdir = $(abspath ../..)
 
 extra_bin = $(extra_srcdir)/dd_rescue
-extra_version = 1.14
+extra_version = 1.28
 extra_archive = dd_rescue-$(extra_version).tar.gz
 extra_uri = http://www.garloff.de/kurt/linux/ddrescue/$(extra_archive)
 
@@ -38,7 +38,7 @@ $(extra_bin):
 
 install-local:
 	mkdir -p $(DESTDIR)$(postinstdir)/bin
-	$(install_BIN) $(extra_bin) $(DESTDIR)$(postinstdir)/bin/dd_rescue
+	$(install_BIN) --strip $(extra_bin) $(DESTDIR)$(postinstdir)/bin/dd_rescue
 
 clean:
 	$(MAKE) -C $(extra_srcdir) clean
