@@ -42,6 +42,7 @@ $(extra_srcdir)/Makefile:
 install-local:
 	mkdir -p $(DESTDIR)$(postinstdir)/bin
 	$(install_BIN) --strip $(extra_bin) $(DESTDIR)$(postinstdir)/bin/ntfs-3g
+	ln -sf ntfs-3g $(DESTDIR)$(postinstdir)/bin/mount.ntfs
 	$(install_BIN) --strip $(extra_srcdir)/ntfsprogs/ntfsresize $(DESTDIR)$(postinstdir)/bin/ntfsresize
 
 clean:
