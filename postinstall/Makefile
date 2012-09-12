@@ -31,7 +31,7 @@ include $(topdir)/extra.mk
 
 install-local:
 	mkdir -p $(DESTDIR)$(postinstdir)/bin
-	$(install_BIN) bin/mountwin $(DESTDIR)$(postinstdir)/bin/mountwin
+	$(install_BIN) bin/mountdisk $(DESTDIR)$(postinstdir)/bin/mountdisk
 	mkdir -p $(DESTDIR)$(postinstdir)/lib
 	$(install_DATA) lib/libpostinst.sh $(DESTDIR)$(postinstdir)/lib/libpostinst.sh
 	mkdir -p $(DESTDIR)$(postinstdir)/winutils
