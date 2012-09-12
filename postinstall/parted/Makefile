@@ -23,7 +23,7 @@
 topdir = $(abspath ../..)
 
 extra_bin = $(extra_srcdir)/parted/parted
-extra_version = 3.1
+extra_version = 2.3
 extra_archive = parted-$(extra_version).tar.xz
 extra_uri = http://ftp.gnu.org/gnu/parted/$(extra_archive)
 
