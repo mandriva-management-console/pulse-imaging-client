@@ -269,7 +269,7 @@ del "%SystemRoot%\system32\GroupPolicy\Machine\Scripts\scripts.ini"
 reg delete "HKLM\Software\Microsoft\Windows\CurrentVersion\Group Policy\State\Machine\Scripts" /f
 del "%~f0"
 EOF
-    unix2dos /mnt/WINDOWS/mandriva_pulse2_agents.bat
+    unix2dos /mnt/mandriva_pulse2_agents.bat
     # Call the Local GPO helper
     AddNewStartupGroupPolicy "C:\\mandriva_pulse2_agents.bat"
   # Regular Unix/Linux drive
