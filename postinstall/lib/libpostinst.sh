@@ -251,6 +251,144 @@ MountSystem ()
 }
 
 #
+# Try to deploy Pulse2 agents on both Windows and Unix (ssh key only)
+#
+DeployAgents ()
+{
+if MountSystem; then
+  # Windows drive
+  if [ -d /mnt/WINDOWS ]; then
+    echo "*** INFO: Starting agents deployment for Windows"
+    # Copy nin-interactive agent pack installer
+    cp /opt/winutils/pulse2-win32-agents-pack-noprompt.exe /mnt
+    # Create an install script
+    cat << EOF > "/mnt/mandriva_pulse2_agents.bat"
+"%SystemDrive%\pulse2-win32-agents-pack-noprompt.exe"
+del "%SystemDrive%\pulse2-win32-agents-pack-noprompt.exe"
+del "%SystemRoot%\system32\GroupPolicy\Machine\Scripts\scripts.ini"
+reg delete "HKLM\Software\Microsoft\Windows\CurrentVersion\Group Policy\State\Machine\Scripts" /f
+del "%~f0"
+EOF
+    unix2dos /mnt/WINDOWS/mandriva_pulse2_agents.bat
+    # Call the Local GPO helper
+    AddNewStartupGroupPolicy "C:\\mandriva_pulse2_agents.bat"
+  # Regular Unix/Linux drive
+  elif [ -d /mnt/root ]; then
+    echo "*** INFO: Copying SSH key for Unix/Linux"
+    mkdir -p /mnt/root/.ssh
+    touch /mnt/root/.ssh/authorized_keys
+    chown root:root /mnt/root/.ssh/authorized_keys
+    chmod 644 /mnt/root/.ssh/authorized_keys 
+    cat /opt/common/id_rsa.pub >> /mnt/root/.ssh/authorized_keys
+    if [ ${?} -eq 0 ]; then
+      echo "*** INFO: SSH keys successfully installed"
+      return 0
+    else
+      echo "*** ERROR: Unexpected error"
+      return 1
+    fi
+  else
+    echo "*** ERROR: Something wrong happened. Unable to find Windows or /root directories"
+    return 1
+  fi
+else
+  echo "*** ERROR: MountSystem hasn't been able to find the system disk"
+  return 1
+fi
+}
+
+#
+# Update gpt.ini (Local GPO) to increase its version
+#
+UpdateGroupPolicyGptIni ()
+{
+
+if [ -d /mnt/WINDOWS ]; then
+  GPTINIPATH="/mnt/WINDOWS/system32/GroupPolicy/gpt.ini"
+  # Already exists ?
+  if [ -f "${GPTINIPATH}" ]; then
+    # Get current version
+    GPTVERSION=`grep '^Version=' "${GPTINIPATH}" | tail -n 1 | cut -d= -f2 | sed 's/\s//g'`
+    if echo "${GPTVERSION}" | grep -q "^[0-9]\+" ;then
+      # Increase by one
+      NEWGPTVERSION=$((${GPTVERSION}+1))
+      sed -i "s/Version=${GPTVERSION}/Version=${NEWGPTVERSION}/" "${GPTINIPATH}"
+      echo "*** INFO: gpt.ini updated from version ${GPTVERSION} to ${NEWGPTVERSION}"
+    else
+      # Uh ?
+      echo "*** ERROR: gpt.ini already exists but I haven't been able to figure out current version"
+      return 1
+    fi
+  else
+    echo "*** INFO: gpt.ini doens't exist yet. Creating a new one"
+    mkdir -p /mnt/WINDOWS/system32/GroupPolicy
+    touch "${GPTINIPATH}"
+    echo '[General]' >> "${GPTINIPATH}"
+    echo 'gPCMachineExtensionNames=[{42B5FAAE-6536-11D2-AE5A-0000F87571E3}{40B6664F-4972-11D1-A7CA-0000F87571E3}]' >> "${GPTINIPATH}"
+    echo 'Version=1' >> "${GPTINIPATH}"
+    unix2dos "${GPTINIPATH}"
+  fi
+else
+  echo "*** ERROR: Unable to find Windows directory, is the disk mounted ?"
+  return 1
+fi
+}
+
+#
+# AddNewStartupGroupPolicy()
+# $1 = scriptname
+#
+AddNewStartupGroupPolicy ()
+{
+
+SCRIPTNAME=${1}
+
+if [ -d /mnt/WINDOWS ]; then
+  SCRIPTINIPATH="/mnt/WINDOWS/system32/GroupPolicy/Machine/Scripts/scripts.ini"
+  # Already exists ?
+  if [ -f "${SCRIPTINIPATH}" ]; then
+    # UTF-16 stuff, can't be used...
+    iconv -f UTF-16 -t UTF-8 "${SCRIPTINIPATH}" > "${SCRIPTINIPATH}.utf8"
+    # Get current script number
+    SCRIPTNUMBER=`grep '^[0-9]\+CmdLine' "${SCRIPTINIPATH}.utf8" | tail -n 1 | sed 's!^\([0-9]\+\).*$!\1!'`
+    if echo "${SCRIPTNUMBER}" | grep -q "^[0-9]\+" ;then
+      # Increase by one
+      NEWSCRIPTNUMBER=$((${SCRIPTNUMBER}+1))
+      echo '' >> "${SCRIPTINIPATH}.utf8"
+      echo "${NEWSCRIPTNUMBER}CmdLine=${SCRIPTNAME}" >> "${SCRIPTINIPATH}.utf8"
+      echo "${NEWSCRIPTNUMBER}Parameters=" >> "${SCRIPTINIPATH}.utf8"
+      # Back to UTF-16
+      iconv -f UTF-8 -t UTF-16 "${SCRIPTINIPATH}.utf8" > "${SCRIPTINIPATH}"
+      rm "${SCRIPTINIPATH}.utf8"
+      echo "*** INFO: ${SCRIPTNAME} added as startupscript number ${NEWSCRIPTNUMBER}"
+      UpdateGroupPolicyGptIni
+    else
+      # Uh ?
+      echo "*** ERROR: scripts.ini already exists but I haven't been able to figure out current last script number"
+      return 1
+    fi
+  else
+    echo "*** INFO: scripts.ini doens't exist yet. Creating a new one"
+    mkdir -p /mnt/WINDOWS/system32/GroupPolicy/Machine/Scripts
+    touch "${SCRIPTINIPATH}.utf8"
+    echo '' >> "${SCRIPTINIPATH}.utf8"
+    echo '[Startup]' >> "${SCRIPTINIPATH}.utf8"
+    echo "0CmdLine=${SCRIPTNAME}" >> "${SCRIPTINIPATH}.utf8"
+    echo '0Parameters=' >> "${SCRIPTINIPATH}.utf8"
+    unix2dos "${SCRIPTINIPATH}.utf8"
+    # Convert to UTF-16
+    iconv -f UTF-8 -t UTF-16 "${SCRIPTINIPATH}.utf8" > "${SCRIPTINIPATH}"
+    rm "${SCRIPTINIPATH}.utf8"
+    echo "*** INFO: ${SCRIPTNAME} added as startupscript number 0"
+    UpdateGroupPolicyGptIni
+  fi
+else
+  echo "*** ERROR: Unable to find Windows directory, is the disk mounted ?"
+  return 1
+fi
+}
+
+#
 # newsid.exe based commands
 #
 ChangeSID ()
