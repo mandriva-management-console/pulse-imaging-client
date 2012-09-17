@@ -393,22 +393,22 @@ fi
 #
 ChangeSID ()
 {
-    mkdir /mnt/tmp
-    unix2dos <<EOF >/mnt/tmp/newsid.bat
-\\tmp\\newsid.exe /a
+    unix2dos <<EOF >/mnt/mandriva_newsid_pulse2.bat
+"%SystemDrive%\newsid.exe" /a
+del "%SystemDrive%\newsid.exe"
+del "%~f0"
 EOF
-    chmod 755 /mnt/tmp/newsid.bat
-    cp -f /opt/winutils/newsid.exe /mnt/tmp/
-    RegistryAddRunOnce '\tmp\newsid.bat'
+    cp /opt/winutils/newsid.exe /mnt/
+    AddNewStartupGroupPolicy "C:\\mandriva_pulse2_newsid.bat"
 }
 
 ChangeSIDAndName ()
 {
-    mkdir /mnt/tmp
-    unix2dos <<EOF >/mnt/tmp/newsid.bat
-\\tmp\\newsid.exe /a /d 30 $HOSTNAME
+    unix2dos <<EOF >/mnt/mandriva_pulse2_newsidandname.bat
+"%SystemDrive%\newsid.exe" /a /d 30 ${HOSTNAME}
+del "%SystemDrive%\newsid.exe"
+del "%~f0"
 EOF
-    chmod 755 /mnt/tmp/newsid.bat
-    cp -f /opt/winutils/newsid.exe /mnt/tmp/
-    RegistryAddRunOnce '\tmp\newsid.bat'
+    cp /opt/winutils/newsid.exe /mnt/
+    AddNewStartupGroupPolicy "C:\\mandriva_pulse2_newsidandname.bat"
 }
