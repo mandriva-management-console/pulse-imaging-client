@@ -22,7 +22,7 @@
 #
 topdir = $(abspath ../..)
 
-extra_bin = $(extra_srcdir)/src/ntfs-3g
+extra_bin = $(extra_srcdir)/src/lowntfs-3g
 extra_version = 2012.1.15
 extra_archive = ntfs-3g_ntfsprogs-$(extra_version).tgz
 extra_uri = http://tuxera.com/opensource/$(extra_archive)
