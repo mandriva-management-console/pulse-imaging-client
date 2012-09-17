@@ -3,4 +3,6 @@
 * /lib/libnewt come from a Debian Etch libnewt 0.52
 * /lib/libslang come from a Debian Etch libslang 2.0.4
 * /lib/libgcc_s.so.1 from a Debian Etch libgcc1 4.1.1
-* /usr/share/keymaps from a tarball named bkeymaps-1.13.tar.gz 
+* /usr/share/keymaps from a tarball named bkeymaps-1.13.tar.gz
+* /usr/lib/gconv/UTF-16.so from Debian Squeeze libc6_2.11.3-3_i386.deb
+* /usr/bin/iconv from Debian Squeeze libc-bin_2.11.3-3_i386.deb
