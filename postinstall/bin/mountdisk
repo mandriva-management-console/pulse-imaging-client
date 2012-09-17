@@ -37,7 +37,7 @@ if [ ! -z ${device} ]; then
     # Clean mountpoint first
     umount /mnt >/dev/null 2>&1
     # Try to mount as ntfs first (mount.ntfs is a symlink to ntfs-3g binary)
-    if mount.ntfs ${device} /mnt; then
+    if mount.ntfs -o ignore_case ${device} /mnt; then
       echo "*** INFO: ${device} successfully mounted as /mnt (NTFS-3G)"
     # Use regular mount command (linux stuff)
     elif mount ${device} /mnt; then
