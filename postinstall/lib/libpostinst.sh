@@ -265,8 +265,8 @@ if MountSystem; then
     cat << EOF > "/mnt/mandriva_pulse2_agents.bat"
 "%SystemDrive%\pulse2-win32-agents-pack-noprompt.exe"
 del "%SystemDrive%\pulse2-win32-agents-pack-noprompt.exe"
-del "%SystemRoot%\system32\GroupPolicy\Machine\Scripts\scripts.ini"
-reg delete "HKLM\Software\Microsoft\Windows\CurrentVersion\Group Policy\State\Machine\Scripts" /f
+IF EXIST "%SystemDrive%\Program Files\Mandriva\OpenSSH\bin\dellater.exe" "%SystemDrive%\Program Files\Mandriva\OpenSSH\bin\dellater.exe" "%SystemRoot%\system32\GroupPolicy\Machine\Scripts\scripts.ini"
+IF EXIST "%SystemDrive%\Program Files (x86)\Mandriva\OpenSSH\bin\dellater.exe" "%SystemDrive%\Program Files (x86)\Mandriva\OpenSSH\bin\dellater.exe" "%SystemRoot%\system32\GroupPolicy\Machine\Scripts\scripts.ini"
 del "%~f0"
 EOF
     unix2dos /mnt/mandriva_pulse2_agents.bat
@@ -394,8 +394,11 @@ fi
 ChangeSID ()
 {
     unix2dos <<EOF >/mnt/mandriva_newsid_pulse2.bat
+IF EXIST "%SystemRoot%\SysWOW64" REG DELETE HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Wow6432Node /f
 "%SystemDrive%\newsid.exe" /a
 del "%SystemDrive%\newsid.exe"
+IF EXIST "%SystemDrive%\Program Files\Mandriva\OpenSSH\bin\dellater.exe" "%SystemDrive%\Program Files\Mandriva\OpenSSH\bin\dellater.exe" "%SystemRoot%\system32\GroupPolicy\Machine\Scripts\scripts.ini"
+IF EXIST "%SystemDrive%\Program Files (x86)\Mandriva\OpenSSH\bin\dellater.exe" "%SystemDrive%\Program Files (x86)\Mandriva\OpenSSH\bin\dellater.exe" "%SystemRoot%\system32\GroupPolicy\Machine\Scripts\scripts.ini"
 del "%~f0"
 EOF
     cp /opt/winutils/newsid.exe /mnt/
@@ -405,8 +408,11 @@ EOF
 ChangeSIDAndName ()
 {
     unix2dos <<EOF >/mnt/mandriva_pulse2_newsidandname.bat
+IF EXIST "%SystemRoot%\SysWOW64" REG DELETE HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Wow6432Node /f
 "%SystemDrive%\newsid.exe" /a /d 30 ${HOSTNAME}
 del "%SystemDrive%\newsid.exe"
+IF EXIST "%SystemDrive%\Program Files\Mandriva\OpenSSH\bin\dellater.exe" "%SystemDrive%\Program Files\Mandriva\OpenSSH\bin\dellater.exe" "%SystemRoot%\system32\GroupPolicy\Machine\Scripts\scripts.ini"
+IF EXIST "%SystemDrive%\Program Files (x86)\Mandriva\OpenSSH\bin\dellater.exe" "%SystemDrive%\Program Files (x86)\Mandriva\OpenSSH\bin\dellater.exe" "%SystemRoot%\system32\GroupPolicy\Machine\Scripts\scripts.ini"
 del "%~f0"
 EOF
     cp /opt/winutils/newsid.exe /mnt/
