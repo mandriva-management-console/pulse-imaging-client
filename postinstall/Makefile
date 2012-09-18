@@ -36,3 +36,6 @@ install-local:
 	$(install_DATA) lib/libpostinst.sh $(DESTDIR)$(postinstdir)/lib/libpostinst.sh
 	mkdir -p $(DESTDIR)$(postinstdir)/winutils
 	$(install_DATA) winutils/newsid.exe $(DESTDIR)$(postinstdir)/winutils/newsid.exe
+	mkdir -p $(DESTDIR)$(postinstdir)/macutils
+	cp -a macutils $(DESTDIR)$(postinstdir)/
+	chmod 0755 $(DESTDIR)$(postinstdir)/macutils/pulse2-inventory-agent/install.sh
