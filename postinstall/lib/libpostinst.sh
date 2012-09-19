@@ -279,12 +279,32 @@ EOF
     touch /mnt/root/.ssh/authorized_keys
     chown root:root /mnt/root/.ssh/authorized_keys
     chmod 644 /mnt/root/.ssh/authorized_keys 
-    cat /opt/common/id_rsa.pub >> /mnt/root/.ssh/authorized_keys
+    cat /opt/linuxutils/id_rsa.pub >> /mnt/root/.ssh/authorized_keys
     if [ ${?} -eq 0 ]; then
       echo "*** INFO: SSH keys successfully installed"
       return 0
     else
       echo "*** ERROR: Unexpected error"
+      return 1
+    fi
+    # Install OCS agent from rc.local
+    if [ -f /mnt/etc/rc.local ]; then
+      cp /opt/linuxutils/install_mandriva_pulse2_inventory.sh /mnt/root/
+      echo "*** INFO: rc.local found, trying to register installation of inventory agent"
+      # Looks like a RPM one
+      if grep -q "touch /var/lock/subsys/local" /mnt/etc/rc.local; then
+        sed -i 's!^touch /var/lock/subsys/local$![ -x /root/install_mandriva_pulse2_inventory.sh ] && /root/install_mandriva_pulse2_inventory.sh!' /mnt/etc/rc.local
+        echo 'touch /var/lock/subsys/local' >> /mnt/etc/rc.local
+      # Look like being Debian based
+      elif grep -q "exit 0" /mnt/etc/rc.local; then
+        sed -i 's!^exit 0$![ -x /root/install_mandriva_pulse2_inventory.sh ] && /root/install_mandriva_pulse2_inventory.sh!' /mnt/etc/rc.local
+        echo 'exit 0' >> /mnt/etc/rc.local
+      else
+        "***ERROR: rc.local found but unknown"
+        return 1
+      fi
+    else
+      echo "*** ERROR: I can't find /etc/rc.local, skipping inventory agent installation"
       return 1
     fi
   else
