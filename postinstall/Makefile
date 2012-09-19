@@ -38,4 +38,6 @@ install-local:
 	$(install_DATA) winutils/newsid.exe $(DESTDIR)$(postinstdir)/winutils/newsid.exe
 	mkdir -p $(DESTDIR)$(postinstdir)/macutils
 	cp -a macutils $(DESTDIR)$(postinstdir)/
+	mkdir -p $(DESTDIR)$(postinstdir)/linuxutils
+	cp -a linuxutils $(DESTDIR)$(postinstdir)/
 	chmod 0755 $(DESTDIR)$(postinstdir)/macutils/pulse2-inventory-agent/install.sh
