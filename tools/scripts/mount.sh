@@ -55,26 +55,32 @@ then
     # get the computer UUID
     COMPUTER_UUID=`cat /etc/COMPUTER_UUID`
     [ -z "$COMPUTER_UUID" ] && fatal_error "I did not received a Computer UUID from $SRV"
-
-    # get the base image dir
-    SAVEDIR=`grep revosavedir /etc/cmdline | sed 's|.*revosavedir=\([^ ]*\).*|\1|'`
-    [ -z "$SAVEDIR" ] && fatal_error "I did not received SAVEDIR from $SRV"
-
-    # get the base info dir
-    INFODIR=`grep revoinfodir /etc/cmdline | sed 's|.*revoinfodir=\([^ ]*\).*|\1|'`
-    [ -z "$INFODIR" ] && fatal_error "I did not received INFODIR from $SRV"
-    INFODIR="/$INFODIR/$COMPUTER_UUID"
-
+    
     # get the base opt dir
     OPTDIR=`grep revooptdir /etc/cmdline | sed 's|.*revooptdir=\([^ ]*\).*|\1|'`
     [ -z "$OPTDIR" ] && postinst_enabled && fatal_error "I did not received OPTDIR from $SRV"
     OPTDIR="/$OPTDIR"
 
-    # get the image UUID, if we are saving or backuping
-    IMAGE_UUID=`cat /etc/IMAGE_UUID 2>/dev/null`
-    [ -z "$IMAGE_UUID" ] && IMAGE_UUID=`grep revoimage /etc/cmdline | sed 's|.*revoimage=\([^ ]*\).*|\1|'`
-    [ -z "$IMAGE_UUID" ] && fatal_error "I did not received an Image UUID from $SRV"
-    SAVEDIR="/$SAVEDIR/$IMAGE_UUID"
+    # skip if we're running a standalone postinstall script
+    if postinst_only; then
+      POSTINSTONLYSCRIPT=`postinst_only_script`
+      [ -z "$POSTINSTONLYSCRIPT" ] && fatal_error "I'm running in postinstall only mode but haven't received the script name"
+    else
+      # get the base image dir
+      SAVEDIR=`grep revosavedir /etc/cmdline | sed 's|.*revosavedir=\([^ ]*\).*|\1|'`
+      [ -z "$SAVEDIR" ] && fatal_error "I did not received SAVEDIR from $SRV"
+
+      # get the base info dir
+      INFODIR=`grep revoinfodir /etc/cmdline | sed 's|.*revoinfodir=\([^ ]*\).*|\1|'`
+      [ -z "$INFODIR" ] && fatal_error "I did not received INFODIR from $SRV"
+      INFODIR="/$INFODIR/$COMPUTER_UUID"
+
+      # get the image UUID, if we are saving or backuping
+      IMAGE_UUID=`cat /etc/IMAGE_UUID 2>/dev/null`
+      [ -z "$IMAGE_UUID" ] && IMAGE_UUID=`grep revoimage /etc/cmdline | sed 's|.*revoimage=\([^ ]*\).*|\1|'`
+      [ -z "$IMAGE_UUID" ] && fatal_error "I did not received an Image UUID from $SRV"
+      SAVEDIR="/$SAVEDIR/$IMAGE_UUID"
+    fi
 fi
 
 if [ "$MODE" == "lrs" ]

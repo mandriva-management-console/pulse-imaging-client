@@ -74,44 +74,42 @@ fi
 pretty_try "NFS options"
 pretty_blue "$NFSOPT\n"
 
-if [ -z "$Option_177" ]
-then
-    pretty_try "Using as backup dir"
-    pretty_blue "$SIP:$PREFIX\n"
+if [ -z "$Option_177" ]; then
+    if ! postinst_only; then
+        pretty_try "Using as backup dir"
+        pretty_blue "$SIP:$PREFIX\n"
 
-    if ! [ "$INFODIR" == '/' ]
-    then
-	if ! grep -q " /revoinfo " /proc/mounts
-	then
-	    pretty_try "Mounting /revoinfo"
-	    if mount -t nfs $SIP:$PREFIX$INFODIR /revoinfo -o $NFSOPT 2>/dev/null
-	    then
-		pretty_success
-	    else
-		pretty_failure
-		exit 1
-	    fi
-	fi
-    else
-	pretty_warn "Can't find /revoinfo"
-	exit 1
-    fi
+        if ! [ "$INFODIR" == '/' ]; then
+            if ! grep -q " /revoinfo " /proc/mounts; then
+                pretty_try "Mounting /revoinfo"
+                    if mount -t nfs $SIP:$PREFIX$INFODIR /revoinfo -o $NFSOPT 2>/dev/null; then
+                        pretty_success
+                    else
+                        pretty_failure
+                        exit 1
+                    fi
+            fi
+        else
+            pretty_warn "Can't find /revoinfo"
+            exit 1
+        fi
 
-    if ! [ "$SAVEDIR" == '/' ]
-    then
-	if ! grep -q " /revosave " /proc/mounts
-	then
-	    pretty_try "Mounting /revosave"
-	    if mount -t nfs $SIP:$PREFIX$SAVEDIR /revosave -o $NFSOPT 2>/dev/null
-	    then
-		pretty_success
-	    else
-		pretty_failure
-		exit 1
-	    fi
-	fi
-    else # not mandatory, only useful in restore mode
-	pretty_info "Not mounting /revosave"
+        if ! [ "$SAVEDIR" == '/' ]; then
+            if ! grep -q " /revosave " /proc/mounts; then
+                pretty_try "Mounting /revosave"
+                if mount -t nfs $SIP:$PREFIX$SAVEDIR /revosave -o $NFSOPT 2>/dev/null; then
+                    pretty_success
+                else
+                    pretty_failure
+                    exit 1
+                fi
+            fi
+        else # not mandatory, only useful in restore mode
+            pretty_info "Not mounting /revosave"
+        fi
+    else # not mandatory in postinstall only mode
+        pretty_info "Not mounting /revoinfo"
+        pretty_info "Not mounting /revosave"
     fi
 
     if postinst_enabled
@@ -135,39 +133,38 @@ else
     pretty_info "Using Option 177 as backup dir :"
     pretty_blue "$Option_177\n"
 
-    if ! [ "$INFODIR" == '/' ]
-    then
-	if ! grep -q " /revoinfo " /proc/mounts
-	then
-	    pretty_try "Mounting /revoinfo"
-	    if mount -t nfs $Option_177$INFODIR /revoinfo -o $NFSOPT 2>/dev/null
-	    then
-		pretty_success
-	    else
-		pretty_failure
-		exit 1
-	    fi
-	fi
-    else
-	pretty_warn "Can't find /revoinfo"
-	exit 1
-    fi
+    if ! postinst_only; then
+        if ! [ "$INFODIR" == '/' ]; then
+            if ! grep -q " /revoinfo " /proc/mounts; then
+                pretty_try "Mounting /revoinfo"
+                if mount -t nfs $Option_177$INFODIR /revoinfo -o $NFSOPT 2>/dev/null; then
+                    pretty_success
+                else
+                    pretty_failure
+                    exit 1
+                fi
+            fi
+        else
+            pretty_warn "Can't find /revoinfo"
+            exit 1
+        fi
 
-    if ! [ "$SAVEDIR" == '/' ]
-    then
-	if ! grep -q " /revosave " /proc/mounts
-	then
-	    pretty_try "Mounting /revosave"
-	    if mount -t nfs $Option_177$SAVEDIR /revosave -o $NFSOPT 2>/dev/null
-	    then
-		pretty_success
-	    else
-		pretty_failure
-		exit 1
-	    fi
-	fi
-    else # not mandatory, only useful in restore mode
-	pretty_info "Not mounting /revosave"
+        if ! [ "$SAVEDIR" == '/' ]; then
+            if ! grep -q " /revosave " /proc/mounts; then
+                pretty_try "Mounting /revosave"
+                if mount -t nfs $Option_177$SAVEDIR /revosave -o $NFSOPT 2>/dev/null; then
+                    pretty_success
+                else
+                    pretty_failure
+                    exit 1
+                fi
+            fi
+        else # not mandatory, only useful in restore mode
+            pretty_info "Not mounting /revosave"
+        fi
+    else # not mandatory in postinstall only mode
+        pretty_info "Not mounting /revoinfo"
+        pretty_info "Not mounting /revosave"
     fi
 
     if postinst_enabled

@@ -72,28 +72,33 @@ run_script() {
     fi
 }
 
-# as a side note:
-# under LRS env, /revoinfo corresponds
-#    either to the <revoboot>/images/$MAC folder when doing shared backup restore
-#    or to the <revoboot>/images folder when doing private backup restore / single postinst
-# under Pulse 2, /revoinfo always corresponds to the <pulse2>/computers/<computer_uuid> folder
-# 
-# the computer preinst script may run:
-# <pulse2>/computers/<computer_uuid>/preinst.d (pulse 2)
-# <revoboot>/images/$MAC/preinst (LRS/shared)
-# <revoboot>/images/preinst (LRS/single)
-run_script "/revoinfo/preinst" "pre"
+# if we're running postinst only mode, skip the regular image behavior
+if postinst_only; then
+   run_script "/opt/scripts/`postinst_only_script`" "postinst"
+else
+    # as a side note:
+    # under LRS env, /revoinfo corresponds
+    #    either to the <revoboot>/images/$MAC folder when doing shared backup restore
+    #    or to the <revoboot>/images folder when doing private backup restore / single postinst
+    # under Pulse 2, /revoinfo always corresponds to the <pulse2>/computers/<computer_uuid> folder
+    # 
+    # the computer preinst script may run:
+    # <pulse2>/computers/<computer_uuid>/preinst.d (pulse 2)
+    # <revoboot>/images/$MAC/preinst (LRS/shared)
+    # <revoboot>/images/preinst (LRS/single)
+    run_script "/revoinfo/preinst" "pre"
 
-# the image postinst script
-run_script "/revosave/postinst" "image"
+    # the image postinst script
+    run_script "/revosave/postinst" "image"
 
-# the computer postinst script may run
-# <pulse2>/computers/<computer_uuid>/postinst.d (pulse 2)
-# <revoboot>/images/$MAC/postinst (LRS/shared)
-# <revoboot>/images/postinst (LRS/single)
-run_script "/revoinfo/postinst" "computer"
+    # the computer postinst script may run
+    # <pulse2>/computers/<computer_uuid>/postinst.d (pulse 2)
+    # <revoboot>/images/$MAC/postinst (LRS/shared)
+    # <revoboot>/images/postinst (LRS/single)
+    run_script "/revoinfo/postinst" "computer"
 
-# old LRS compatibility stuff
-[ -z "$MAC" ] && exit 0
-[ -e "/revoinfo/$MAC/preinst" ] && run_script "/revoinfo/$MAC/preinst" "preinst"
-[ -e "/revoinfo/$MAC/postinst" ] && run_script "/revoinfo/$MAC/postinst" "postinst"
+    # old LRS compatibility stuff
+   [ -z "$MAC" ] && exit 0
+   [ -e "/revoinfo/$MAC/preinst" ] && run_script "/revoinfo/$MAC/preinst" "preinst"
+   [ -e "/revoinfo/$MAC/postinst" ] && run_script "/revoinfo/$MAC/postinst" "postinst"
+fi

@@ -265,3 +265,12 @@ getmac() {
     MAC=`cat /etc/shortmac`
     export MAC
 }
+
+# postinstallation only (bootservice like)
+postinst_only() {
+    grep -q "revopostscript=" /etc/cmdline
+}
+
+postinst_only_script() {
+    grep "revopostscript=" /etc/cmdline | sed 's|.*revopostscript=\([^ ]*\).*|\1|'
+}
