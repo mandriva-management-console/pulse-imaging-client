@@ -23,7 +23,7 @@
 topdir = $(abspath ../..)
 
 extra_bin = $(extra_srcdir)/memtest
-extra_version = 4.00
+extra_version = 4.20
 extra_archive = memtest86+-$(extra_version).tar.gz
 extra_uri = http://www.memtest.org/download/$(extra_version)/$(extra_archive)
 patch_srcdir = $(extra_srcdir)
