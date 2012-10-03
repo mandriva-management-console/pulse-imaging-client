@@ -20,22 +20,31 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 #
-SUBDIRS = scripts reiserfsprogs revosave autosave autorestore ui_newt bench \
-	ntblfix memtest dban
+topdir = $(abspath ../..)
 
-topdir = $(abspath ..)
+extra_bin = $(extra_srcdir)/dban.bzi
+extra_version = 2.2.7
+extra_archive = dban-$(extra_version)_i586.iso
+extra_uri = http://garr.dl.sourceforge.net/project/dban/dban/dban-$(extra_version)/$(extra_archive)
+
 include $(topdir)/common.mk
+include $(topdir)/extra.mk
+include $(topdir)/patch.mk
+
+all-local: $(extra_bin)
+
+$(extra_srcdir): $(extra_archive)
+	tmpdir=$(shell mktemp -d --tmpdir=$(CURDIR)) && \
+	mount -oloop $< $$tmpdir/ && \
+	cp -a $$tmpdir $@ && \
+	umount $$tmpdir && \
+	rm -rf $$tmpdir;
+
+$(extra_bin): $(extra_srcdir)
 
 install-local:
-	mkdir -p $(DESTDIR)$(libdir) $(DESTDIR)$(usrbindir)
-	$(install_DATA) /usr/lib/libnewt.so.0.52.11 $(DESTDIR)$(libdir)/
-	ln -sf libnewt.so.0.52.11 $(DESTDIR)$(libdir)/libnewt.so.0.52
-	$(install_DATA) /lib/libslang.so.2.2.2 $(DESTDIR)$(libdir)/
-	ln -sf libslang.so.2.2.2 $(DESTDIR)$(libdir)/libslang.so.2
-	$(install_DATA) /usr/lib/libz.so.1.2.3.4 $(DESTDIR)$(libdir)/
-	ln -sf libz.so.1.2.3.4 $(DESTDIR)$(libdir)/libz.so.1
-	$(install_BIN) /usr/bin/whiptail $(DESTDIR)$(usrbindir)/
-	$(install_DATA) /lib/libext2fs.so.2.4 $(DESTDIR)$(libdir)/
-	ln -sf libext2fs.so.2.4 $(DESTDIR)$(libdir)/libext2fs.so.2
-	$(install_DATA) /lib/libcom_err.so.2.1 $(DESTDIR)$(libdir)/
-	ln -sf libcom_err.so.2.1 $(DESTDIR)$(libdir)/libcom_err.so.2
+	mkdir -p $(DESTDIR)$(disklessdir)
+	$(install_DATA) $(extra_bin) $(DESTDIR)$(disklessdir)/dban
+
+clean-local:
+	rm -rf $(extra_srcdir)
