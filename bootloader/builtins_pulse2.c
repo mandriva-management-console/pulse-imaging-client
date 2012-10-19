@@ -1239,7 +1239,7 @@ int identify_func(char *arg, int flags) {
 
     if (strstr(arg, "L=fr_FR")) {
         title_prompt = "\n\
-ออออออออต  Dclaration d'un poste client au serveur Pulse 2 Imaging  ฦอออออออออ\n\
+ออออออออต  Dclaration d'un poste client au serveur Pulse Imaging  ฦอออออออออ\n\
 \n\
     Lors de la dclaration du poste, si l'identifiant respecte le format\n\
     suivant :\n\
@@ -1253,10 +1253,10 @@ int identify_func(char *arg, int flags) {
     identifiant.\
 ";
         login_prompt =    "  Entrez l'identifiant de ce poste ฏ ";
-        password_prompt = "  Entrez vos identifiants Pulse 2  ฏ ";
-    } else if (strstr(arg, "L=C")) {
+        password_prompt = "  Entrez vos identifiants Pulse  ฏ ";
+    } else if (strstr(arg, "L=pt_BR")) {
         title_prompt = "\n\
-ออออออออออออต  Register a computer with a Pulse 2 Imaging Server  ฦอออออออออออออ\n\
+ออออออออออออต  Register a computer with a Pulse Imaging Server  ฦอออออออออออออ\n\
 \n\
     When registering the client computer, if the ID respects the\n\
     following format :\n\
@@ -1269,7 +1269,23 @@ int identify_func(char *arg, int flags) {
     Warning : when possible, uses the station name as ID.\
 ";
         login_prompt =    "  Please enter the name of this computer ฏ ";
-        password_prompt = "  Please enter your Pulse 2 credentials  ฏ ";
+        password_prompt = "  Please enter your Pulse credentials  ฏ ";
+    } else if (strstr(arg, "L=C")) {
+        title_prompt = "\n\
+ออออออออออออต  Register a computer with a Pulse Imaging Server  ฦอออออออออออออ\n\
+\n\
+    When registering the client computer, if the ID respects the\n\
+    following format :\n\
+\n\
+        <profile>:/<entity_A>/<entity_B>/<computer-name>\n\
+\n\
+    The computer will automatically be added to the <profile> profile\n\
+    and the <entity_A>/<entity_B> entity.\n\
+\n\
+    Warning : when possible, uses the station name as ID.\
+";
+        login_prompt =    "  Please enter the name of this computer ฏ ";
+        password_prompt = "  Please enter your Pulse credentials  ฏ ";
     } else {
         title_prompt = NULL;
         login_prompt =    "  CLIENT NAME ฏ ";
