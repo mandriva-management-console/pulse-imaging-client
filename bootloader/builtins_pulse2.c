@@ -1256,20 +1256,20 @@ int identify_func(char *arg, int flags) {
         password_prompt = "  Entrez vos identifiants Pulse  ฏ ";
     } else if (strstr(arg, "L=pt_BR")) {
         title_prompt = "\n\
-ออออออออออออต  Register a computer with a Pulse Imaging Server  ฦอออออออออออออ\n\
+ออออออออออออต  Registre um computador com o Servidor de Imagem Pulse  ฦอออออออออออออ\n\
 \n\
-    When registering the client computer, if the ID respects the\n\
-    following format :\n\
+    Quando registrar o computador cliente, o ID respeita o\n\
+    seguinte formato:\n\
 \n\
         <profile>:/<entity_A>/<entity_B>/<computer-name>\n\
 \n\
-    The computer will automatically be added to the <profile> profile\n\
-    and the <entity_A>/<entity_B> entity.\n\
+    O computador irแ automaticamente ser adicionado ao <profile> perfil\n\
+    e a <entity_A>/<entity_B> entitade.\n\
 \n\
-    Warning : when possible, uses the station name as ID.\
+    Aten็ao: Quando possivel, use o nome da maquina com ID.\
 ";
-        login_prompt =    "  Please enter the name of this computer ฏ ";
-        password_prompt = "  Please enter your Pulse credentials  ฏ ";
+        login_prompt =    "  Por favor entre com o nome do computador ฏ ";
+        password_prompt = "  Por favor entre sua credenciais Pulse ฏ ";
     } else if (strstr(arg, "L=C")) {
         title_prompt = "\n\
 ออออออออออออต  Register a computer with a Pulse Imaging Server  ฦอออออออออออออ\n\
