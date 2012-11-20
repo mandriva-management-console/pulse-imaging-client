@@ -6,3 +6,5 @@
 * /usr/share/keymaps from a tarball named bkeymaps-1.13.tar.gz
 * /usr/lib/gconv/UTF-16.so from Debian Squeeze libc6_2.11.3-3_i386.deb
 * /usr/bin/iconv from Debian Squeeze libc-bin_2.11.3-3_i386.deb
+* /lib/libncurses.so.5 from Debian Squeeze libncurses5 5.7+20100313-5
+* /lib/libreadline.so.6 from Debian Squeeze libreadline6 6.1-3
