@@ -36,20 +36,22 @@ include $(topdir)/patch.mk
 all-local: $(extra_bin)
 
 $(extra_bin):
-	$(MAKE) $(extra_srcdir)/Makefile 
-	LDFLAGS="-lblkid -L/home/pulse2/postinstall/parted/sources/libparted/.libs" \
-        CFLAGS="-I/home/pulse2/postinstall/parted/sources/include" \
+	$(MAKE) $(extra_srcdir)/Makefile
+	LDFLAGS="-lblkid -L$(topdir)/initrd/parted/sources/libparted/.libs" \
+        CFLAGS="-I$(topdir)/initrd/parted/sources/include" \
 	$(MAKE) -C $(extra_srcdir)
-	strip $@
 
 $(extra_srcdir)/Makefile: patched-srcdir
 	cd $(@D) && \
-	  LDFLAGS="-lblkid -L/home/pulse2/postinstall/parted/sources/libparted/.libs" \
-          CFLAGS="-I/home/pulse2/postinstall/parted/sources/include" \
-          ./configure 
+	  LDFLAGS="-lblkid -L$(topdir)/initrd/parted/sources/libparted/.libs" \
+          CFLAGS="-I$(topdir)/initrd/parted/sources/include" \
+          ./configure
 
 install-local:
 	mkdir -p $(DESTDIR)$(initramfsdir)/sbin
-	$(install_BIN) $(extra_bin) $(DESTDIR)$(initramfsdir)/sbin/
+	$(install_BIN) --strip $(extra_bin) $(DESTDIR)$(initramfsdir)/sbin/
+
+clean:
+	-$(MAKE) -C $(extra_srcdir) clean
 
 CLEANFILES += $(extra_bin)
