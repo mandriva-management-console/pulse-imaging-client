@@ -27,23 +27,29 @@ extra_version = 2.3
 extra_archive = parted-$(extra_version).tar.xz
 extra_uri = http://ftp.gnu.org/gnu/parted/$(extra_archive)
 
+patch_srcdir = $(extra_srcdir)
+
 include $(topdir)/common.mk
 include $(topdir)/extra.mk
+include $(topdir)/patch.mk
 
 all-local: $(extra_bin)
 
-$(extra_bin): $(extra_srcdir)/Makefile
+$(extra_bin):
+	$(MAKE) $(extra_srcdir)/Makefile
 	$(MAKE) -C $(extra_srcdir)
 
-$(extra_srcdir)/Makefile:
-	$(MAKE) $(extra_srcdir)
-	cd $(extra_srcdir) && ./configure --disable-device-mapper --without-readline --disable-shared
+$(extra_srcdir)/Makefile: patched-srcdir
+	cd $(@D) && \
+	  ./configure --disable-device-mapper \
+	              --without-readline \
+                      --disable-shared
 
 install-local:
-	mkdir -p $(DESTDIR)$(postinstdir)/bin
-	$(install_BIN) --strip $(extra_bin) $(DESTDIR)$(postinstdir)/bin/parted
+	mkdir -p $(DESTDIR)$(initramfsdir)/sbin
+	$(install_BIN) --strip $(extra_bin) $(DESTDIR)$(initramfsdir)/sbin/
 
 clean:
-	$(MAKE) -C $(extra_srcdir) clean
+	-$(MAKE) -C $(extra_srcdir) clean
 
-
+CLEANFILES += $(extra_bin)
