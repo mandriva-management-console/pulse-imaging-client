@@ -25,6 +25,6 @@ include $(topdir)/common.mk
 
 #SUBDIRS = e1000 e1000e r8101 r8168 r8169 igb ixgbe nxii tg3
 SUBDIRS = e1000e r8101 r8168 r8169 igb ixgbe
-# e1000, nxii and tg3 dont't build on 3.4.10
+# bnx2 still do not build on 3.4.X
 # e1000 and tg3 are "obsolete" anyway, maybe we should just use the kernel
 # provided ones ?
