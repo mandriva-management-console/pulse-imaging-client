@@ -521,7 +521,9 @@ int save(void)
                         dontsave = 1;
                     } else if (!isdm) {
                         /* try now to get part type with sfdisk */
-                        sprintf(command, "/sbin/sfdisk --id %s %d 2>/dev/null", majorn,
+			/* --force will enable compat mode when detecting GPT. It will always return type=ee for the first partition of any GPT drive */
+			/* This is a workaround that could make autosave work on a GPT partitionned disk with a specific part as number 1 (ie: Grub partition) */
+                        sprintf(command, "/sbin/sfdisk --force --id %s %d 2>/dev/null", majorn,
                                 poff[0]);
                         foerr = popen(command, "r");
                         /* get the last hexadecimal number found */
