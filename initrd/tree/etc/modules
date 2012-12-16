@@ -35,6 +35,11 @@ lxt
 micrel
 smsc
 
+# NVidia
+# Many motherboards with nForce chipset had additionnal controllers
+# Be sure to load forcedeth first so the chipset built-in NIC will be eth0
+forcedeth
+
 # 3Com
 3c59x
 
@@ -78,9 +83,6 @@ bnx2
 bnx2x
 cnic
 tg3
-
-# NVidia
-forcedeth
 
 # RealTek
 # keep the following two in that order !
