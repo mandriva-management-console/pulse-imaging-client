@@ -163,9 +163,6 @@ Resize ()
     elif [ -z $FS ]; then
       echo "*** ERROR: Unable to identify filesystem of partition ${FS}. Aborting resize."
       return 1
-    elif [ -z $BOOT ]; then
-      echo "*** ERROR: Unable to figure out if partition ${FS} is bootable or not. Aborting resize."
-      return 1
     else
       if [ "$FS" = "ntfs" ]; then
         parted -s $D rm $NUM mkpart primary ntfs $S $SZ
