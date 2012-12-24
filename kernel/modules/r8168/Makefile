@@ -23,9 +23,9 @@ topdir = $(abspath ../../..)
 
 module = r8168.ko
 module_path = $(extra_srcdir)/src/$(module)
-module_version = 8.034.00
+module_version = 8.035.00
 extra_archive = r8168-$(module_version).tar.bz2
-extra_uri = ftp://WebUser:AxPL9s3k@95.130.192.218/cn/nic/$(extra_archive)
+extra_uri = ftp://WebUser:wK9xBuD5@202.134.71.21/cn/nic/$(extra_archive)
 module_builddir = src
 
 include $(topdir)/kernel/modules.mk
