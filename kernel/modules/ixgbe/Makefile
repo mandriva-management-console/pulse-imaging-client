@@ -23,9 +23,9 @@ topdir = $(abspath ../../..)
 
 module = ixgbe.ko
 module_path = $(extra_srcdir)/src/$(module)
-module_version = 3.11.33
+module_version = 3.12.6
 extra_archive = ixgbe-$(module_version).tar.gz
-extra_uri = http://downloadmirror.intel.com/14687/eng/$(extra_archive)
+extra_uri = http://freefr.dl.sourceforge.net/project/e1000/ixgbe%20stable/$(module_version)/$(extra_archive)
 module_builddir = src
 
 include $(topdir)/kernel/modules.mk
