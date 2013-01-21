@@ -21,7 +21,7 @@
 #
 project = pulse2-imaging-client
 baseversion=1.4.0
-linux_version = 3.6.10
+linux_version = 3.6.11
 revision := $(shell if [ -d $(PWD)/.svn ]; then \
 		      rev=`echo $Rev$ | tr -cd [[:digit:]]`; \
 		    elif [ -d $(topdir)/.git ]; then \
