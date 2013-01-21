@@ -24,7 +24,7 @@ topdir = $(abspath ../../..)
 
 module = e1000e.ko
 module_path = $(extra_srcdir)/src/$(module)
-module_version = 2.1.4
+module_version = 2.2.14
 extra_archive = e1000e-$(module_version).tar.gz
 # Don't update to 2.X until this bug is closed!
 # https://sourceforge.net/p/e1000/bugs/1/
