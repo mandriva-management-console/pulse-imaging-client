@@ -70,6 +70,9 @@ run_script() {
 	/bin/run-parts $basename.d
 	/bin/revosendlog 7
     fi
+
+    # Wait a few seconds so we'd be able to read what's going on
+    /bin/sleep 5
 }
 
 # if we're running postinst only mode, skip the regular image behavior
