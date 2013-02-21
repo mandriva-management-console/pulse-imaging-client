@@ -16,6 +16,7 @@ mii
 mlx4_core
 ssb
 uio
+hwmon
 
 # PHYs
 libphy
