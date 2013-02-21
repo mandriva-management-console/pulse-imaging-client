@@ -95,6 +95,10 @@ binarydir: check-root
 	rm -rf $(binarybase)
 	mkdir -p $(binarybase)
 	$(MAKE) install DESTDIR=$(topdir)/$(binarybase)
+	# Modules' dependencies checks
+	$(topdir)/kernel/check_module_deps.sh \
+	  $(topdir)/$(binarybase)/$(initramfsdir)/etc/modules \
+	  $(topdir)/$(binarybase)/$(initramfsdir)/lib/modules
 	$(binarybase)$(imaginglibdir)/update-initrd all DESTDIR=$(topdir)/$(binarybase)
 
 PHONY += initcheck dist distcheck distdir binarydir binary

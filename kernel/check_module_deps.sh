@@ -22,25 +22,52 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 
-for module in `cat ../../src_initrd/trunk/tree/etc/modules | grep -v '^#' | grep -v '^$'`; do
-   if [ -f build/modules/$module.ko ]; then
-     deps=`strings build/modules/$module.ko | grep '^depends='`
-     if [ "$deps" == "depends=" ]; then
-       echo "$module: OK"
-     else
-       deps=`echo $deps | sed 's!^depends=!!' | sed 's!,! !g'`
-       bad=0
-       for dep in $deps; do
-         grep -q "^$dep\$" ../../src_initrd/trunk/tree/etc/modules || bad=1
-       done
-       if [ $bad -eq 1 ]; then
-         echo "$module: $deps: DEPS NOT LOADED"
-       else
-         echo "$module: $deps: OK"
-       fi
+
+# Check argument number
+if [ ! $# -eq 2 ]; then
+  echo
+  echo "Usage: `basename $0` /path/to/etc/modules /path/to/lib/modules"
+  echo
+  exit 2
+fi
+
+# Check arguments looks valid
+etcmodule=${1}
+kodir=${2}
+if [ -f ${etcmodule} ] && [ -d ${kodir} ]; then
+  echo
+  echo "Checking ${etcmodule} against ${kodir}.."
+  echo
+else
+  echo
+  echo "Usage: `basename $0` /path/to/etc/modules /path/to/lib/modules"
+  echo
+  exit 2
+fi
+
+# Here we go !
+totalerrors=0
+for module in `cat ${etcmodule} | grep -v '^#' | grep -v '^$'`; do
+   if [ -f ${kodir}/${module}.ko ]; then
+     deps=`strings ${kodir}/${module}.ko | grep '^depends='`
+     if [ "${deps}" == "depends=" ]; then
        continue
+     else
+       deps=`echo ${deps} | sed 's!^depends=!!' | sed 's!,! !g'`
+       bad=0
+       for dep in ${deps}; do
+         grep -q "^${dep}\$" ${etcmodule} || bad=1
+       done
+       if [ ${bad} -eq 1 ]; then
+         echo "${module}: ${deps}: AT LEAST ONE DEPENDENCY MISSING"
+         totalerrors=`expr ${totalerrors} + 1`
+       fi
      fi
    else
-     echo "$module: ERROR LOADED BUT NOT INSTALLED"
+     echo "${module}: ERROR LOADED BUT NOT INSTALLED"
+     totalerrors=`expr ${totalerrors} + 1`
    fi
 done
+
+echo
+exit ${totalerrors}
