@@ -1321,7 +1321,7 @@ int identify_func(char *arg, int flags) {
 
     i = currticks();
     udp_close();
-    delay_func(2); // wait 2 secondes
+    delay_func(50); // wait sometime (it's definetely not seconds...)
 
     done_inventory = 0;
     init_bios_info();
