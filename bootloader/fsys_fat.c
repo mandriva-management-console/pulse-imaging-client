@@ -63,7 +63,7 @@ log2 (unsigned long word)
 	   : "r" (word));
   return word;
 }
-
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
 int
 fat_mount (void)
 {

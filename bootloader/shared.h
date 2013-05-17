@@ -731,7 +731,8 @@ void gateA20 (int linear);
 /* memory probe routines */
 int get_memsize (int type);
 int get_eisamemsize (void);
-
+//jfk 
+int console_getkbdstatuskey(void);
 /* Fetch the next entry in the memory map and return the continuation
    value.  DESC is a pointer to the descriptor buffer, and CONT is the
    previous continuation value (0 to get the first entry in the

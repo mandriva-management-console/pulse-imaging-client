@@ -71,8 +71,8 @@ typedef struct s_udp_r_s
     short   BuffSeg;
 } udp_r_s;
 
-unsigned char *udp_packet_s=(char *)0x6000;
-unsigned char *udp_packet_r=(char *)0x6800;
+unsigned char *udp_packet_s=(unsigned char *)0x6000;
+unsigned char *udp_packet_r=(unsigned char *)0x6800;
 //PASSWORD_BUF;
 
 udp_w_s *udp_w=(udp_w_s*)0x7000;
@@ -116,7 +116,7 @@ int udp_send_withmac(char *buf,int size,int s_port,int d_port)
     char ip[] = "Mc:xx:xx:xx:xx:xx:xx";
     char hex[]="0123456789ABCDEF";
     char newbuf[1500];          /* Pulse 2 command strings should not be bigger than 512 chars */
-    unsigned char *ptr = (char *)nic_macaddr;
+    unsigned char *ptr = (unsigned char *)nic_macaddr;
     int i;
 
     if (size > 1500-21) {

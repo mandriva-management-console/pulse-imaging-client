@@ -345,7 +345,7 @@ dump_pxe_struct (void)
   getkey ();
 }
 #endif
-
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
 void
 parse_dhcp_options (unsigned char *ptr)
 {
@@ -456,7 +456,7 @@ P ((void))
     }
 
     *(in_addr *) & arptable[ARP_CLIENT].ipaddr = *(in_addr *) (ptr + 16);
-    *(in_addr *) & arptable[ARP_SERVER].ipaddr = *(in_addr *) (ptr + 20);
+    *(in_addr *) & arptable[ARP_SERVER].ipaddr = *(in_addr *) (ptr + 20);    
     *(unsigned long *) &(nic_macaddr[0]) = *(unsigned long *) (ptr + 28);
     *(unsigned short *) &(nic_macaddr[4]) = *(unsigned short *) (ptr + 32);
 
@@ -468,7 +468,7 @@ P ((void))
     // guest basedir using ptr + 108, aka "filename"
     // filename max len is 128
     cmp = ptr + 108;
-    strcpy(basedir, cmp);
+    strcpy(basedir,(char *) cmp);
 
     // to obtain the basename, we reverse count from ptr + 235 to ptr + 109
     // if we found a '/', we replace it by a \0 to terminate the string
@@ -750,8 +750,8 @@ tftpopen (void)
 #endif
   str[0] = 0;
   str[1] = 1;
-  memmove (str + len, filename, strlen (filename));
-  len += strlen (filename);
+  memmove (str + len, filename, strlen ((char*)filename));
+  len += strlen ((char*)filename);
   str[len++] = 0;
 
   memmove (str + len, strappend, strlen (strappend));
@@ -799,7 +799,7 @@ tftpget (char *buff, int len)
       timeout = 0;
       do
         {
-          ret = udp_get (tftpbuff, &size, iport, &s_port);
+          ret = udp_get ((char*)tftpbuff, &size, iport, &s_port);
           if (getrtsecs () != to)
             {
               timeout++;
@@ -950,7 +950,7 @@ retransmit:
         {
           do
             {
-              if (tftpget (buffer, BUFFERSIZE) < 0)
+              if (tftpget ((char*)buffer, BUFFERSIZE) < 0)
                 {
                   tftp_close ();
                   tftpopen ();
@@ -1004,7 +1004,7 @@ next:
               len += remain;
             }
 
-          bufferend = tftpget (buffer, BUFFERSIZE);
+          bufferend = tftpget ((char*)buffer, BUFFERSIZE);
           if (bufferend == -1)
             {
               tftp_close ();
@@ -1333,8 +1333,8 @@ arp_request (unsigned long ip)
 
   for (retry = 1; retry <= MAX_ARP_RETRIES; retry++)
     {
-      //printf ("ARP Request : %d\n", retry);
-      (*send) (nic, broadcast, ARP_TYPE, sizeof (arpreq),
+       //printf ("ARP Request : %d\n", retry);
+      (*send) (nic,(const char *)  broadcast, ARP_TYPE, sizeof (arpreq),
                (const char *) &arpreq);
       timeout = getrtsecs ();
       // Wait for Reply
@@ -1507,8 +1507,7 @@ pxe_oeb (int func, void *packet)
             *(unsigned short *) &(nic_macaddr[4]);
           // Request -> Reply
           *(unsigned short *) &(nic->packet[20]) = ARP_REPLY;   // Byte swapped !!!
-          send (nic, (unsigned char *) (nic->packet + 32), ARP_TYPE, 28,
-                nic->packet + 14);
+          send (nic, (const char *) (nic->packet + 32), ARP_TYPE, 28,nic->packet + 14);
 #ifdef DEBUG
           printf ("Sent Reply to ARP Request\n");
 #endif
@@ -1629,9 +1628,9 @@ pxe_oeb (int func, void *packet)
 #endif
 
 
-      (*send) (nic, destmac, IP_TYPE,
+      (*send) (nic,(const char *) destmac, IP_TYPE,
                ptr->buffer_size + sizeof (struct iphdr) +
-               sizeof (struct udphdr), buf);
+               sizeof (struct udphdr),(const char *) buf);
 #ifdef DEBUG
       printf ("Packet sent.\n");
 #endif

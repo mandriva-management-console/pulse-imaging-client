@@ -35,7 +35,8 @@ static int linux_mem_size;
  *  blocks of the multiboot loader component.  They handle essentially all
  *  of the gory details of loading in a bootable image and the modules.
  */
-
+//#pragma GCC diagnostic push 
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
 kernel_t
 load_image (char *kernel, char *arg, kernel_t suggested_type,
 	    unsigned long load_flags)
@@ -64,7 +65,7 @@ load_image (char *kernel, char *arg, kernel_t suggested_type,
   if (!grub_open (kernel))
     return KERNEL_TYPE_NONE;
 
-  if (!(len = grub_read (buffer, MULTIBOOT_SEARCH)) || len < 32)
+  if (!(len = grub_read ((char*)buffer, MULTIBOOT_SEARCH)) || len < 32)
     {
       grub_close ();
       
@@ -95,13 +96,14 @@ load_image (char *kernel, char *arg, kernel_t suggested_type,
      or bzImage.  */
   lh = (struct linux_kernel_header *) buffer;
   
+  
   /* ELF loading supported if multiboot, FreeBSD and NetBSD.  */
   if ((type == KERNEL_TYPE_MULTIBOOT
        || pu.elf->e_ident[EI_OSABI] == ELFOSABI_FREEBSD
-       || grub_strcmp (pu.elf->e_ident + EI_BRAND, "FreeBSD") == 0
+       || grub_strcmp ((const char *)pu.elf->e_ident + EI_BRAND, "FreeBSD") == 0
        || suggested_type == KERNEL_TYPE_NETBSD)
       && len > sizeof (Elf32_Ehdr)
-      && BOOTABLE_I386_ELF ((*((Elf32_Ehdr *) buffer))))
+      && BOOTABLE_I386_ELF ((*((Elf32_Ehdr *) buffer))))    
     {
       if (type == KERNEL_TYPE_MULTIBOOT)
 	entry_addr = (entry_func) pu.elf->e_entry;
@@ -743,7 +745,7 @@ load_image (char *kernel, char *arg, kernel_t suggested_type,
   
   return type;
 }
-
+//#pragma GCC diagnostic pop
 int
 load_module (char *module, char *arg)
 {
@@ -917,7 +919,7 @@ bsd_boot (kernel_t type, int bootdev, char *arg)
       *arg = 0;
       while ((--arg) > (char *) MB_CMDLINE_BUF && *arg != '/');
       if (*arg == '/')
-	bi.bi_kernelname = arg + 1;
+	bi.bi_kernelname = (unsigned char *)arg + 1;
       else
 	bi.bi_kernelname = 0;
 

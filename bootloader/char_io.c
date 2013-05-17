@@ -22,7 +22,7 @@ extern int isLRSEnvironment;
 
 #include <shared.h>
 #include <term.h>
-
+#include "deffunc.h"
 #ifdef SUPPORT_HERCULES
 # include <hercules.h>
 #endif
@@ -219,6 +219,7 @@ grub_printf (const char *format,...)
 }
 
 #ifndef STAGE1_5
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
 int
 grub_sprintf (char *buffer, const char *format, ...)
 {
@@ -267,9 +268,9 @@ grub_sprintf (char *buffer, const char *format, ...)
 void init_page (void) {
     cls ();
     if (isLRSEnvironment) {
-        grub_printf ("\nอออออออออออออออออออออออออออต  Linbox Rescue Server  ฦอออออออออออออออออออออออออออ");
+        grub_printf ("\nอต  Linbox Rescue Server  ");
     } else {
-        grub_printf ("\nออออออออออออออออออออออออออต  Pulse 2 Imaging Server  ฦออออออออออออออออออออออออออ");
+        grub_printf ("\nอต  Pulse 2 Imaging Server ");
     }
 
 }

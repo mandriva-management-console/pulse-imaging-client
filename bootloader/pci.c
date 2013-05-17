@@ -463,7 +463,7 @@ static void scan_bus(unsigned char *store)
                          */
 
                         if ( (store) && (class != 0x06) && (class != 0x0C) )  {
-                            grub_sprintf(store,"B:%x,f:%x,v:%x,d:%x,c:%x,s:%x\n",bus,devfn,vendor,device,class,subclass);
+                            grub_sprintf((char*)store,"B:%x,f:%x,v:%x,d:%x,c:%x,s:%x\n",bus,devfn,vendor,device,class,subclass);
                             while (*store)
                                 store++;
                         }

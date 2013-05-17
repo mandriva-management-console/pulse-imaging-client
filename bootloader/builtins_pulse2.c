@@ -27,7 +27,7 @@
 #include <term.h>
 #include "pci.h"
 #include "etherboot.h"
-
+#include "deffunc.h"
 #ifdef SUPPORT_NETBOOT
 #include "zlib.h"
 #define INBUFF 8192
@@ -53,7 +53,7 @@ int nosecurity = 0;
 /* current image name being restored */
 char imgname[32];
 
-/* proto */
+/* proto*/
 int new_get(char *file, int sect, int *endsect, int table);
 
 /* to force a new inventory */
@@ -66,10 +66,10 @@ void sendACK(int block, int from, int port) {
     buffer[1] = 4;
     buffer[2] = block >> 8;
     buffer[3] = block & 0xFF;
-    udp_send(buffer, 4, from, port);
+    udp_send((char *)buffer, 4, from, port);
 }
 
-void sendERR(unsigned char *str, int from, int port) {
+void sendERR(const  char *str, int from, int port) {
     unsigned char buffer[40], i;
 
     buffer[0] = 0;
@@ -78,7 +78,7 @@ void sendERR(unsigned char *str, int from, int port) {
     buffer[3] = 123;
     for (i = 0; i <= strlen(str); i++)
         buffer[4 + i] = str[i];
-    udp_send(buffer, 4 + strlen(str) + 1, from, port);
+    udp_send((char *)buffer, 4 + strlen(str) + 1, from, port);
 }
 
 #define TFTPBLOCK 1456
@@ -113,6 +113,16 @@ int get_empty(tftpbuffer * buff, int *i) {
     return 0;
 }
 
+
+
+
+
+
+
+
+
+
+
 int tot_lg(tftpbuffer * buff) {
     int i = 0;
 
@@ -137,8 +147,8 @@ void inc(int *ptr, int *mask) {
     }
 }
 
-int val(unsigned char *string) {
-    char *ptr, *cp;
+int val(const char *string) {
+    char *ptr, *cp=NULL;
     int i;
 
     ptr = (char *)BUFFERADDR;
@@ -158,14 +168,14 @@ int val(unsigned char *string) {
     }
 
     if (cp) {
-        safe_parse_maxint(&cp, &i);
+        safe_parse_maxint(&cp,(int *) &i);
         return i;
     }
 
     return -1;
 }
 
-int exist(unsigned char *string) {
+int exist(const char *string) {
     char *ptr, *cp;
     int i;
 
@@ -198,13 +208,13 @@ int setdefault_func(char *arg, int flags) {
     unsigned char buffer[] = " x\0";
     int i;
 
-    safe_parse_maxint(&arg, &i);
+    safe_parse_maxint(&arg,(int*) &i);
 
     buffer[0] = 0xCD;
     buffer[1] = i & 255;
 
     udp_init();
-    udp_send_withmac(buffer, 3, 1001, 1001);
+    udp_send_withmac((char*)buffer, 3, 1001, 1001);
     udp_close();
 
     return 0;
@@ -223,7 +233,7 @@ void drive_info(unsigned char *buffer) {
 
     unsigned long partition, start, len, offset, ext_offset;
     unsigned int type, entry;
-    unsigned char *buf = (char *)SCRATCHADDR;
+    unsigned char *buf = (unsigned char *)SCRATCHADDR;
     unsigned char disk[] = "(hdX)";
     unsigned char bnum = *(unsigned char *)0x0475;
 
@@ -235,7 +245,7 @@ void drive_info(unsigned char *buffer) {
     for (i = '0'; i <= '0' + bnum - 1; i++) {
         disk[3] = i;
 
-        set_device(disk);
+        set_device((char*)disk);
         grub_memset(&geom, 0, sizeof(geom));
         err = get_diskinfo(current_drive, &geom);
         if (err)
@@ -247,7 +257,7 @@ void drive_info(unsigned char *buffer) {
             continue;
         }
 
-        grub_sprintf(buffer, "D:%s:CHS(%d,%d,%d)=%d\n", disk, geom.cylinders,
+        grub_sprintf((char*)buffer, "D:%s:CHS(%d,%d,%d)=%d\n", disk, geom.cylinders,
                      geom.heads, geom.sectors, geom.total_sectors);
 
 #ifndef QUIET
@@ -263,10 +273,10 @@ void drive_info(unsigned char *buffer) {
         errnum = 0;
 
         while (next_partition
-               (current_drive, 0xFFFFFF, &partition, &type, &start, &len,
-                &offset, &entry, &ext_offset, buf)) {
+               (current_drive, 0xFFFFFF, &partition,(int *) &type, &start, &len,
+                &offset,(int *) &entry, &ext_offset,(char *) buf)) {
             if (((type) && (type != 5) && (type != 0xf) && (type != 0x85))) {
-                grub_sprintf(buffer, "P:%d,t:%x,s:%d,l:%d\n",
+                grub_sprintf((char*)buffer, "P:%d,t:%x,s:%d,l:%d\n",
                              (partition >> 16), type, start, len);
 #ifndef QUIET
                 grub_printf("\t\tP:%d, t:%x, s:%d, l:%d\n", (partition >> 16),
@@ -312,7 +322,7 @@ int partcopy_func(char *arg, int flags) {
     }
 
     /* Get the drive and the partition.  */
-    if (!set_device(arg))
+    if (!set_device((char*)arg))
         return 1;
 
     /* The drive must be a hard disk.  */
@@ -360,9 +370,9 @@ int partcopy_func(char *arg, int flags) {
                   (PC_SLICE_LENGTH(mbr, (entry - 1))) + (buf_geom.sectors -
                                                          1)) /
                  buf_geom.sectors);
-        else if (!safe_parse_maxint(&arg, &new_start))
+        else if (!safe_parse_maxint(&arg,(int*) &new_start))
             return 1;
-    } else if (!safe_parse_maxint(&arg, &new_start))
+    } else if (!safe_parse_maxint(&arg,(int*) &new_start))
         return 1;
 
     /* get file path */
@@ -384,12 +394,12 @@ int partcopy_func(char *arg, int flags) {
     if (total_kbytes == 0) {
         int i, olddrive = current_drive;
 
-        strcpy(name, path);
+        strcpy((char *)name, path);
         for (i = grub_strlen(name); i > 0; i--) {
             if (name[i] == '/')
                 break;
         }
-        strcpy(&name[i + 1], "size.txt");
+        strcpy((char *)&name[i + 1], "size.txt");
 
         if (new_tftpdir(name) < 0) {
             total_kbytes = 0;
@@ -398,7 +408,7 @@ int partcopy_func(char *arg, int flags) {
                 char buf[17], *ptr = buf;
 
                 grub_read(ptr, 16);
-                safe_parse_maxint(&ptr, &total_kbytes);
+                safe_parse_maxint(&ptr,(int*) &total_kbytes);
                 grub_printf("KB to download: %d\n", total_kbytes);
                 grub_close();
             }
@@ -418,7 +428,7 @@ int partcopy_func(char *arg, int flags) {
     /* tell Pulse 2 that we will restore a partition */
     if (sendlog) {
         udp_init();
-        grub_sprintf(name, "L2-%s", imgname);
+        grub_sprintf((char*)name, "L2-%s", imgname);
         udp_send_to_pulse2(name, grub_strlen(name));
         udp_close();
         sendlog = 0;
@@ -428,7 +438,7 @@ int partcopy_func(char *arg, int flags) {
         //    grub_printf("-> %d/%d : \r",i+1,files);
         old_perc = -1;
 
-        grub_sprintf(name, "%s%d%c%c", path, l1, l2, l3);
+        grub_sprintf((char*)name, "%s%d%c%c", path, l1, l2, l3);
         l3++;
         if (l3 > '9') {
             l2++;
@@ -448,7 +458,7 @@ int partcopy_func(char *arg, int flags) {
 
     return 0;
 }
-
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
 /* ptabs */
 int ptabs_func(char *arg, int flags) {
     char buf[516];
@@ -458,13 +468,13 @@ int ptabs_func(char *arg, int flags) {
     char *sep =
         "\n================================================================================\n";
 
-    if (!set_device(arg))
+    if (!set_device((char*)arg))
         return 1;
 
     save_drive = current_drive;
 
     // warning message
-    grub_sprintf(buf, "%s/etc/warning.txt", basedir);
+    grub_sprintf((char*)buf, "%s/etc/warning.txt", basedir);
     if (new_tftpdir(buf) >= 0) {
         if (grub_open(buf)) {
             char c;
@@ -520,7 +530,7 @@ int new_get(char *file, int sect, int *endsect, int table) {
 
     unsigned char buffer[2100], alloc[24064 - 2048], *cp;
     unsigned char compressed[INBUFF], compressed_full, *ptr;
-    int compr_lg, firstblock, sectptr, sectmask, nb, maxpack;
+    int compr_lg, firstblock, sectptr=0, sectmask=1, nb, maxpack;
     int i, size, src, to, block, op, tftpend, end, newp, oldp, lastblk;
     int resendack = 0;
     unsigned char progr, progress[] = "/-\\|";
@@ -547,7 +557,7 @@ int new_get(char *file, int sect, int *endsect, int table) {
 
     tftpbuffer tbuf[NB_BUF], *first, *last, *curr;
     diskbuffer dbuf;
-
+    dbuf.size=0;
     dbuf.full = 0;
     for (i = 0; i < NB_BUF; i++) {
         tbuf[i].length = 0;
@@ -560,7 +570,7 @@ int new_get(char *file, int sect, int *endsect, int table) {
     zptr.zfree = Z_NULL;        //zcfree;
 
     zptr.avail_in = 0;
-    zptr.next_out = (char *)BUFFERADDR; // was dbuf.data;
+    zptr.next_out = (unsigned char *)BUFFERADDR; // was dbuf.data;
     zptr.avail_out = OUTBUFF;
 
     inflateInit(&zptr);
@@ -574,13 +584,13 @@ int new_get(char *file, int sect, int *endsect, int table) {
 
     buffer[0] = 0;
     buffer[1] = 1;
-    strcpy(buffer + 2, file);
+    strcpy((char*)buffer + 2, file);
     i = 2 + strlen(file) + 1;
-    strcpy(buffer + i, "octet");
-    strcpy(buffer + i + 6, "tsize");
-    strcpy(buffer + i + 12, "0");
-    strcpy(buffer + i + 14, "blksize");
-    strcpy(buffer + i + 22, BLKSIZE);
+    strcpy((char*)buffer + i, "octet");
+    strcpy((char*)buffer + i + 6, "tsize");
+    strcpy((char*)buffer + i + 12, "0");
+    strcpy((char*)buffer + i + 14, "blksize");
+    strcpy((char*)buffer + i + 22, BLKSIZE);
 
     udp_init();
 
@@ -589,7 +599,7 @@ int new_get(char *file, int sect, int *endsect, int table) {
     if (tftpport > TFTPSTARTPORT + 127)
         tftpport = TFTPSTARTPORT;       /* helper for traffic shaping */
 
-    udp_send(buffer, i + 27, tftpport, 69);     /* Request */
+    udp_send((char *)buffer, i + 27, tftpport, 69);     /* Request */
     to = 69;
     ltime = getrtsecs();
     timeout = 0;
@@ -625,7 +635,7 @@ int new_get(char *file, int sect, int *endsect, int table) {
                         gotoxy(xypos >> 8, xypos & 255);
                     }
                     if (exist("SECTORS")) {
-                        new_len = val("SECTORS");
+                        new_len =val("SECTORS");
 #ifdef DEBUG
                         grub_printf("\n%d sectors\n", new_len);
 #endif
@@ -719,7 +729,7 @@ int new_get(char *file, int sect, int *endsect, int table) {
                     }
                 }
 
-                zptr.next_out = (char *)BUFFERADDR;     // was dbuf.data;
+                zptr.next_out = (unsigned char *)BUFFERADDR;     // was dbuf.data;
                 zptr.avail_out = OUTBUFF;
                 dbuf.full = 0;
                 if (end == 1) {
@@ -834,7 +844,7 @@ int new_get(char *file, int sect, int *endsect, int table) {
             }
         }
         while (dbuf.full || !get_empty(tbuf, &i)
-               || (!tftpend && udp_get(tbuf[i].udp, &size, tftpport, &src)));
+               || (!tftpend && udp_get((char *)tbuf[i].udp, &size, tftpport, &src)));
 
 //      grub_printf("-> %d %d : ",size,src);
 //      grub_printf("%x %x\n",buffer[0],buffer[1]);
@@ -856,7 +866,7 @@ int new_get(char *file, int sect, int *endsect, int table) {
                 }
                 lastblk = 0;
                 cp = buffer + 8;
-                safe_parse_maxint(&cp, &maxpack);
+                safe_parse_maxint((char **)&cp,(int*) &maxpack);
                 maxpack /= TFTPBLOCK;
                 to = src;
                 sendACK(0, tftpport, to);
@@ -958,7 +968,9 @@ int smbios_init(void) {
                 smbios_addr = check;
                 smbios_len = *(__u16 *) (check + 0x16);
                 smbios_num = *(__u16 *) (check + 0x1C);
-                smbios_base = *(__u32 *) (check + 0x18);
+                //smbios_base = *(__u32 *) (check + 0x18);
+		smbios_base = (__u8 *)(*(__u32 *) (check + 0x18));
+		
                 if (smbios_base == 0 || smbios_num == 0 || smbios_len == 0)
                     continue;
 #ifdef DEBUG
@@ -1092,8 +1104,9 @@ void smbios_get_sysinfo(char **p1, char **p2, char **p3, char **p4, char **p5) {
     printf("Product        : %s\n", *p2);
     printf("Version        : %s\n", *p3);
     printf("Serial         : %s\n", *p4);
-    /* in smbios 2.1+ only */
-    *p5 = &ptr[8];
+    /* in smbios 2.1+ only */    
+    //*p5 = &ptr[8];
+    *p5 = (char*)&ptr[8];
 }
 
 /*
@@ -1126,7 +1139,8 @@ void smbios_get_enclosure(char **p1, char **p2) {
     if (ptr == NULL)
         return;
     *p1 = smbios_string(ptr, ptr[0x4]);
-    *p2 = &ptr[0x5];
+    //*p2 = &ptr[0x5];
+     *p2 =(char*) &ptr[0x5];
 }
 
 /*
@@ -1223,7 +1237,7 @@ void delay_func(int delay)
 
     printf(label);
 
-    for(i; i < progress_len; i++) 
+    for(i=0; i < progress_len; i++) 
     {
        offset =  current + (i*TICKS_PER_SEC + (delay * TICKS_PER_SEC)) / progress_len; 
        while ( offset >= currticks()) {}
@@ -1239,40 +1253,40 @@ int identify_func(char *arg, int flags) {
 
     if (strstr(arg, "L=fr_FR")) {
         title_prompt = "\n\
-ÍÍÍÍÍÍÍÍµ  D‚claration d'un poste client au serveur Pulse Imaging  ÆÍÍÍÍÍÍÍÍÍ\n\
+Íµ  DÃ©claration d'un poste client au serveur Pulse Imaging  \n\
 \n\
-    Lors de la d‚claration du poste, si l'identifiant respecte le format\n\
+    Lors de la dÃ©claration du poste, si l'identifiant respecte le format\n\
     suivant :\n\
 \n\
-        <profil>:/<entit‚_A>/<entit‚_B>/<nom-de-l'ordinateur>\n\
+        <profil>:/<entitÃ©_A>/<entitÃ©_B>/<nom-de-l'ordinateur>\n\
 \n\
-    Le poste sera directement ajout‚ au profil <profil> et … l'entit‚\n\
-    /entit‚_A/entit‚_B.\n\
+    Le poste sera directement ajoutÃ© au profil <profil> et Ã  l'entitÃ©\n\
+    /entitÃ©_A/entitÃ©_B.\n\
 \n\
     Attention : si possible, utilisez le nom du poste de travail comme\n\
     identifiant.\
 ";
-        login_prompt =    "  Entrez l'identifiant de ce poste ¯ ";
-        password_prompt = "  Entrez vos identifiants Pulse  ¯ ";
+        login_prompt =    "  Entrez l'identifiant de ce poste  ";
+        password_prompt = "  Entrez vos identifiants Pulse   ";
     } else if (strstr(arg, "L=pt_BR")) {
         title_prompt = "\n\
-ÍÍÍÍÍÍÍÍÍÍÍÍµ  Registre um computador com o Servidor de Imagem Pulse  ÆÍÍÍÍÍÍÍÍÍÍÍÍÍ\n\
+Íµ  Registre um computador com o Servidor de Imagem Pulse  \n\
 \n\
     Quando registrar o computador cliente, o ID respeita o\n\
     seguinte formato:\n\
 \n\
         <profile>:/<entity_A>/<entity_B>/<computer-name>\n\
 \n\
-    O computador irá automaticamente ser adicionado ao <profile> perfil\n\
+    O computador ir automaticamente ser adicionado ao <profile> perfil\n\
     e a <entity_A>/<entity_B> entitade.\n\
 \n\
-    Atençao: Quando possivel, use o nome da maquina com ID.\
+    AtenÃ©ao: Quando possivel, use o nome da maquina com ID.\
 ";
-        login_prompt =    "  Por favor entre com o nome do computador ¯ ";
-        password_prompt = "  Por favor entre sua credenciais Pulse ¯ ";
+        login_prompt =    "  Por favor entre com o nome do computador  ";
+        password_prompt = "  Por favor entre sua credenciais Pulse  ";
     } else if (strstr(arg, "L=C")) {
         title_prompt = "\n\
-ÍÍÍÍÍÍÍÍÍÍÍÍµ  Register a computer with a Pulse Imaging Server  ÆÍÍÍÍÍÍÍÍÍÍÍÍÍ\n\
+Íµ  Register a computer with a Pulse Imaging Server  \n\
 \n\
     When registering the client computer, if the ID respects the\n\
     following format :\n\
@@ -1284,12 +1298,12 @@ int identify_func(char *arg, int flags) {
 \n\
     Warning : when possible, uses the station name as ID.\
 ";
-        login_prompt =    "  Please enter the name of this computer ¯ ";
-        password_prompt = "  Please enter your Pulse credentials  ¯ ";
+        login_prompt =    "  Please enter the name of this computer  ";
+        password_prompt = "  Please enter your Pulse credentials   ";
     } else {
         title_prompt = NULL;
-        login_prompt =    "  CLIENT NAME ¯ ";
-        password_prompt = "  PASSWORD    ¯ ";
+        login_prompt =    "  CLIENT NAME  ";
+        password_prompt = "  PASSWORD     ";
     }
 
     if (title_prompt)
@@ -1301,7 +1315,7 @@ int identify_func(char *arg, int flags) {
     for (i = 3; i < 52; i++)
         buffer[i] = 0;
 
-    get_cmdline(login_prompt, buffer + 03, 40, 0, 1);
+    get_cmdline(login_prompt,(char*) buffer + 03, 40, 0, 1);
     i = 3;
     while (buffer[i]) {
         if (buffer[i] == ' ')
@@ -1311,13 +1325,13 @@ int identify_func(char *arg, int flags) {
     buffer[i] = ':';
     i++;
     if (strstr(arg, "P=none") == NULL) {
-        get_cmdline(password_prompt, buffer + i, 10, '*', 1);
+        get_cmdline(password_prompt,(char*) buffer + i, 10, '*', 1);
         while (buffer[i])
             i++;
     }
 
     udp_init();
-    udp_send_withmac(buffer, i + 1, 1001, 1001);
+    udp_send_withmac((char*)buffer, i + 1, 1001, 1001);
 
     i = currticks();
     udp_close();
@@ -1334,7 +1348,7 @@ int identifyauto_func(char *arg, int flags) {
     buffer[0] = 0xAD;
 
     udp_init();
-    udp_send_withmac(buffer, 7, 1001, 1001);
+    udp_send_withmac((char*)buffer, 7, 1001, 1001);
     udp_close();
     return 0;
 }
@@ -1345,7 +1359,7 @@ int kbdfr_func(char *arg, int flags) {
 #include "frkbd.h"
 
     int i;
-    unsigned char *ptr = ascii_key_map;
+    unsigned char *ptr = (unsigned char*) ascii_key_map;
     for (i = 0; i < 256; i++) {
         if (i != keyremap[i]) {
             *ptr++ = i;

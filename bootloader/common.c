@@ -22,7 +22,8 @@
 #include <shared.h>
 #include "pci.h"
 #include "builtins_pulse2.h"
-
+#include "deffunc.h"
+#include "pxe.h"
 int isLRSEnvironment = 1;
 
 #ifdef SUPPORT_DISKLESS
@@ -189,7 +190,7 @@ setup_diskless_environment (void)
 
     grub_printf("Configuration  : ");
     // attempt to get menu corresponding to our MAC address
-    machex((char *)nic_macaddr);
+    machex((unsigned char *)nic_macaddr);
 
     // Pulse 2 mode
     grub_sprintf(config_file,"/bootmenus/%s", ip);
@@ -211,7 +212,7 @@ setup_diskless_environment (void)
     }
 
     // attempt to get menu corresponding to our IP address
-    iphex((char *)&arptable[ARP_CLIENT].ipaddr);
+    iphex((unsigned char *)&arptable[ARP_CLIENT].ipaddr);
 
     // Pulse 2 mode
     grub_sprintf(config_file,"/bootmenus/%s", ip);
@@ -403,9 +404,9 @@ init_bios_info (void)
         buffer=(char *)PASSWORD_BUF;
         *buffer++=0xAA;
         buffer += grub_sprintf(buffer,"M:%x,U:%x\n",mbi.mem_lower,mbi.mem_upper);
-        eth_pci_init(buffer); while (*buffer) buffer++;
+        eth_pci_init((unsigned char *)buffer); while (*buffer) buffer++;
 
-        drive_info(buffer);
+        drive_info((unsigned char *)buffer);
         while (*buffer) buffer++;
 
         /* smbios infos */
@@ -415,10 +416,10 @@ init_bios_info (void)
               int i, i1, i2, i3, i4;
               char hex[]="0123456789ABCDEF";
 
-              smbios_get_biosinfo(&p1, &p2, &p3);
+              smbios_get_biosinfo((char **)&p1,(char **) &p2,(char **) &p3);
               buffer += grub_sprintf(buffer, "S0:%s|%s|%s\n",p1, p2, p3);
 
-              smbios_get_sysinfo(&p1, &p2, &p3, &p4, &p);
+              smbios_get_sysinfo((char **)&p1,(char **) &p2,(char **) &p3,(char **) &p4,(char **) &p);
               buffer += grub_sprintf(buffer, "S1:%s|%s|%s|%s|",p1, p2, p3, p4);
 
               /* while (*buffer) buffer++; */
@@ -428,10 +429,10 @@ init_bios_info (void)
                   *buffer++ = hex[p[i]&15];
                 }
 
-              smbios_get_enclosure(&p1, &p2);
+              smbios_get_enclosure((char **)&p1,(char **) &p2);
               buffer += grub_sprintf(buffer, "\nS3:%s|%d\n",p1, *p2 & 0x7F);
 
-              while (smbios_get_memory(&i1, &i2, &p1, &i3, &i4)) {
+              while (smbios_get_memory(&i1, &i2,(char **) &p1, &i3, &i4)) {
                  buffer += grub_sprintf(buffer, "SM:%d:%x:%s:%x:%d\n", i1, i2, p1, i3, i4);
               }
               buffer += grub_sprintf(buffer, "S4:%d\n", smbios_get_numcpu());

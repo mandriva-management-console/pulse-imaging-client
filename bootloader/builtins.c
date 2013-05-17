@@ -64,6 +64,104 @@ int show_menu = 1;
 static unsigned short bios_drive_map[DRIVE_MAP_SIZE + 1];
 
 
+
+
+
+/* variables */
+
+/* grub builtins */
+
+
+
+static struct builtin builtin_inc = {
+    "inc",
+    inc_func,
+    BUILTIN_CMDLINE,
+#ifdef HELP_ON
+    "inc [MESSAGE ...]",
+    "increment a Pulse 2 backup number."
+#endif
+};
+
+static struct builtin builtin_setdefault = {
+    "setdefault",
+    setdefault_func,
+    BUILTIN_CMDLINE,
+#ifdef HELP_ON
+    "setdefault number",
+    "set the default grub menu entry for the next reboot."
+#endif
+};
+
+static struct builtin builtin_nosecurity = {
+    "nosecurity",
+    nosecurity_func,
+    BUILTIN_CMDLINE | BUILTIN_MENU,
+#ifdef HELP_ON
+    "nosecurity",
+    "allow access to grub cmdline."
+#endif
+};
+
+static struct builtin builtin_partcopy = {
+    "partcopy",
+    partcopy_func,
+    BUILTIN_CMDLINE | BUILTIN_MENU,
+#ifdef HELP_ON
+    "partcopy START PREFIXNAME [TYPE]",
+    "Create a primary partition at the starting address START with the"
+        " compressed files beginning with PREFIXNAME. Update partition table "
+        "with the partition TYPE type."
+#endif
+};
+
+static struct builtin builtin_ptabs = {
+    "ptabs",
+    ptabs_func,
+    BUILTIN_CMDLINE,
+#ifdef HELP_ON
+    "ptabs DISK FILE",
+    "Copy uncompressed sectors from FILE (LBA,DATA) to disk DISK."
+#endif
+};
+
+static struct builtin builtin_identify = {
+    "identify",
+    identify_func,
+    BUILTIN_CMDLINE,
+#ifdef HELP_ON
+    "identify",
+    "Ask for Name/ID and send UDP packet to server."
+#endif
+};
+
+static struct builtin builtin_identifyauto = {
+    "identifyauto",
+    identifyauto_func,
+    BUILTIN_CMDLINE,
+#ifdef HELP_ON
+    "identifyauto",
+    "Send an ID packet to the server with Name/ID=+/+"
+#endif
+};
+
+static struct builtin builtin_kbdfr = {
+    "kbdfr",
+    kbdfr_func,
+    BUILTIN_CMDLINE | BUILTIN_MENU,
+#ifdef HELP_ON
+    "kbdfr",
+    "azerty keymap"
+#endif
+};
+
+
+
+
+
+
+
+
 /* Initialize the data for builtins.  */
 void
 init_builtins (void)

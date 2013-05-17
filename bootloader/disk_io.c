@@ -595,7 +595,7 @@ real_open_partition (int flags)
     {
       int ret = next_partition (current_drive, dest_partition,
 				&current_partition, &current_slice,
-				&part_start, &part_length,
+				(unsigned long *)&part_start,(unsigned long *) &part_length,
 				&part_offset, &entry, &ext_offset, buf);
       bsd_part = (current_partition >> 8) & 0xFF;
       pc_slice = current_partition >> 16;

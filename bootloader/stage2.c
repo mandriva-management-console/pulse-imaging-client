@@ -268,6 +268,7 @@ set_line_highlight (int y, int entryno, char *menu_entries)
 }
 #endif
 
+//"utilisation int 10h function 01h asm.S implicit declaration"
 static void
 run_menu (char *menu_entries, char *config_entries, int num_entries,
           char *heap, int entryno)
@@ -353,6 +354,7 @@ restart:
       auto_fill = 0;
 
       init_page ();
+     
       nocursor ();
 
       print_border (3, 12);

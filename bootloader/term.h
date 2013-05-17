@@ -81,6 +81,7 @@ struct term_entry
   void (*setcolor) (int normal_color, int highlight_color);
   /* Turn on/off the cursor.  */
   int (*setcursor) (int on);
+  //void (*setcursor) (int on);
 
   /* function to start a terminal */
   int (*startup) (void);
@@ -93,7 +94,7 @@ extern struct term_entry term_table[];
 /* This points to the current terminal. This is useful, because only
    a single terminal is enabled normally.  */
 extern struct term_entry *current_term;
-
+//int translate_keycode(int c);
 #endif /* ! STAGE1_5 */
 
 /* The console stuff.  */
