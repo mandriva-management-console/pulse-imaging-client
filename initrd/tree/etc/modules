@@ -93,6 +93,10 @@ r8168
 r8169
 r8101
 
+# Alx
+# http://projects.mandriva.org/issues/2084
+alx
+
 # Texas Instrument
 tlan
 

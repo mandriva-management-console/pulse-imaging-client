@@ -1,5 +1,4 @@
-# (c) 2003-2007 Linbox FAS, http://linbox.com
-# (c) 2008-2009 Mandriva, http://www.mandriva.com
+# (c) 2011 Mandriva, http://www.mandriva.com
 #
 # $Id$
 #
@@ -20,11 +19,14 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 #
-topdir = $(abspath ../..)
-include $(topdir)/common.mk
+topdir = $(abspath ../../..)
 
-#SUBDIRS = e1000 e1000e r8101 r8168 r8169 igb ixgbe nxii tg3
-SUBDIRS = e1000e r8101 r8168 r8169 igb ixgbe alx
-# bnx2 still do not build on 3.4.X
-# e1000 and tg3 are "obsolete" anyway, maybe we should just use the kernel
-# provided ones ?
+module = alx.ko
+module_path = $(extra_srcdir)/src/$(module)
+module_version = 0.0+git20130514
+module_builddir = src
+# git clone https://github.com/Sauyon/alx/
+# + fix upstream Makefile 
+extra_archive = alx-$(module_version).tar.gz
+
+include $(topdir)/kernel/modules.mk
