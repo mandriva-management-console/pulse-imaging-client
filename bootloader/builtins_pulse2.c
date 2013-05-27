@@ -1253,40 +1253,40 @@ int identify_func(char *arg, int flags) {
 
     if (strstr(arg, "L=fr_FR")) {
         title_prompt = "\n\
-Íµ  DÃ©claration d'un poste client au serveur Pulse Imaging  \n\
+ÍÍÍÍÍÍÍÍµ  D‚claration d'un poste client au serveur Pulse Imaging  ÆÍÍÍÍÍÍÍÍÍ\n\
 \n\
-    Lors de la dÃ©claration du poste, si l'identifiant respecte le format\n\
+    Lors de la d‚claration du poste, si l'identifiant respecte le format\n\
     suivant :\n\
 \n\
-        <profil>:/<entitÃ©_A>/<entitÃ©_B>/<nom-de-l'ordinateur>\n\
+        <profil>:/<entit‚_A>/<entit‚_B>/<nom-de-l'ordinateur>\n\
 \n\
-    Le poste sera directement ajoutÃ© au profil <profil> et Ã  l'entitÃ©\n\
-    /entitÃ©_A/entitÃ©_B.\n\
+    Le poste sera directement ajout‚ au profil <profil> et … l'entit‚\n\
+    /entit‚_A/entit‚_B.\n\
 \n\
     Attention : si possible, utilisez le nom du poste de travail comme\n\
     identifiant.\
 ";
-        login_prompt =    "  Entrez l'identifiant de ce poste  ";
-        password_prompt = "  Entrez vos identifiants Pulse   ";
+        login_prompt =    "  Entrez l'identifiant de ce poste ¯ ";
+        password_prompt = "  Entrez vos identifiants Pulse  ¯ ";
     } else if (strstr(arg, "L=pt_BR")) {
         title_prompt = "\n\
-Íµ  Registre um computador com o Servidor de Imagem Pulse  \n\
+ÍÍÍÍÍÍÍÍÍÍÍÍµ  Registre um computador com o Servidor de Imagem Pulse  ÆÍÍÍÍÍÍÍÍÍÍÍÍÍ\n\
 \n\
     Quando registrar o computador cliente, o ID respeita o\n\
     seguinte formato:\n\
 \n\
         <profile>:/<entity_A>/<entity_B>/<computer-name>\n\
 \n\
-    O computador ir automaticamente ser adicionado ao <profile> perfil\n\
+    O computador irá automaticamente ser adicionado ao <profile> perfil\n\
     e a <entity_A>/<entity_B> entitade.\n\
 \n\
-    AtenÃ©ao: Quando possivel, use o nome da maquina com ID.\
+    Atençao: Quando possivel, use o nome da maquina com ID.\
 ";
-        login_prompt =    "  Por favor entre com o nome do computador  ";
-        password_prompt = "  Por favor entre sua credenciais Pulse  ";
+        login_prompt =    "  Por favor entre com o nome do computador ¯ ";
+        password_prompt = "  Por favor entre sua credenciais Pulse ¯ ";
     } else if (strstr(arg, "L=C")) {
         title_prompt = "\n\
-Íµ  Register a computer with a Pulse Imaging Server  \n\
+ÍÍÍÍÍÍÍÍÍÍÍÍµ  Register a computer with a Pulse Imaging Server  ÆÍÍÍÍÍÍÍÍÍÍÍÍÍ\n\
 \n\
     When registering the client computer, if the ID respects the\n\
     following format :\n\
@@ -1298,12 +1298,12 @@ int identify_func(char *arg, int flags) {
 \n\
     Warning : when possible, uses the station name as ID.\
 ";
-        login_prompt =    "  Please enter the name of this computer  ";
-        password_prompt = "  Please enter your Pulse credentials   ";
+        login_prompt =    "  Please enter the name of this computer ¯ ";
+        password_prompt = "  Please enter your Pulse credentials  ¯ ";
     } else {
         title_prompt = NULL;
-        login_prompt =    "  CLIENT NAME  ";
-        password_prompt = "  PASSWORD     ";
+        login_prompt =    "  CLIENT NAME ¯ ";
+        password_prompt = "  PASSWORD    ¯ ";
     }
 
     if (title_prompt)
