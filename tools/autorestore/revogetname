@@ -28,6 +28,7 @@ MAC=`cat /etc/mac`
 . /etc/netinfo.sh
 
 SRV=$Next_server
+[ -n "$Option_177" ] && SRV=`echo $Option_177|cut -d : -f 1`
 
 if get_computer_hostname $MAC $SRV
 then

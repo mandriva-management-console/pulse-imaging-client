@@ -37,7 +37,7 @@ MAC=`cat /etc/shortmac`
 
 # get server IP address
 SRV=$Next_server
-
+[ -n "$Option_177" ] && SRV=`echo $Option_177|cut -d : -f 1`
 
 # prefix is not empty : Pulse 2 mode, else LRS mode
 lrs && MODE="lrs"

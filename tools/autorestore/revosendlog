@@ -29,6 +29,7 @@ MAC=`cat /etc/mac`
 . /etc/netinfo.sh
 
 SRV=$Next_server
+[ -n "$Option_177" ] && SRV=`echo $Option_177|cut -d : -f 1`
 [ -z "$SRV" ] && exit 1
 
 if [ "$1" = "2" -o "$1" = "3" -o "$1" = "4" -o "$1" = "5" ]
