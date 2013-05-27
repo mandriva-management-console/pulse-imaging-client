@@ -54,3 +54,4 @@ install-local:
 	chown -R root:root $(DESTDIR)$(initramfsdir)/lib/udev/
 	find $(DESTDIR)$(initramfsdir)/lib/udev/ -type f -exec chmod 644 {} \;
 	find $(DESTDIR)$(initramfsdir)/lib/udev/ -type d -exec chmod 755 {} \;
+	chmod 755 $(DESTDIR)$(initramfsdir)/lib/udev/*

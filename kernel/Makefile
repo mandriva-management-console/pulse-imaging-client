@@ -28,7 +28,7 @@ ifeq ($(OS),Linux)
 	NPROCS = $(shell grep -c ^processor /proc/cpuinfo)
 endif
 
-SUBDIRS = rdev . modules
+SUBDIRS = rdev . modules firmware
 
 include $(topdir)/version.mk
 
