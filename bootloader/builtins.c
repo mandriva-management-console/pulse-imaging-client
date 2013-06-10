@@ -44,7 +44,7 @@ kernel_t kernel_type;
 static int bootdev;
 /* True when the debug mode is turned on, and false
    when it is turned off.  */
-int debug = 0;
+int debug = 1;
 /* The default entry.  */
 int default_entry = 0;
 /* The fallback entry.  */
@@ -103,6 +103,16 @@ static struct builtin builtin_nosecurity = {
 #endif
 };
 
+static struct builtin builtin_set_master_password_func = {
+    "menupwd",
+    set_master_password_func,
+     BUILTIN_CMDLINE | BUILTIN_MENU ,
+#ifdef HELP_ON
+    "menupwd [master='none|password'] [localpwd='yes|no']",
+    "Set ask password the default entry is master=none"    
+#endif
+};
+
 static struct builtin builtin_partcopy = {
     "partcopy",
     partcopy_func,
@@ -154,12 +164,6 @@ static struct builtin builtin_kbdfr = {
     "azerty keymap"
 #endif
 };
-
-
-
-
-
-
 
 
 /* Initialize the data for builtins.  */
@@ -596,7 +600,7 @@ static struct builtin builtin_configfile = {
   "Load FILE as the configuration file."
 #endif
 };
-
+
 
 /* debug */
 static int
@@ -625,7 +629,7 @@ static struct builtin builtin_debug = {
   "Turn on/off the debug mode."
 #endif
 };
-
+
 
 /* default */
 static int
@@ -2488,6 +2492,7 @@ struct builtin *builtin_table[] = {
   &builtin_cat,
   &builtin_chainloader,
   &builtin_clear,
+  &builtin_set_master_password_func,
 #ifdef OLDFUNC
   &builtin_cmp,
 #endif
@@ -2550,6 +2555,7 @@ struct builtin *builtin_table[] = {
 //  &builtin_setkey,
 //  &builtin_setup,
   &builtin_setdefault,
+  
 #ifdef SUPPORT_GRAPHICS
   &builtin_splashimage,
 #endif /* SUPPORT_GRAPHICS */

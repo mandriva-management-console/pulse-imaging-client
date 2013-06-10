@@ -31,11 +31,13 @@
 #include "pxe.h"
 
 #define nic_macaddr arptable[ARP_CLIENT].node
-
+extern char buffermak[20];
+extern char buffgateway[20];
 // #define DEBUG
 
 extern struct arptable_t arptable[MAX_ARP];
 
+static unsigned long netmask;
 typedef struct s_udp_o_s
 {
     short   Status;
@@ -107,6 +109,60 @@ int udp_send(char *buf,int size,int s_port,int d_port)
     return ret;
 }
 
+
+ int add_ip_mask (char *buf,const char* header_adresse,unsigned long addr)
+  {
+    char my_maska[30];
+    sprintf (my_maska,"[%s:%d.%d.%d.%d]",
+	     header_adresse,
+             addr & 0xFF, (addr >> 8) & 0xFF,
+             (addr >> 16) & 0xFF, addr >> 24);
+     return grub_strncat(buf,my_maska,1500); 
+  }
+  
+/*
+ * Same as udp_send but put the mac address appended to the packet
+ * (needed for Pulse 2 getClientResponse)
+ */
+int addmac(char *buf)
+{
+char ip[] = "Mc:xx:xx:xx:xx:xx:xx";
+    char hex[]="0123456789ABCDEF";    
+    unsigned char *ptr = (unsigned char *)nic_macaddr;
+    ip[ 3]=hex[((*ptr)&0xF0)>>4]; ip[ 4]=hex[(*ptr++)&0x0F];
+    ip[ 6]=hex[((*ptr)&0xF0)>>4]; ip[ 7]=hex[(*ptr++)&0x0F];
+    ip[ 9]=hex[((*ptr)&0xF0)>>4]; ip[10]=hex[(*ptr++)&0x0F];
+    ip[12]=hex[((*ptr)&0xF0)>>4]; ip[13]=hex[(*ptr++)&0x0F];
+    ip[15]=hex[((*ptr)&0xF0)>>4]; ip[16]=hex[(*ptr++)&0x0F];
+    ip[18]=hex[((*ptr)&0xF0)>>4]; ip[19]=hex[(*ptr++)&0x0F];
+    return grub_strncat(buf,ip,1500);  
+}
+
+int addip(char *buf,const char* header_adresse,char codeip[])
+{
+  char ipadresse[30];
+  grub_sprintf (ipadresse,"[%s:%d.%d.%d.%d]",header_adresse,
+					      (unsigned char)codeip[0],
+					      (unsigned char)codeip[1],
+					      (unsigned char)codeip[2],
+					      (unsigned char)codeip[3]);
+  return grub_strncat(buf,ipadresse,1500);  
+}
+
+      
+int udp_send_withmac_ips_ipc_ipgw(char *buf,int s_port,int d_port)
+{   
+    //char buffermask[16];
+    //print_network_configuration_return(buffermask);
+    grub_strncat(buf, buffermak,1500);
+    //add_ip_mask(buf,"mask:",netmask);
+    addip(buf,"IPServer:",(char *)(udp_w->ip));
+    addip(buf,"IPClient:",(char *)(udp_o->src_ip));
+    addip(buf,"IPGateWa:",(char *)(udp_w->gw));
+    addmac(buf);
+    return (udp_send(buf,grub_strlen(buf)+1,s_port,d_port));
+}
+
 /*
  * Same as udp_send but put the mac address appended to the packet
  * (needed for Pulse 2 getClientResponse)
@@ -136,8 +192,6 @@ int udp_send_withmac(char *buf,int size,int s_port,int d_port)
     ip[12]=hex[((*ptr)&0xF0)>>4]; ip[13]=hex[(*ptr++)&0x0F];
     ip[15]=hex[((*ptr)&0xF0)>>4]; ip[16]=hex[(*ptr++)&0x0F];
     ip[18]=hex[((*ptr)&0xF0)>>4]; ip[19]=hex[(*ptr++)&0x0F];
-
-
     for (i=0; i<grub_strlen(ip); i++) {
         newbuf[size+i+1] = ip[i];
     }

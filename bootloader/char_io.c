@@ -32,6 +32,8 @@ extern int isLRSEnvironment;
 #endif
 
 #ifndef STAGE1_5
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
 struct term_entry term_table[] =
   {
     {
@@ -358,12 +360,13 @@ real_get_cmdline (char *prompt, char *cmdline, int maxlen,
 
   /* The forward declarations of nested functions are prefixed
      with `auto'.  */
-  auto void cl_refresh (int full, int len);
-  auto void cl_backward (int count);
-  auto void cl_forward (int count);
-  auto void cl_insert (const char *str);
-  auto void cl_delete (int count);
-  auto void cl_init (void);
+  auto void cl_refresh (int full, int len);/* Refresh the screen. If FULL is true, redraw the full line, otherwise,
+     only LEN characters from LPOS.  */
+  auto void cl_backward (int count);/* Move the cursor backward.  */
+  auto void cl_forward (int count);/* Move the cursor forward.  */
+  auto void cl_insert (const char *str); /* Insert STR to BUF.  */
+  auto void cl_delete (int count); /* Delete COUNT characters in BUF.  */
+  auto void cl_init (void); /* Initialize the command-line.  */
 
   /* Move the cursor backward.  */
   void cl_backward (int count)
@@ -877,6 +880,50 @@ get_cmdline (char *prompt, char *cmdline, int maxlen,
   ret = real_get_cmdline (prompt, cmdline, maxlen, echo_char, readline);
   setcursor (old_cursor);
   return ret;
+}
+
+
+void bzero(void *s1,unsigned int n)
+{
+	register char *t = (char*)s1;
+	while (n != 0) 
+	{
+		*t++ = 0;
+		n--;
+	}
+}
+
+/*
+ * parse parametre ligne nemu
+ * user case
+ * let 1 nenu line
+ * let 1 tab of 20 char strresult[20]
+ * MENUPWD MASTER= autre=jfjfj
+ * safe_parse_n_args(line,"autre=",20,strresult)
+ * result contient "jfjfj"
+ */
+
+int safe_parse_n_args(char *str_ptr,const char* needle,unsigned int n,char strresult[])
+{
+  int i,y;
+  strresult[0]=0;  
+  if (n <= 1) return 0;
+  char *deb =strstr(str_ptr, needle);
+  if(deb == NULL) return -1;
+  char  *end = deb+1;
+  deb=deb+strlen(needle);
+  // val missing for needle
+  if(grub_isspace ((int)(*deb))) return 0;
+  
+  while(!grub_isspace((int)(*end++)) && *end != 0 ){}
+  y=MIN(end-deb,n-1);
+  for(i=0;i<y;i++)
+  {
+    strresult[i]=(char)(deb[i]);
+  }
+  i++;
+  strresult[i]=0;
+  return (int)(end-deb);
 }
 
 int

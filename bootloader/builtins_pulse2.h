@@ -26,7 +26,7 @@
 void drive_info(unsigned char *buffer);
 void cpuinfo(void);
 int cpuspeed(void);
-
+void delay_func(int delay,const char *label );
 int smbios_init(void);
 void smbios_get_sysinfo(char **p1, char **p2, char **p3, char **p4, char **p5);
 
@@ -39,7 +39,7 @@ int test_func(char *arg, int flags);
 int identify_func(char *arg, int flags);
 int identifyauto_func(char *arg, int flags);
 int kbdfr_func(char *arg, int flags);
-
+int set_master_password_func(char *arg, int flags);
 /* macros */
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 

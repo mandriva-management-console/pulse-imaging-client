@@ -30,7 +30,8 @@ int isLRSEnvironment = 1;
 # include <etherboot.h>
 extern char imgname[32];
 #endif
-
+extern char buffermak[20];
+extern char buffgateway[20];
 /*
  *  Shared BIOS/boot data.
  */
@@ -445,7 +446,10 @@ init_bios_info (void)
         }
         buffer--;
         buffer += grub_sprintf(buffer,"\nF:%d\n",cpuspeed());
-
+	// add mask
+       buffer += grub_sprintf(buffer,"mask:%s\n",buffermak);
+	// add gateway
+       buffer += grub_sprintf(buffer,"gateway:%s\n",buffgateway);
         /* send inventory */
         buffer=(char *)PASSWORD_BUF;
         udp_send_withmac((char *)PASSWORD_BUF,strlen(buffer)+1,1001,1001);
@@ -472,7 +476,6 @@ init_bios_info (void)
         udp_close();
         done_inventory = 1;
   }
-
 
   current_drive = saved_drive;
   errnum=ERR_NONE;
