@@ -270,9 +270,9 @@ grub_sprintf (char *buffer, const char *format, ...)
 void init_page (void) {
     cls ();
     if (isLRSEnvironment) {
-        grub_printf ("\nอต  Linbox Rescue Server  ");
+        grub_printf ("\nอออออออออออออออออออออออออออต  Linbox Rescue Server  ฦอออออออออออออออออออออออออออ");
     } else {
-        grub_printf ("\nอต  Pulse 2 Imaging Server ");
+        grub_printf ("\nออออออออออออออออออออออออออต  Pulse 2 Imaging Server  ฦออออออออออออออออออออออออออ");
     }
 
 }

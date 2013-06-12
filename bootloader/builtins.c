@@ -44,7 +44,7 @@ kernel_t kernel_type;
 static int bootdev;
 /* True when the debug mode is turned on, and false
    when it is turned off.  */
-int debug = 1;
+int debug = 0;
 /* The default entry.  */
 int default_entry = 0;
 /* The fallback entry.  */
