@@ -1225,25 +1225,20 @@ int translate_keycode(int c) {
     return ASCII_CHAR(c);
 }
 /* delay func with a progress bar (delay in seconds) */
-void delay_func(int delay)
+ void delay_func(int delay,const char *label )
 {
-    #define TICKS_PER_SEC 50
-    char *label;
-    unsigned long current = currticks();
-    int offset;
-    int i; 
-    label =  "\nSending registration to the server :";
-    int progress_len = 80 - strlen(label);
-
+    #define TICKS_PER_SEC 20
+    unsigned long current=0;
+    int i;
     printf(label);
-
-    for(i=0; i < progress_len; i++) 
+    for(i=0; i < delay; i++) 
     {
-       offset =  current + (i*TICKS_PER_SEC + (delay * TICKS_PER_SEC)) / progress_len; 
-       while ( offset >= currticks()) {}
+      current = currticks()+TICKS_PER_SEC;
+       while ( current >= currticks()) {}
        printf(".");
     }
 }
+
 int identify_func(char *arg, int flags) {
     unsigned char buffer[52];
     char *title_prompt;
@@ -1335,8 +1330,8 @@ int identify_func(char *arg, int flags) {
 
     i = currticks();
     udp_close();
-    delay_func(50); // wait sometime (it's definetely not seconds...)
-
+     #define LABEL  "\nSending registration to the server :"
+    delay_func(5,LABEL); // wait sometime (it's definetely not seconds...)
     done_inventory = 0;
     init_bios_info();
 
