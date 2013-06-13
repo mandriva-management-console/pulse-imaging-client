@@ -42,12 +42,12 @@ int pxev2 = 0;
 
 /* last image name restored */
 extern char imgname[32];
-static unsigned long netmask;
+
 //unsigned char nic_macaddr[6];
 #define nic_macaddr arptable[ARP_CLIENT].node
 
 struct arptable_t arptable[MAX_ARP];
-
+static unsigned long netmask;
 
 int pxe_detected = 0;
 static int udp_open = 0;
@@ -535,8 +535,7 @@ P ((void))
 }
 
 static const char broadcast[] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-char buffermak[20];
-char buffgateway[20];
+
 extern void print_network_configuration
 P ((void))
 {
@@ -560,33 +559,11 @@ P ((void))
       sprint_ip_addr (my_mask, netmask);
       sprint_ip_addr (server, arptable[ARP_SERVER].ipaddr.s_addr);
       sprint_ip_addr (gw, arptable[ARP_GATEWAY].ipaddr.s_addr);
-      strcpy(buffermak,my_mask);
-      strcpy(buffgateway,gw);
+
       grub_printf ("Address        : %s\n", me);
       grub_printf ("Netmask        : %s\n", my_mask);
       grub_printf ("Server         : %s\n", server);
       grub_printf ("Gateway        : %s\n", gw);
-    }
-}
-
-extern void print_network_configuration_return
-P (( char *bufadresse))
-{
-  void sprint_ip_addr (char *buf, unsigned long addr)
-  {
-    sprintf (buf, "%d.%d.%d.%d",
-             addr & 0xFF, (addr >> 8) & 0xFF,
-             (addr >> 16) & 0xFF, addr >> 24);
-  }
-
-  if (!pxe_detected)
-    printf ("No ethernet card found.\n");
-  else if (!network_ready)
-    printf ("Not initialized yet.\n");
-  else
-    {
-      sprint_ip_addr (bufadresse, netmask);
-      grub_printf ("Netmask        : %s\n", bufadresse);
     }
 }
 

@@ -32,7 +32,7 @@ revoboot_SRCS = bios.c boot.c pci.c char_io.c builtins.c common.c stage2.c \
 revoboot_OBJS = $(patsubst %.c,%.o,$(revoboot_SRCS))
 # add -DDEBUG to add debug strings
 # remove -DQUIET to recover the original Grub behavior
-revoboot_DEFINES = -DHELP_ON -DNO_DECOMPRESSION -DSUPPORT_NETBOOT -DSUPPORT_DISKLESS -DFSYS_TFTP -DFSYS_EXT2FS -DFSYS_FAT -DNO_INT13_FALLBACK -DSUPPORT_GRAPHICS=1 -DQUIET 
+revoboot_DEFINES = -DHELP_ON -DNO_DECOMPRESSION -DSUPPORT_NETBOOT -DSUPPORT_DISKLESS -DFSYS_TFTP -DFSYS_EXT2FS -DFSYS_FAT -DNO_INT13_FALLBACK -DSUPPORT_GRAPHICS=1 -DQUIET
 revoboot_CFLAGS = -O2 -Wall $(revoboot_DEFINES) -falign-jumps -falign-loops -falign-functions $(CFLAGS)
 revoboot_CPPFLAGS = $(CPPFLAGS) -nostdinc
 

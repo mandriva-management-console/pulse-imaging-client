@@ -899,9 +899,6 @@ int safe_parse_maxint (char **str_ptr, int *myint_ptr);
 int memcheck (int start, int len);
 void grub_putstr (const char *str);
 
-int safe_parse_n_args(char *str_ptr,const char* needle,unsigned int n,char strresult[]);
-void bzero(void *s1,unsigned int n);
-
 #ifndef NO_DECOMPRESSION
 /* Compression support. */
 int gunzip_test_header (void);

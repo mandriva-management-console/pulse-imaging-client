@@ -37,9 +37,6 @@ void zcfree(long toto, unsigned char *zone);
 #include "pxe.h"
 #endif
 
-
-      
-     
 /* ugly global vars */
 int fat, ntfs, files, new_len, new_type;
 
@@ -115,6 +112,14 @@ int get_empty(tftpbuffer * buff, int *i) {
 
     return 0;
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -215,87 +220,17 @@ int setdefault_func(char *arg, int flags) {
     return 0;
 }
 
-/* setdefault */
-int set_master_password_func(char *arg, int flags) 
-{
-  char buffer[50];char buf[50];
-  bzero((void *)buffer,sizeof(buffer));
-  buffer[0]=0xAF;
-  buffer[1]=':';
-  graphics_cls();
-  char strpassword[10];
-  unsigned int size=0;
-  char *password_prompt = "  PASSWORD    ¯ ";
-  const char strlocal[]="local=";
-
-  if (strstr(arg, "local=none") != NULL) 
-  {
-    return 0;
-  }
-  if (strstr(arg, strlocal) != NULL) 
-  {//un mot de passe local est definie
-    if((size=safe_parse_n_args(arg,strlocal,10,strpassword))==0)
-    {  
-      return 0;
-    }
-    // PASSWORD TRAITEMENT LOCAL strpassword
-    bzero((void *)buffer,sizeof(buffer));
-    get_cmdline(password_prompt,(char*) buffer, 10, '*', 1);
-    if(grub_strcmp (strpassword,buffer )==0)
-    {  // password conforme continue cycle
-      return 0;
-    }else
-    { //password fail. start default choix
-      //delay_func(15,"cache menu\n");
-      // on repropose saisir password
-      grub_printf("\nPassword error:\n");
-      grub_printf("Retype new password:\n");
-      bzero((void *)buffer,sizeof(buffer));
-      get_cmdline(password_prompt,(char*) buffer, 10, '*', 1);
-      if(grub_strcmp (strpassword,buffer )==0)
-      {
-	return 0;
-      }else
-      {
-	grub_timeout=0;
-	show_menu = 0;
-	return 0;
-      }
-    }
-  }else
-  {// checking password by server
-    bzero((void *)&buffer[2],sizeof(buffer));
-    get_cmdline(password_prompt,(char*) &buffer[2] , 10, '*', 1);
-    delay_func(1,"checking password by server");
-    // checking password by server
-    udp_init();
-    int size,port;
-    udp_send_withmac(buffer,strlen(buffer)+1,1001,1001);
-    delay_func(2,"\nWaiting server identification\n");
-    udp_get(buf,&size,1001,&port);
-    udp_close();
-      if(grub_strcmp (buf,"ok")==0)
-      {
-	delay_func(5,"\nshow menu verify ok\n");
-	return 0;
-      }else
-      {
-	delay_func(5,"\nStart default entry\n");
-	grub_timeout=0;
-	show_menu = 0;
-	return 0;
-      }
-  }
-}
 /* nosecurity */
 int nosecurity_func(char *arg, int flags) {
     nosecurity = 1;
+
     return 0;
 }
 
 void drive_info(unsigned char *buffer) {
     int i, err;
     struct geometry geom;
+
     unsigned long partition, start, len, offset, ext_offset;
     unsigned int type, entry;
     unsigned char *buf = (unsigned char *)SCRATCHADDR;
@@ -1290,47 +1225,25 @@ int translate_keycode(int c) {
     return ASCII_CHAR(c);
 }
 /* delay func with a progress bar (delay in seconds) */
-// void delay_func(int delay)
-// {
-//     #define TICKS_PER_SEC 50
-//     char *label;
-//     unsigned long current = currticks();
-//     int offset;
-//     int i; 
-//     label =  "\nSending registration to the server :";
-//     int progress_len = 80 - strlen(label);
-// 
-//     printf(label);
-// 
-//     for(i=0; i < progress_len; i++) 
-//     {
-//        offset =  current + (i*TICKS_PER_SEC + (delay * TICKS_PER_SEC)) / progress_len; 
-//        while ( offset >= currticks()) {}
-//        printf(".");
-//     }
-// }
-
-
-/* delay func with a progress bar (delay in seconds) */
-void delay_func(int delay,const char *label )
+void delay_func(int delay)
 {
-    #define TICKS_PER_SEC 20
-    //char *label;
-    unsigned long current=0;// = currticks();
-    //int offset;
+    #define TICKS_PER_SEC 50
+    char *label;
+    unsigned long current = currticks();
+    int offset;
     int i; 
-    //label =  "\nSending registration to the server :";
-    //int progress_len = 80 - strlen(label);
+    label =  "\nSending registration to the server :";
+    int progress_len = 80 - strlen(label);
+
     printf(label);
-    for(i=0; i < delay; i++) 
+
+    for(i=0; i < progress_len; i++) 
     {
-      current = currticks()+TICKS_PER_SEC;
-     // offset =  current + (i*TICKS_PER_SEC + (delay * TICKS_PER_SEC)) / progress_len; 
-       while ( current >= currticks()) {}
+       offset =  current + (i*TICKS_PER_SEC + (delay * TICKS_PER_SEC)) / progress_len; 
+       while ( offset >= currticks()) {}
        printf(".");
     }
 }
-
 int identify_func(char *arg, int flags) {
     unsigned char buffer[52];
     char *title_prompt;
@@ -1416,19 +1329,13 @@ int identify_func(char *arg, int flags) {
         while (buffer[i])
             i++;
     }
-    udp_init();   
 
-//     if (strstr(arg, "NET") == NULL) 
-//     {
-      udp_send_withmac((char*)buffer, i + 1, 1001, 1001);
-//     }else
-//     {
-//       udp_send_withmac_ips_ipc_ipgw((char*)buffer, 1001, 1001);
-//     }
+    udp_init();
+    udp_send_withmac((char*)buffer, i + 1, 1001, 1001);
+
     i = currticks();
     udp_close();
-    #define LABEL  "\nSending registration to the server :"
-    delay_func(5,LABEL); // wait sometime (it's definetely not seconds...)
+    delay_func(50); // wait sometime (it's definetely not seconds...)
 
     done_inventory = 0;
     init_bios_info();

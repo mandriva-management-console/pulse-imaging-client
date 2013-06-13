@@ -5,7 +5,6 @@ extern int network_ready;
 extern int bootp P((void));
 extern int rarp P((void));
 extern void print_network_configuration P((void));
-extern void print_network_configuration_return P (( char *bufadresse));
 extern int arp_server_override P((const char *buf));
 
 extern void udp_init(void);
@@ -13,9 +12,6 @@ extern int udp_close(void);
 extern int udp_send(char *,int,int,int);
 extern int udp_send_withmac(char *,int,int,int);
 extern int udp_send_to_pulse2(char *,int);
-extern int addmac(char *buf);
-extern int addip(char *buf,const char* header_adresse,char codeip[]);
-extern int udp_send_withmac_ips_ipc_ipgw(char *buf,int s_port,int d_port);
 extern int udp_get(char *,int *,int,int *);
 
 typedef struct {

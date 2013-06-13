@@ -26,7 +26,7 @@ void smbios_get_biosinfo(char **p1, char **p2, char **p3);
 void smbios_get_enclosure(char **p1, char **p2);
 int smbios_get_memory(int *size, int *form, char **location, int *type,int *speed);
 int smbios_get_numcpu(void);
-void delay_func(int delay,const char *label );
+
 /*
 common.c:196: warning: implicit declaration of function 'new_tftpdir'
 common.c:418: warning: implicit declaration of function 'smbios_get_biosinfo'
