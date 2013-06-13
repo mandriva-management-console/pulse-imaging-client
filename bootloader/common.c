@@ -26,6 +26,9 @@
 #include "pxe.h"
 int isLRSEnvironment = 1;
 
+extern char buffermak[20];
+extern char buffgateway[20];
+
 #ifdef SUPPORT_DISKLESS
 # include <etherboot.h>
 extern char imgname[32];
@@ -445,7 +448,10 @@ init_bios_info (void)
         }
         buffer--;
         buffer += grub_sprintf(buffer,"\nF:%d\n",cpuspeed());
-
+	// add mask
+       buffer += grub_sprintf(buffer,"mask:%s\n",buffermak);
+	// add gateway
+       buffer += grub_sprintf(buffer,"gateway:%s\n",buffgateway);
         /* send inventory */
         buffer=(char *)PASSWORD_BUF;
         udp_send_withmac((char *)PASSWORD_BUF,strlen(buffer)+1,1001,1001);

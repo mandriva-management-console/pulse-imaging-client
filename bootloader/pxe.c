@@ -42,6 +42,8 @@ int pxev2 = 0;
 
 /* last image name restored */
 extern char imgname[32];
+char buffermak[20];
+char buffgateway[20];
 
 //unsigned char nic_macaddr[6];
 #define nic_macaddr arptable[ARP_CLIENT].node
@@ -559,7 +561,8 @@ P ((void))
       sprint_ip_addr (my_mask, netmask);
       sprint_ip_addr (server, arptable[ARP_SERVER].ipaddr.s_addr);
       sprint_ip_addr (gw, arptable[ARP_GATEWAY].ipaddr.s_addr);
-
+      strcpy(buffermak,my_mask);
+      strcpy(buffgateway,gw);
       grub_printf ("Address        : %s\n", me);
       grub_printf ("Netmask        : %s\n", my_mask);
       grub_printf ("Server         : %s\n", server);
