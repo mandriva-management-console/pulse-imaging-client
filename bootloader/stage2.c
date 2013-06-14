@@ -21,11 +21,12 @@
 #include "shared.h"
 #include <term.h>
 #include "etherboot.h"
-
+#include "deffunc.h"
 grub_jmp_buf restart_env;
 
 char pulse2name[32];
 extern int nosecurity;
+extern int modifietimeout;
 char *desc_entries;
 
 static char *
@@ -799,7 +800,12 @@ cmain (void)
           while (get_line_from_config (cmdline, NEW_HEAPSIZE))
             {
               struct builtin *builtin;
-
+              if(strstr(cmdline, "menupwd") != NULL) set_master_password_func(cmdline+8, 0);
+	      if(strstr(cmdline, "timeout") != NULL && modifietimeout)
+	      {// modifie cmdline pour mettre timeout a 0
+		cmdline[7]=0;
+		grub_strncat (cmdline," 0",10) ;
+	      }
               /* Get the pointer to the builtin structure.  */
               builtin = find_command (cmdline);
               errnum = 0;
