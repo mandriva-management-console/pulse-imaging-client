@@ -42,7 +42,10 @@ int fat, ntfs, files, new_len, new_type;
 
 /* auto fill mode ?! */
 int auto_fill = 1;
-
+/* variable global pour signaler si modification du timeout du menu
+si cette variable est a 1 le timeout menu est 0
+*/
+int modifietimeout=0;
 /* total/current bytes of data to decompress */
 unsigned int total_kbytes = 0;
 unsigned int current_bytes = 0;
@@ -202,7 +205,84 @@ int inc_func(char *arg, int flags) {
 
     return 0;
 }
+/*
+* gere la demande du mot de passe local
+*/
+int saisie_password_local(const char* password_prompt,const char* strpassword)
+{
+  int i=3;
+  char buffer[50];
+  while(i>0)
+  {
+  bzero((void *)buffer,sizeof(buffer));
+  get_cmdline((char*)password_prompt,(char*) buffer, 10, '*', 1);
+    if(grub_strcmp (strpassword,buffer )==0)
+    {  // password conforme continue cycle
+      return 0;
+    }else
+    { 
+      grub_printf("\nPassword error:\n");
+      grub_printf("Retype new password:\n");      
+      i--;
+    }
+  }
+     return -1;
+}
+/*
+*gere le password du menu
+*/
+int set_master_password_func(char *arg, int flags) 
+{ 
+  char buffer[50];char buf[50];
+  bzero((void *)buffer,sizeof(buffer));
+  buffer[0]=0xAF;
+  buffer[1]=':';
+  graphics_cls();
+  char strpassword[10];
+  unsigned int size=0;
+  char *password_prompt = "  PASSWORD    > ";
+  const char strlocal[]="local=";
 
+  if (strstr(arg, "local=none") != NULL) return 0;
+ 
+  if (strstr(arg, strlocal) != NULL) 
+  {//un mot de passe local est definie
+    if((size=safe_parse_n_args(arg,strlocal,10,strpassword))==0)return 0;
+    if(saisie_password_local((const char*)password_prompt,(const char*)strpassword)==0) 
+    {
+      return 0;
+    }
+    else
+    {
+      modifietimeout=1;
+      //grub_timeout=0;
+      show_menu = 0;
+      return 0;
+    }
+  }else
+  {// checking password by server
+    bzero((void *)&buffer[2],sizeof(buffer));
+    get_cmdline(password_prompt,(char*) &buffer[2] , 10, '*', 1);
+    delay_func(1,"checking password by server\n");
+    // checking password by server
+    udp_init();
+    int size,port;
+    udp_send_withmac(buffer,strlen(buffer)+1,1001,1001);
+    delay_func(2,"\nWaiting server identification\n");
+    udp_get(buf,&size,1001,&port);
+    udp_close();
+      if(grub_strcmp (buf,"ok")==0)
+      {// password verifie affiche menu
+	return 0;
+      }else
+      {// erreur authentification ,lance entree par default
+	delay_func(1,"\nIdentication Error\n");
+	grub_timeout=0;modifietimeout=1;
+	show_menu = 0;
+	return 0;
+      }
+  }
+}
 /* setdefault */
 int setdefault_func(char *arg, int flags) {
     unsigned char buffer[] = " x\0";

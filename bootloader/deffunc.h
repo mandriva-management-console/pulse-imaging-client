@@ -27,17 +27,7 @@ void smbios_get_enclosure(char **p1, char **p2);
 int smbios_get_memory(int *size, int *form, char **location, int *type,int *speed);
 int smbios_get_numcpu(void);
 void delay_func(int delay,const char *label );
-/*
-common.c:196: warning: implicit declaration of function 'new_tftpdir'
-common.c:418: warning: implicit declaration of function 'smbios_get_biosinfo'
-common.c:431: warning: implicit declaration of function 'smbios_get_enclosure'
-common.c:434: warning: implicit declaration of function 'smbios_get_memory'
-common.c:437: warning: implicit declaration of function 'smbios_get_numcpu'
-stage2.c:311: warning: implicit declaration of function 'console_getkbdstatuskey'
-stage2.c:356: warning: implicit declaration of function 'nocursor'
-stage2.c:408: warning: implicit declaration of function 'translate_keycode'*/
-
-
-
+int set_master_password_func(char *arg, int flags);
+int saisie_password_local(const char* password_prompt,const char* strpassword);
 #endif
 
