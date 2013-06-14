@@ -898,7 +898,8 @@ int get_based_digit (int c, int base);
 int safe_parse_maxint (char **str_ptr, int *myint_ptr);
 int memcheck (int start, int len);
 void grub_putstr (const char *str);
-
+void bzero(void *s1,unsigned int n);
+int safe_parse_n_args(char *str_ptr,const char* needle,unsigned int n,char strresult[]);
 #ifndef NO_DECOMPRESSION
 /* Compression support. */
 int gunzip_test_header (void);

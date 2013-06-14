@@ -30,7 +30,8 @@ extern int isLRSEnvironment;
 #ifdef SUPPORT_SERIAL
 # include <serial.h>
 #endif
-
+#define MAX(x, y) (((x) > (y)) ? (x) : (y))
+#define MIN(x, y) (((x) < (y)) ? (x) : (y))
 #ifndef STAGE1_5
 struct term_entry term_table[] =
   {
@@ -878,7 +879,49 @@ get_cmdline (char *prompt, char *cmdline, int maxlen,
   setcursor (old_cursor);
   return ret;
 }
-
+/*
+ met a zero un buffer
+*/
+void bzero(void *s1,unsigned int n)
+{
+	register char *t = (char*)s1;
+	while (n != 0) 
+	{
+		*t++ = 0;
+		n--;
+	}
+}
+/*
+ * function for pars parametre ligne nemu
+ * user case
+ * para 1 nenu line
+ * para 2 option menu
+ * para 3 strresult[20]
+ * line menu :  menupwd option=val1
+ * safe_parse_n_args(line,"option=",20,strresult)
+ * result contient "val1"
+ */
+int safe_parse_n_args(char *str_ptr,const char* needle,unsigned int n,char strresult[])
+{
+  int i,y;
+  strresult[0]=0;  
+  if (n <= 1) return 0;
+  char *deb =strstr(str_ptr, needle);
+  if(deb == NULL) return -1;
+  char  *end = deb+1;
+  deb=deb+strlen(needle);
+  // val missing for needle
+  if(grub_isspace ((int)(*deb))) return 0;  
+  while(!grub_isspace((int)(*end++)) && *end != 0 ){}
+  y=MIN(end-deb,n-1);
+  for(i=0;i<y;i++)
+  {
+    strresult[i]=(char)(deb[i]);
+  }
+  i++;
+  strresult[i]=0;
+  return (int)(end-deb);
+}
 int
 safe_parse_maxint (char **str_ptr, int *myint_ptr)
 {
