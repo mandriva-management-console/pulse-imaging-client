@@ -1331,7 +1331,7 @@ int identify_func(char *arg, int flags) {
     i = currticks();
     udp_close();
      #define LABEL  "\nSending registration to the server :"
-    delay_func(5,LABEL); // wait sometime (it's definetely not seconds...)
+    delay_func(10,LABEL); // wait sometime (it's definetely not seconds...)
     done_inventory = 0;
     init_bios_info();
 
