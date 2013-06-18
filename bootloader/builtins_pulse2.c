@@ -28,6 +28,7 @@
 #include "pci.h"
 #include "etherboot.h"
 #include "deffunc.h"
+#include "builtins_pulse2.h"
 #ifdef SUPPORT_NETBOOT
 #include "zlib.h"
 #define INBUFF 8192
@@ -116,16 +117,6 @@ int get_empty(tftpbuffer * buff, int *i) {
     return 0;
 }
 
-
-
-
-
-
-
-
-
-
-
 int tot_lg(tftpbuffer * buff) {
     int i = 0;
 
@@ -195,7 +186,6 @@ int exist(const char *string) {
         }
         ptr++;
     }
-
     return 0;
 }
 
@@ -762,7 +752,7 @@ int new_get(char *file, int sect, int *endsect, int table) {
                                      current_drive, 0);
 #endif
                                 fatal();
-                                getkey();
+                               
                             }
                         } else {
                             printf
@@ -1027,7 +1017,48 @@ int new_get(char *file, int sect, int *endsect, int table) {
     *endsect = save_sect;
     return 0;
 }
+#ifdef DEBUG
+void typestructure(smbios_struct *base,int nbmaxstructure)
+{
+  smbios_struct *tmp=base,*next;
+  grub_printf("nb de structure %d type SMBios: %x \n",nbmaxstructure, tmp->type);
+  while(nbmaxstructure>0)
+  {
+    nbmaxstructure--;
+    next = smbios_next_struct (tmp);
+    grub_printf("nb structure %d type SMBios: %x\n",nbmaxstructure);
+    tmp=next;
+  }
+}
 
+smbios_struct *
+smbios_next_struct (smbios_struct * struct_ptr)
+{
+    unsigned char *ptr = (unsigned char *) struct_ptr + struct_ptr->length;
+    grub_printf("\nlen %d len %d\n",struct_ptr->length, (unsigned char *) struct_ptr + struct_ptr->length);
+    /* search end string 0 0 et end bloc*/
+    while (ptr[0] != 0x00 || ptr[1] != 0x00)
+        ptr++;
+    ptr += 2;			/* terminating 0x0000 should be included */
+grub_printf("\nnext %d \n",ptr);
+    return (smbios_struct *) ptr ;
+}
+
+int
+smbios_get_struct_length (smbios_struct * struct_ptr)
+{
+    /* jump to string list */
+    unsigned char *ptr = (unsigned char *) struct_ptr + struct_ptr->length;
+
+    /* search for the end of string list */
+    while (ptr[0] != 0x00 || ptr[1] != 0x00)
+        ptr++;
+    ptr += 2;			/* terminating 0x0000 should be included */
+
+    return (int) ptr - (int) struct_ptr;
+}
+smbios_struct *section;
+#endif
 /* SMBios */
 char *smbios_addr = NULL;
 __u16 smbios_len = 0;
@@ -1048,16 +1079,18 @@ int smbios_init(void) {
                 smbios_addr = check;
                 smbios_len = *(__u16 *) (check + 0x16);
                 smbios_num = *(__u16 *) (check + 0x1C);
-                //smbios_base = *(__u32 *) (check + 0x18);
 		smbios_base = (__u8 *)(*(__u32 *) (check + 0x18));
-		
+#ifdef DEBUG		
+		section=(smbios_struct *)smbios_base;
+#endif		
+		//typestructure((smbios_struct *)smbios_base,smbios_num);
                 if (smbios_base == 0 || smbios_num == 0 || smbios_len == 0)
                     continue;
 #ifdef DEBUG
                 grub_printf
-                    ("SMBios         : version %d.%d len %d  num %d %x\n",
+                    ("SMBios         : version %d.%d len %d  num %d %x  nbstruct%d\n",
                      *(check + 6), *(check + 7), smbios_len, smbios_num,
-                     smbios_base);
+                     smbios_base,smbios_num);
                 getkey();
 #else
                 grub_printf("SMBios         : %d.%d\n", *(check + 6),
@@ -1069,18 +1102,44 @@ int smbios_init(void) {
     }
     return 0;
 }
-
+#ifdef DEBUG
+/* affiche une table de smbios si elle existe */
+/* n'affiche pas les strings associés à la table*/
+void affiche_table_smbios_hexa(unsigned char type, char* buffer)
+{
+  char hex[]="0123456789ABCDEF";
+  smbios_get(-1, NULL);
+  unsigned char *smbios_table=NULL;
+  int nb=1;	
+	while ((smbios_table=smbios_get(type, NULL))!=NULL)
+	{
+	  buffer += grub_sprintf(buffer,"\naffiche %d table  type %d:",nb,type);
+	  nb++;
+	  unsigned char *tt;
+	  for(tt=smbios_table;tt < smbios_table + smbios_table[1];tt++)
+	  {
+	    buffer += grub_sprintf(buffer,"0x");
+	    *buffer++ = hex[*tt>>4];
+	    *buffer++ = hex[*tt&0x0f];
+	    buffer += grub_sprintf(buffer," ");
+	  }
+	}
+}
+#endif
 void smbios_sum(void) {
     /* TODO */
 }
-
+// attention cette fonction fonctionne pour smbios 2.0
+// pour systeme information cette fonction peut etre utilise pour recupérer 
+// manufacture, product name,Version et serial number.
+// ne pas utiliser cette fonction pour recupérer les valeurs decrites ci-dessous
+// la version 2.1 à 2.3.4 inclut UUID et Wakon_land 
+// la version 2.4 et possibilite ajouter des informations propre a un produit.
 char *smbios_string(__u8 * dm, __u8 s) {
     char *bp = (char *)dm;
     int i;
-
     if (s == 0)
         return "-";
-
     bp += dm[1];
     while (s > 1 && *bp) {
         bp += strlen(bp);
@@ -1094,31 +1153,8 @@ char *smbios_string(__u8 * dm, __u8 s) {
         if (bp[i] < 32 || bp[i] == 127)
             bp[i] = '.';
     return bp;
-
 }
 
-char *smbios_uuid(__u8 * dm, __u8 s) {
-    char *bp = (char *)dm;
-    int i;
-
-    if (s == 0)
-        return "-";
-
-    bp += dm[1];
-    while (s > 1 && *bp) {
-        bp += strlen(bp);
-        bp++;
-        s--;
-    }
-    if (!*bp)
-        return "badindex";
-
-    for (i = 0; i < strlen(bp); i++)
-        if (bp[i] < 32 || bp[i] == 127)
-            bp[i] = '.';
-    return bp;
-
-}
 
 __u8 *smbios_get(int rtype, __u8 ** rnext) {
     static int i = 0;
@@ -1145,7 +1181,7 @@ __u8 *smbios_get(int rtype, __u8 ** rnext) {
         while ((next - smbios_base + 1) < smbios_len && (next[0] || next[1]))
             next++;
 #ifdef DEBUG
-        grub_printf("%d %d %x\n", type, len, handle);
+        grub_printf("type %d  len %d  handle %x\n", type, len, handle);
         getkey();
 #endif
 
@@ -1187,6 +1223,7 @@ void smbios_get_sysinfo(char **p1, char **p2, char **p3, char **p4, char **p5) {
     /* in smbios 2.1+ only */    
     //*p5 = &ptr[8];
     *p5 = (char*)&ptr[8];
+ 
 }
 
 /*

@@ -21,7 +21,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301, USA.
  */
-
+#ifndef __BUILTINS_PULSE__
+#define __BUILTINS_PULSE__
 /* functions */
 void drive_info(unsigned char *buffer);
 void cpuinfo(void);
@@ -39,8 +40,22 @@ int test_func(char *arg, int flags);
 int identify_func(char *arg, int flags);
 int identifyauto_func(char *arg, int flags);
 int kbdfr_func(char *arg, int flags);
-
+unsigned char* smbios_get(int rtype, unsigned char ** rnext);
 /* macros */
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))
 
-
+  #ifdef DEBUG
+      typedef struct smbios_struct
+      {
+	unsigned char  type                           ;
+	unsigned char  length                         ;
+	unsigned short handle                        ; 
+	unsigned char  subtype                       ;
+	      /* ... other fields are structure dependend ... */
+      } __attribute__ ((packed)) smbios_struct ;
+      int             smbios_get_struct_length (smbios_struct * struct_ptr);
+      smbios_struct * smbios_next_struct (smbios_struct * struct_ptr);
+      void typestructure(smbios_struct *base,int nbmaxstructure);
+      void affiche_table_smbios_hexa(unsigned char type, char* buffer);
+  #endif
+#endif

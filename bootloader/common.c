@@ -28,12 +28,16 @@ int isLRSEnvironment = 1;
 
 extern char buffermak[20];
 extern char buffgateway[20];
-
+//extern smbios_struct *section;
 #ifdef SUPPORT_DISKLESS
 # include <etherboot.h>
 extern char imgname[32];
 #endif
 
+//cheching version
+extern __u8 smbios_ver;
+ __u8* wake_up=NULL;;
+extern __u8 *smbios_base;
 /*
  *  Shared BIOS/boot data.
  */
@@ -391,6 +395,7 @@ init_bios_info (void)
   /* INFO AT STARTUP to PORT 1001 */
   if (!done_inventory)
   {
+     char hex[]="0123456789ABCDEF";
         char *buffer; unsigned int i;
         extern unsigned char X86;
         unsigned char *ptr=&X86;
@@ -417,7 +422,7 @@ init_bios_info (void)
             {
               unsigned char *p1, *p2, *p3, *p4, *p;
               int i, i1, i2, i3, i4;
-              char hex[]="0123456789ABCDEF";
+             
 
               smbios_get_biosinfo((char **)&p1,(char **) &p2,(char **) &p3);
               buffer += grub_sprintf(buffer, "S0:%s|%s|%s\n",p1, p2, p3);
@@ -426,12 +431,17 @@ init_bios_info (void)
               buffer += grub_sprintf(buffer, "S1:%s|%s|%s|%s|",p1, p2, p3, p4);
 
               /* while (*buffer) buffer++; */
-              for (i = 0; i<16; i++)    /* UUID */
-                {
-                  *buffer++ = hex[p[i]>>4];
-                  *buffer++ = hex[p[i]&15];
-                }
-
+	      if (smbios_ver >= 20) 
+	      {
+		  for (i = 0; i<16; i++)    /* UUID */
+		  {
+		    *buffer++ = hex[p[i]>>4];
+		    *buffer++ = hex[p[i]&15];
+		  }
+	      }else
+	      {
+		  buffer += grub_sprintf(buffer, "uuid no");
+	      }
               smbios_get_enclosure((char **)&p1,(char **) &p2);
               buffer += grub_sprintf(buffer, "\nS3:%s|%d\n",p1, *p2 & 0x7F);
 
@@ -451,7 +461,40 @@ init_bios_info (void)
 	// add mask
        buffer += grub_sprintf(buffer,"mask:%s\n",buffermak);
 	// add gateway
-       buffer += grub_sprintf(buffer,"gateway:%s\n",buffgateway);
+       buffer += grub_sprintf(buffer,"gateway:%s",buffgateway);
+       // familly processor
+        unsigned char *processor_table=NULL;
+	unsigned char *tmp;
+	int nbprocesseur=1;
+	smbios_get(-1, NULL);
+	while ((processor_table=smbios_get(4, NULL))!=NULL)
+	{
+	   tmp=processor_table+0x06;	   
+	   buffer += grub_sprintf(buffer,"\ncpuf %d:",nbprocesseur);
+	   *buffer++ = hex[*tmp>>4];
+	   *buffer++ = hex[*tmp&0x0f];
+	   buffer += grub_sprintf(buffer,"h");
+#ifdef DEBUG	   
+	   buffer += grub_sprintf(buffer,"|core ");
+	   tmp=processor_table+0x23;  
+	   *buffer++ = hex[*tmp>>4];
+	   *buffer++ = hex[*tmp&0x0f];
+	   buffer += grub_sprintf(buffer,"h|family2 ");
+	   tmp=processor_table+0x28;	   
+	   *buffer++ = hex[*tmp>>4];
+	   *buffer++ = hex[*tmp&0x0f];
+#endif	   
+	   nbprocesseur++;
+	};
+	if (nbprocesseur ==1)
+	{ // pas de table processeur dans smbios (type 4)
+	 buffer += grub_sprintf(buffer,"\ncpuf 1:02h");
+	}
+        buffer += grub_sprintf(buffer,"\n");
+#ifdef DEBUG
+	affiche_table_smbios_hexa(0, buffer);
+	affiche_table_smbios_hexa(1, buffer);
+#endif
         /* send inventory */
         buffer=(char *)PASSWORD_BUF;
         udp_send_withmac((char *)PASSWORD_BUF,strlen(buffer)+1,1001,1001);
