@@ -64,6 +64,7 @@
 #define PCI_FUNC(devfn)           ((devfn) & 0x07)
 
 #define BIOS32_SIGNATURE        (('_' << 0) + ('3' << 8) + ('2' << 16) + ('_' << 24))
+// plus clair 0x5F32335F
 
 /* PCI signature: "PCI " */
 #define PCI_SIGNATURE           (('P' << 0) + ('C' << 8) + ('I' << 16) + (' ' << 24))

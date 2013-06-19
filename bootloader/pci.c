@@ -125,7 +125,9 @@ static unsigned long bios32_service(unsigned long service)
         switch (return_code) {
                 case 0:
                         return address + entry;
-                case 0x80:      /* Not present */
+                //case 0x80:      /* Not present */
+		case 0x81:      /* Not present */
+		  
                         grub_printf("bios32_service(%d) : not present\n", service);
                         return 0;
                 default: /* Shouldn't happen */
@@ -331,12 +333,10 @@ static void check_pcibios(void)
                 present_status = (pack >> 16) & 0xff;
                 major_revision = (pack >> 8) & 0xff;
                 minor_revision = pack & 0xff;
-                if (present_status || (signature != PCI_SIGNATURE)) {
-                        grub_printf("ERROR: BIOS32 says PCI BIOS, but no PCI "
-                                "BIOS????\n");
-//                      grub_printf("%d %d %d\n", present_status, signature, PCI_SIGNATURE);
-                        pcibios_entry = 0;
-                }
+//                 if (present_status || (signature != PCI_SIGNATURE)) {
+                         grub_printf("PCI BIOS  %d.%d\n",major_revision,minor_revision );
+//                         pcibios_entry = 0;
+//                 }
                 if (pcibios_entry) {
                         lastbus=ecx&0xFF;
 #if     DEBUG
@@ -462,7 +462,7 @@ static void scan_bus(unsigned char *store)
                          *  - serial stuff (0x0C)
                          */
 
-                        if ( (store) && (class != 0x06) && (class != 0x0C) )  {
+                       if ( (store)  && (class != 0x06) )  {//&& (class != 0x0C) )  {
                             grub_sprintf((char*)store,"B:%x,f:%x,v:%x,d:%x,c:%x,s:%x\n",bus,devfn,vendor,device,class,subclass);
                             while (*store)
                                 store++;
