@@ -32,8 +32,10 @@ include $(topdir)/extra.mk
 install-local:
 	mkdir -p $(DESTDIR)$(postinstdir)/bin
 	$(install_BIN) bin/mountdisk $(DESTDIR)$(postinstdir)/bin/mountdisk
+	$(install_BIN) bin/fix-winxp-blue-screen-after-hardware-change $(DESTDIR)$(postinstdir)/bin/fix-winxp-blue-screen-after-hardware-change
 	mkdir -p $(DESTDIR)$(postinstdir)/lib
 	$(install_DATA) lib/libpostinst.sh $(DESTDIR)$(postinstdir)/lib/libpostinst.sh
+	cp -a lib/fix-winxp-blue-screen-after-hardware-change $(DESTDIR)$(postinstdir)/lib/
 	mkdir -p $(DESTDIR)$(postinstdir)/winutils
 	$(install_DATA) winutils/newsid.exe $(DESTDIR)$(postinstdir)/winutils/newsid.exe
 	mkdir -p $(DESTDIR)$(postinstdir)/macutils
