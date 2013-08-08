@@ -31,7 +31,6 @@ MAC=`cat /etc/mac`
 lrs && exit 0
 
 SRV=$Next_server
-[ -n "$Option_177" ] && SRV=`echo $Option_177|cut -d : -f 1`
 
 COMPUTER_UUID=`grep revouuid /etc/cmdline | sed 's|.*revouuid=\([^ ]*\).*|\1|'`
 
