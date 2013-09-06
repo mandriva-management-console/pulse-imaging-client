@@ -28,6 +28,7 @@ void drive_info(unsigned char *buffer);
 void cpuinfo(void);
 int cpuspeed(void);
 
+
 int smbios_init(void);
 void smbios_get_sysinfo(char **p1, char **p2, char **p3, char **p4, char **p5);
 

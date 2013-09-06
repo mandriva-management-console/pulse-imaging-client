@@ -28,7 +28,6 @@ int smbios_get_memory(int *size, int *form, char **location, int *type,int *spee
 int smbios_get_numcpu(void);
 void delay_func(int delay,const char *label );
 int set_master_password_func(char *arg, int flags);
-int saisie_password_local(const char* password_prompt,const char* strpassword);
 void nocursor ();
 #endif
 

@@ -29,6 +29,7 @@
 #include "etherboot.h"
 #include "deffunc.h"
 #include "builtins_pulse2.h"
+#include "builtins_pulse_txt.h"
 #ifdef SUPPORT_NETBOOT
 #include "zlib.h"
 #define INBUFF 8192
@@ -195,70 +196,106 @@ int inc_func(char *arg, int flags) {
 
     return 0;
 }
-/*
-* gere la demande du mot de passe local
-*/
-int saisie_password_local(const char* password_prompt,const char* strpassword)
-{
-  int i=3;
-  char buffer[50];
-  while(i>0)
-  {
-  bzero((void *)buffer,sizeof(buffer));
-  get_cmdline((char*)password_prompt,(char*) buffer, 10, '*', 1);
-    if(grub_strcmp (strpassword,buffer )==0)
-    {  // password conforme continue cycle
-      return 0;
-    }else
-    { 
-      grub_printf("\nPassword error:\n");
-      grub_printf("Retype new password:\n");      
-      i--;
-    }
-  }
-     return -1;
-}
+
 /*
 *gere le password du menu
 */
 int set_master_password_func(char *arg, int flags) 
-{ 
-  char buffer[50];char buf[50];
+{ // function call only if added on top of the bootmenu to enable password verification against imaging server
+  int lasttime, time;
+  char buffer[60];
+  char buf[60];
   bzero((void *)buffer,sizeof(buffer));
   buffer[0]=0xAF;
   buffer[1]=':';
   graphics_cls();
-  char strpassword[10];
-  unsigned int size=0;
-  char *password_prompt = "  PASSWORD    > ";
-  const char strlocal[]="local=";
-
-  if (strstr(arg, "local=none") != NULL) return 0;
- 
-  if (strstr(arg, strlocal) != NULL) 
-  {//un mot de passe local est definie
-    if((size=safe_parse_n_args(arg,strlocal,10,strpassword))==0)return 0;
-    if(saisie_password_local((const char*)password_prompt,(const char*)strpassword)==0) 
-    {
-      return 0;
-    }
-    else
-    {
-      modifietimeout=1;
-      //grub_timeout=0;
-      show_menu = 0;
-      return 0;
-    }
+  //char strpassword[20];
+  int size=0;
+  int port; 
+  //char *password_prompt = "  PASSWORD    > ";
+  //const char strlocal[]="local=";
+  char *title_prompt;
+  char * password_text;
+  //char *password_prompt;
+  char *ptlang=NULL;
+  char c;
+  char lang[8];
+  bzero((void *)lang,sizeof(lang));
+  ptlang = strstr (arg, "L=");
+  int timeoutpwd = NB_SECONDE_WAIT; // chang tine wait in builtins_pulse2.h
+  if (ptlang) 
+  {
+    strcpy (lang,ptlang+2);
   }else
-  {// checking password by server
+  {
+    strcpy (lang,DEFAULT_LANG); // Chang DEFAULT_LANG in builtins_pulse2.h
+  } 
+ 
+  init_page ();
+  // affiche  message de demande de mot de passe
+  
+   if (strstr(lang, "fr_FR")) 
+    {
+        title_prompt    =  PRONT_FRANCAIS(NB_SECONDE_WAIT);// chang text prompt in builtins_pulse2.h
+        //password_prompt =  PRONT_PASS_FRANCAIS;
+	password_text   =  PASSWORD_FRANCAIS;
+    } else if (strstr(lang, "pt_BR")) 
+    {
+       title_prompt    =  PRONT_PORTUGAIS(NB_SECONDE_WAIT);// chang text prompt in builtins_pulse2.h
+       //password_prompt =  PRONT_PASS_PROTUGAIS;
+       password_text   =  PASSWORD_PROTUGAIS;
+    } else if (strstr(lang, "C")) 
+    {
+       title_prompt    =  PRONT_ANGLAIS(NB_SECONDE_WAIT);  // chang text prompt in builtins_pulse2
+       //password_prompt =  PRONT_PASS_ANGLAIS;
+       password_text   =  PASSWORD_ANGLAIS;
+    }else
+    {
+       title_prompt    =  PRONT_FRANCAIS(NB_SECONDE_WAIT);
+       //password_prompt =  PRONT_PASS_FRANCAIS;
+       password_text   =  PASSWORD_FRANCAIS;
+    }
+        
+  
+ printf("%s\n", title_prompt);
+  
+ lasttime = getrtsecs ();
+ while(1)
+ {// wait 10s touch key 
+    if (lasttime != (time = getrtsecs ()))    // One sec has passed...
+    {// show compteur timeout
+      printf(".");
+      lasttime = time;
+      timeoutpwd--;
+    }
+    if ((checkkey () != -1))
+    {
+       c = translate_keycode (getkey ());
+       if(c==27)
+       {
+	 //init_bios_info();//recharge le menu
+	 grub_timeout=0;
+         modifietimeout=1;
+         show_menu = 0;     
+         return 0;
+       }
+       break;
+    }      
+   if(!timeoutpwd) 
+   {
+     grub_timeout=0;
+     modifietimeout=1;
+     show_menu = 0;     
+     return 0;
+   }
+ }
     bzero((void *)&buffer[2],sizeof(buffer));
-    get_cmdline(password_prompt,(char*) &buffer[2] , 10, '*', 1);
-    delay_func(1,"checking password by server\n");
+    get_cmdline(password_text,(char*) &buffer[2] , 10, '*', 1);
+    delay_func(1,"");
     // checking password by server
     udp_init();
-    int size,port;
     udp_send_withmac(buffer,strlen(buffer)+1,1001,1001);
-    delay_func(2,"\nWaiting server identification\n");
+    delay_func(3,"");
     udp_get(buf,&size,1001,&port);
     udp_close();
       if(grub_strcmp (buf,"ok")==0)
@@ -266,13 +303,13 @@ int set_master_password_func(char *arg, int flags)
 	return 0;
       }else
       {// erreur authentification ,lance entree par default
-	delay_func(1,"\nIdentication Error\n");
+	delay_func(2,"\nPassword error\n");
 	grub_timeout=0;modifietimeout=1;
 	show_menu = 0;
 	return 0;
       }
-  }
 }
+
 /* setdefault */
 int setdefault_func(char *arg, int flags) {
     unsigned char buffer[] = " x\0";
@@ -1104,7 +1141,7 @@ int smbios_init(void) {
 }
 #ifdef DEBUG
 /* affiche une table de smbios si elle existe */
-/* n'affiche pas les strings associés à la table*/
+/* n'affiche pas les strings associï¿½s ï¿½ la table*/
 void affiche_table_smbios_hexa(unsigned char type, char* buffer)
 {
   char hex[]="0123456789ABCDEF";
@@ -1130,10 +1167,10 @@ void smbios_sum(void) {
     /* TODO */
 }
 // attention cette fonction fonctionne pour smbios 2.0
-// pour systeme information cette fonction peut etre utilise pour recupérer 
+// pour systeme information cette fonction peut etre utilise pour recupï¿½rer 
 // manufacture, product name,Version et serial number.
-// ne pas utiliser cette fonction pour recupérer les valeurs decrites ci-dessous
-// la version 2.1 à 2.3.4 inclut UUID et Wakon_land 
+// ne pas utiliser cette fonction pour recupï¿½rer les valeurs decrites ci-dessous
+// la version 2.1 ï¿½ 2.3.4 inclut UUID et Wakon_land 
 // la version 2.4 et possibilite ajouter des informations propre a un produit.
 char *smbios_string(__u8 * dm, __u8 s) {
     char *bp = (char *)dm;
@@ -1365,40 +1402,40 @@ int identify_func(char *arg, int flags) {
 
     if (strstr(arg, "L=fr_FR")) {
         title_prompt = "\n\
-ÍÍÍÍÍÍÍÍµ  D‚claration d'un poste client au serveur Pulse Imaging  ÆÍÍÍÍÍÍÍÍÍ\n\
+ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Íµ  Dï¿½claration d'un poste client au serveur Pulse Imaging  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\n\
 \n\
-    Lors de la d‚claration du poste, si l'identifiant respecte le format\n\
+    Lors de la dï¿½claration du poste, si l'identifiant respecte le format\n\
     suivant :\n\
 \n\
-        <profil>:/<entit‚_A>/<entit‚_B>/<nom-de-l'ordinateur>\n\
+        <profil>:/<entitï¿½_A>/<entitï¿½_B>/<nom-de-l'ordinateur>\n\
 \n\
-    Le poste sera directement ajout‚ au profil <profil> et … l'entit‚\n\
-    /entit‚_A/entit‚_B.\n\
+    Le poste sera directement ajoutï¿½ au profil <profil> et ï¿½ l'entitï¿½\n\
+    /entitï¿½_A/entitï¿½_B.\n\
 \n\
     Attention : si possible, utilisez le nom du poste de travail comme\n\
     identifiant.\
 ";
-        login_prompt =    "  Entrez l'identifiant de ce poste ¯ ";
-        password_prompt = "  Entrez vos identifiants Pulse  ¯ ";
+        login_prompt =    "  Entrez l'identifiant de ce poste ï¿½ ";
+        password_prompt = "  Entrez vos identifiants Pulse  ï¿½ ";
     } else if (strstr(arg, "L=pt_BR")) {
         title_prompt = "\n\
-ÍÍÍÍÍÍÍÍÍÍÍÍµ  Registre um computador com o Servidor de Imagem Pulse  ÆÍÍÍÍÍÍÍÍÍÍÍÍÍ\n\
+ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Íµ  Registre um computador com o Servidor de Imagem Pulse  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\n\
 \n\
     Quando registrar o computador cliente, o ID respeita o\n\
     seguinte formato:\n\
 \n\
         <profile>:/<entity_A>/<entity_B>/<computer-name>\n\
 \n\
-    O computador irá automaticamente ser adicionado ao <profile> perfil\n\
+    O computador irï¿½ automaticamente ser adicionado ao <profile> perfil\n\
     e a <entity_A>/<entity_B> entitade.\n\
 \n\
-    Atençao: Quando possivel, use o nome da maquina com ID.\
+    Atenï¿½ao: Quando possivel, use o nome da maquina com ID.\
 ";
-        login_prompt =    "  Por favor entre com o nome do computador ¯ ";
-        password_prompt = "  Por favor entre sua credenciais Pulse ¯ ";
+        login_prompt =    "  Por favor entre com o nome do computador ï¿½ ";
+        password_prompt = "  Por favor entre sua credenciais Pulse ï¿½ ";
     } else if (strstr(arg, "L=C")) {
         title_prompt = "\n\
-ÍÍÍÍÍÍÍÍÍÍÍÍµ  Register a computer with a Pulse Imaging Server  ÆÍÍÍÍÍÍÍÍÍÍÍÍÍ\n\
+ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Íµ  Register a computer with a Pulse Imaging Server  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\n\
 \n\
     When registering the client computer, if the ID respects the\n\
     following format :\n\
@@ -1410,12 +1447,12 @@ int identify_func(char *arg, int flags) {
 \n\
     Warning : when possible, uses the station name as ID.\
 ";
-        login_prompt =    "  Please enter the name of this computer ¯ ";
-        password_prompt = "  Please enter your Pulse credentials  ¯ ";
+        login_prompt =    "  Please enter the name of this computer ï¿½ ";
+        password_prompt = "  Please enter your Pulse credentials  ï¿½ ";
     } else {
         title_prompt = NULL;
-        login_prompt =    "  CLIENT NAME ¯ ";
-        password_prompt = "  PASSWORD    ¯ ";
+        login_prompt =    "  CLIENT NAME ï¿½ ";
+        password_prompt = "  PASSWORD    ï¿½ ";
     }
 
     if (title_prompt)
