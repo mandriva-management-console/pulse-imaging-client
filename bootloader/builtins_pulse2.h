@@ -41,6 +41,7 @@ int test_func(char *arg, int flags);
 int identify_func(char *arg, int flags);
 int identifyauto_func(char *arg, int flags);
 int kbdfr_func(char *arg, int flags);
+int kbdfr_func1();
 unsigned char* smbios_get(int rtype, unsigned char ** rnext);
 /* macros */
 #define MIN(X,Y) ((X) < (Y) ? (X) : (Y))

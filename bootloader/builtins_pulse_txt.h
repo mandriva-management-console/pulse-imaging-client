@@ -24,6 +24,7 @@
 #define __BUILTINS_PULSE_TXT__
 
 #define NB_SECONDE_WAIT 10
+#define TAILLE_MAX_PASSWORD 10
 // default lang "fr_FR" or "C" or "pt_BR"
 #define DEFAULT_LANG "fr_FR"
 
@@ -54,6 +55,9 @@ Default boot in "#x" seconds ";
 # define PRONT_FRANCAIS(X)  PRONT_PASSWORD_FRANCAIS(X)
 # define PRONT_ANGLAIS(X)   PRONT_PASSWORD_ANGLAIS(X)
 
-
+# define  ERROR_FRANCAIS  "\nErreur mot de passe\n"
+# define  ERROR_PROTUGAIS "\nSenha Erro\n"
+# define  ERROR_ANGLAIS   "\nError Password\n"
+   
 
 #endif
