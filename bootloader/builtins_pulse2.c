@@ -1140,7 +1140,7 @@ int smbios_init(void) {
 }
 #ifdef DEBUG
 /* affiche une table de smbios si elle existe */
-/* n'affiche pas les strings associï¿½s ï¿½ la table*/
+/* n'affiche pas les strings associés à la table*/
 void affiche_table_smbios_hexa(unsigned char type, char* buffer)
 {
   char hex[]="0123456789ABCDEF";
@@ -1166,10 +1166,10 @@ void smbios_sum(void) {
     /* TODO */
 }
 // attention cette fonction fonctionne pour smbios 2.0
-// pour systeme information cette fonction peut etre utilise pour recupï¿½rer 
+// pour systeme information cette fonction peut etre utilise pour recupérer 
 // manufacture, product name,Version et serial number.
-// ne pas utiliser cette fonction pour recupï¿½rer les valeurs decrites ci-dessous
-// la version 2.1 ï¿½ 2.3.4 inclut UUID et Wakon_land 
+// ne pas utiliser cette fonction pour recupérer les valeurs decrites ci-dessous
+// la version 2.1 à 2.3.4 inclut UUID et Wakon_land 
 // la version 2.4 et possibilite ajouter des informations propre a un produit.
 char *smbios_string(__u8 * dm, __u8 s) {
     char *bp = (char *)dm;
@@ -1401,40 +1401,40 @@ int identify_func(char *arg, int flags) {
 
     if (strstr(arg, "L=fr_FR")) {
         title_prompt = "\n\
-ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Íµ  Dï¿½claration d'un poste client au serveur Pulse Imaging  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\n\
+ÍÍÍÍÍÍÍÍµ  D‚claration d'un poste client au serveur Pulse Imaging  ÆÍÍÍÍÍÍÍÍÍ\n\
 \n\
-    Lors de la dï¿½claration du poste, si l'identifiant respecte le format\n\
+    Lors de la d‚claration du poste, si l'identifiant respecte le format\n\
     suivant :\n\
 \n\
-        <profil>:/<entitï¿½_A>/<entitï¿½_B>/<nom-de-l'ordinateur>\n\
+        <profil>:/<entit‚_A>/<entit‚_B>/<nom-de-l'ordinateur>\n\
 \n\
-    Le poste sera directement ajoutï¿½ au profil <profil> et ï¿½ l'entitï¿½\n\
-    /entitï¿½_A/entitï¿½_B.\n\
+    Le poste sera directement ajout‚ au profil <profil> et … l'entit‚\n\
+    /entit‚_A/entit‚_B.\n\
 \n\
     Attention : si possible, utilisez le nom du poste de travail comme\n\
     identifiant.\
 ";
-        login_prompt =    "  Entrez l'identifiant de ce poste ï¿½ ";
-        password_prompt = "  Entrez vos identifiants Pulse  ï¿½ ";
+        login_prompt =    "  Entrez l'identifiant de ce poste ¯ ";
+        password_prompt = "  Entrez vos identifiants Pulse  ¯ ";
     } else if (strstr(arg, "L=pt_BR")) {
         title_prompt = "\n\
-ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Íµ  Registre um computador com o Servidor de Imagem Pulse  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\n\
+ÍÍÍÍÍÍÍÍÍÍÍÍµ  Registre um computador com o Servidor de Imagem Pulse  ÆÍÍÍÍÍÍÍÍÍÍÍÍÍ\n\
 \n\
     Quando registrar o computador cliente, o ID respeita o\n\
     seguinte formato:\n\
 \n\
         <profile>:/<entity_A>/<entity_B>/<computer-name>\n\
 \n\
-    O computador irï¿½ automaticamente ser adicionado ao <profile> perfil\n\
+    O computador irá automaticamente ser adicionado ao <profile> perfil\n\
     e a <entity_A>/<entity_B> entitade.\n\
 \n\
-    Atenï¿½ao: Quando possivel, use o nome da maquina com ID.\
+    Atençao: Quando possivel, use o nome da maquina com ID.\
 ";
-        login_prompt =    "  Por favor entre com o nome do computador ï¿½ ";
-        password_prompt = "  Por favor entre sua credenciais Pulse ï¿½ ";
+        login_prompt =    "  Por favor entre com o nome do computador ¯ ";
+        password_prompt = "  Por favor entre sua credenciais Pulse ¯ ";
     } else if (strstr(arg, "L=C")) {
         title_prompt = "\n\
-ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Íµ  Register a computer with a Pulse Imaging Server  ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½\n\
+ÍÍÍÍÍÍÍÍÍÍÍÍµ  Register a computer with a Pulse Imaging Server  ÆÍÍÍÍÍÍÍÍÍÍÍÍÍ\n\
 \n\
     When registering the client computer, if the ID respects the\n\
     following format :\n\
@@ -1446,12 +1446,12 @@ int identify_func(char *arg, int flags) {
 \n\
     Warning : when possible, uses the station name as ID.\
 ";
-        login_prompt =    "  Please enter the name of this computer ï¿½ ";
-        password_prompt = "  Please enter your Pulse credentials  ï¿½ ";
+        login_prompt =    "  Please enter the name of this computer ¯ ";
+        password_prompt = "  Please enter your Pulse credentials  ¯ ";
     } else {
         title_prompt = NULL;
-        login_prompt =    "  CLIENT NAME ï¿½ ";
-        password_prompt = "  PASSWORD    ï¿½ ";
+        login_prompt =    "  CLIENT NAME ¯ ";
+        password_prompt = "  PASSWORD    ¯ ";
     }
 
     if (title_prompt)
