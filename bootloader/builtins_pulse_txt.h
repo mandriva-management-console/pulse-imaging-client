@@ -20,44 +20,50 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301, USA.
  */
+
+/*
+ VIM: PLEASE USE:
+ :e ++enc=cp850
+*/
+
 #ifndef __BUILTINS_PULSE_TXT__
 #define __BUILTINS_PULSE_TXT__
 
-#define NB_SECONDE_WAIT 10
-#define TAILLE_MAX_PASSWORD 10
+#define SEC_TO_WAIT 10
+#define MAX_MENU_PASSWD_SIZE 10
 // default lang "fr_FR" or "C" or "pt_BR"
-#define DEFAULT_LANG "fr_FR"
+#define DEFAULT_LANG "C"
 
-#define PRONT_PASSWORD_FRANCAIS(x) "\nS'il vous plaŒt, saisissez le mot-de-passe pour modifier le menu de boot.\n\
-Si vous ne savez pas ce que cela signifie ou vous ne poss‚dez pas le bon mot-de-passe, ne faite rien !\n\n\
-Press une touche pour saisir votre mot-de-passe\n\tor ESC pour d‚marrer\n\n\
-boot par d‚faut dans "#x" secondes "
+#define PASSWD_FR " Mot de passe:"
+#define PASSWD_EN " Password:"
+#define PASSWD_PT " Senha:"
 
-#define PASSWORD_FRANCAIS  "Mot-de-passe :" 
-#define PASSWORD_ANGLAIS   "Password :" 
-#define PASSWORD_PROTUGAIS "Senha :"
+#define PASSWD_ERROR_FR "\n Mauvais mot de passe\n"
+#define PASSWD_ERROR_PT "\n Senha incorreta\n"
+#define PASSWD_ERROR_EN "\n Wrong password\n"
+
+#define PROMPT_PASSWD_FR(x) "\n Merci de saisir le mot de passe d'accŠs au menu.\n\
+ Si vous ne savez pas ce que cela signifie ou que vous ne poss‚dez pas\n\
+ ce mot de passe, ne faites rien !\n\n\
+ Appuyez sur une touche pour saisir le mot de passe ou ESC pour d‚marrer\n\
+ imm‚diatement\n\n\
+ D‚marrage par d‚faut dans "#x" secondes "
 
 //le Æ n'est pas utilisable
-#define PRONT_PASSWORD_PORTUGAIS(x) "Se vocˆ plana, digite a £ltima senha para mudar o menu de inicializa‡ao. \n\
-Se vocˆ nao sabe o que significa ou vocˆ nao possdez a senha correta, nao nada\nfeito! \n\n\
-Pressione qualquer tecla para digitar sua senha \n\touro ESC para come‡ar\n\n\
-Boot padrao por padrao em "#x" segundos "
+#define PROMPT_PASSWD_PT(x) "\n Por favor digite a senha para acessar o menu de boot via rede.\n\
+ Se vocˆ nao sabe o que isso significa ou nao tenha a senha correta,\n\
+ entao nao fa‡a nada!\n\n\
+ Pressione qualquer tecla para digitar a senha ou ESC para iniciar agora\n\n\
+ Tempo de boot padrao em "#x" segundos "
 
+#define PROMPT_PASSWD_EN(x) "\n Please enter the password to access network boot menu.\n\
+ If you don't know what it means or don't have the right password,\n\
+ don't do anything !\n\n\
+ Press any key to enter the password or ESC to start now\n\n\
+ Default boot in "#x" seconds ";
 
-#define PRONT_PASSWORD_ANGLAIS(x) "\nPlease type the password to change network boot menu.\n\
-If you don't know what it means or don't have the right password, don't do anything !n\n\
-Press any key to enter your password\n\tgold ESC to start\n\n\
-Default boot in "#x" seconds ";
-
-
-
-# define PRONT_PORTUGAIS(X) PRONT_PASSWORD_PORTUGAIS(X)
-# define PRONT_FRANCAIS(X)  PRONT_PASSWORD_FRANCAIS(X)
-# define PRONT_ANGLAIS(X)   PRONT_PASSWORD_ANGLAIS(X)
-
-# define  ERROR_FRANCAIS  "\nErreur mot de passe\n"
-# define  ERROR_PROTUGAIS "\nSenha Erro\n"
-# define  ERROR_ANGLAIS   "\nError Password\n"
-   
+#define PASSWD_PROMPT_PT(X) PROMPT_PASSWD_PT(X)
+#define PASSWD_PROMPT_FR(X) PROMPT_PASSWD_FR(X)
+#define PASSWD_PROMPT_EN(X) PROMPT_PASSWD_EN(X)
 
 #endif

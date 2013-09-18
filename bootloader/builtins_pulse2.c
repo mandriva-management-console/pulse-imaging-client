@@ -219,7 +219,7 @@ int set_master_password_func(char *arg, int flags)
   char lang[8];
   bzero((void *)lang,sizeof(lang));
   ptlang = strstr (arg, "L=");
-  int timeoutpwd = NB_SECONDE_WAIT; // chang tine wait in builtins_pulse2.h
+  int timeoutpwd = SEC_TO_WAIT; // chang tine wait in builtins_pulse2.h
   if (ptlang) 
   {
     strcpy (lang,ptlang+2);
@@ -234,25 +234,25 @@ int set_master_password_func(char *arg, int flags)
    if (strstr(lang, "fr_FR")) 
     {
         //kbdfr_func(NULL,0); //met le clavier en azerty
-        title_prompt    =  PRONT_FRANCAIS(NB_SECONDE_WAIT);// chang text prompt in builtins_pulse2.h
-	password_text   =  PASSWORD_FRANCAIS;
-	erreurmsg_text   =  ERROR_FRANCAIS;
+        title_prompt    =  PASSWD_PROMPT_FR(SEC_TO_WAIT);// chang text prompt in builtins_pulse2.h
+	password_text   =  PASSWD_FR;
+	erreurmsg_text   =  PASSWD_ERROR_FR;
     } else if (strstr(lang, "pt_BR")) 
     {
-       title_prompt    =  PRONT_PORTUGAIS(NB_SECONDE_WAIT);// chang text prompt in builtins_pulse2.h
-       password_text   =  PASSWORD_PROTUGAIS;
-       erreurmsg_text   =  ERROR_PROTUGAIS;
+       title_prompt    =  PASSWD_PROMPT_PT(SEC_TO_WAIT);// chang text prompt in builtins_pulse2.h
+       password_text   =  PASSWD_PT;
+       erreurmsg_text   =  PASSWD_ERROR_PT;
     } else if (strstr(lang, "C")) 
     {
-       title_prompt    =  PRONT_ANGLAIS(NB_SECONDE_WAIT);  // chang text prompt in builtins_pulse2
-       password_text   =  PASSWORD_ANGLAIS;
-       erreurmsg_text   =  ERROR_ANGLAIS;
+       title_prompt    =  PASSWD_PROMPT_EN(SEC_TO_WAIT);  // chang text prompt in builtins_pulse2
+       password_text   =  PASSWD_EN;
+       erreurmsg_text   =  PASSWD_ERROR_EN;
     }else
     {
        //kbdfr_func(NULL,0); //met le clavier en azerty
-       title_prompt    =  PRONT_FRANCAIS(NB_SECONDE_WAIT);
-       password_text   =  PASSWORD_FRANCAIS;
-       erreurmsg_text   =  ERROR_FRANCAIS;
+       title_prompt    =  PASSWD_PROMPT_FR(SEC_TO_WAIT);
+       password_text   =  PASSWD_FR;
+       erreurmsg_text   =  PASSWD_ERROR_FR;
     }
         
   
@@ -289,7 +289,7 @@ int set_master_password_func(char *arg, int flags)
    }
  }
     bzero((void *)&buffer[2],sizeof(buffer));
-    get_cmdline(password_text,(char*) &buffer[2] , TAILLE_MAX_PASSWORD, '*', 1);
+    get_cmdline(password_text,(char*) &buffer[2] , MAX_MENU_PASSWD_SIZE, '*', 1);
     delay_func(1,"");
     // checking password by server
     udp_init();
@@ -302,7 +302,7 @@ int set_master_password_func(char *arg, int flags)
 	return 0;
       }else
       {// erreur authentification ,lance entree par default
-	delay_func(2,"erreurmsg_text");
+	delay_func(2,erreurmsg_text);
 	grub_timeout=0;modifietimeout=1;
 	show_menu = 0;
 	return 0;
