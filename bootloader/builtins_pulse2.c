@@ -203,6 +203,8 @@ int inc_func(char *arg, int flags) {
 int set_master_password_func(char *arg, int flags) 
 { // function call only if added on top of the bootmenu to enable password verification against imaging server
   int lasttime, time;
+  #define TICKS_PER_SEC 20
+  unsigned long ctime=0;
   int ii,i1,i2;
   char buffer[60];
   char buf[60];
@@ -297,9 +299,12 @@ int set_master_password_func(char *arg, int flags)
     udp_send_withmac(buffer,strlen(buffer)+1,1001,1001);
     // Clearing buffer
     i1 = 0;
-    for (i1 = 0; i1<10; i1++){
+    ctime = currticks();
+    while (1){
+    if ( currticks() > ctime + 500 ) break;
     // Clearing input buffer
     ii = 0;
+    //if (i1++ == 
     while (buf[ii]) { buf[ii++] = 0; }
     // Try to get server response
     udp_get(buf,&size,1001,&port);
@@ -313,7 +318,7 @@ int set_master_password_func(char *arg, int flags)
     {
         break;    
     }
-    delay_func(3,"");
+    //delay_func(3,"");
     }
     // After tries, wrong password
     udp_close();
