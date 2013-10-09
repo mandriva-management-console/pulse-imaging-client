@@ -203,6 +203,7 @@ int inc_func(char *arg, int flags) {
 int set_master_password_func(char *arg, int flags) 
 { // function call only if added on top of the bootmenu to enable password verification against imaging server
   int lasttime, time;
+  int ii,i1,i2;
   char buffer[60];
   char buf[60];
   bzero((void *)buffer,sizeof(buffer));
@@ -294,19 +295,32 @@ int set_master_password_func(char *arg, int flags)
     // checking password by server
     udp_init();
     udp_send_withmac(buffer,strlen(buffer)+1,1001,1001);
-    delay_func(3,"");
+    // Clearing buffer
+    i1 = 0;
+    for (i1 = 0; i1<10; i1++){
+    // Clearing input buffer
+    ii = 0;
+    while (buf[ii]) { buf[ii++] = 0; }
+    // Try to get server response
     udp_get(buf,&size,1001,&port);
+    if (grub_strcmp (buf,"ok")==0)
+    {
+        // Close UDP and enter the bootmenu
+        udp_close();
+        return 0;
+    }
+    else if (grub_strcmp (buf,"ko")==0)
+    {
+        break;    
+    }
+    delay_func(3,"");
+    }
+    // After tries, wrong password
     udp_close();
-      if(grub_strcmp (buf,"ok")==0)
-      {// password verifie affiche menu
-	return 0;
-      }else
-      {// erreur authentification ,lance entree par default
-	delay_func(2,erreurmsg_text);
-	grub_timeout=0;modifietimeout=1;
-	show_menu = 0;
-	return 0;
-      }
+    delay_func(2,erreurmsg_text);
+    grub_timeout=0;modifietimeout=1;
+    show_menu = 0;
+    return 0;
 }
 
 /* setdefault */
