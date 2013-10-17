@@ -23,7 +23,7 @@ topdir = $(abspath ../../..)
 
 module = ixgbe.ko
 module_path = $(extra_srcdir)/src/$(module)
-module_version = 3.12.6
+module_version = 3.18.7
 extra_archive = ixgbe-$(module_version).tar.gz
 extra_uri = http://freefr.dl.sourceforge.net/project/e1000/ixgbe%20stable/$(module_version)/$(extra_archive)
 module_builddir = src

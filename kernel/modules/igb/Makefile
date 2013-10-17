@@ -24,7 +24,7 @@ topdir = $(abspath ../../..)
 
 module = igb.ko
 module_path = $(extra_srcdir)/src/$(module)
-module_version = 4.1.2
+module_version = 5.0.6
 extra_archive = igb-$(module_version).tar.gz
 extra_uri = http://heanet.dl.sourceforge.net/project/e1000/igb%20stable/$(module_version)/$(extra_archive)
 module_builddir = src
