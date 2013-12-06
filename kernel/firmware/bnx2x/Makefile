@@ -22,7 +22,7 @@
 #
 topdir = $(abspath ../../..)
 
-extra_version = 0.38
+extra_version = 0.40
 extra_archive = firmware-bnx2x_$(extra_version)_all.deb
 extra_uri = http://ftp.de.debian.org/debian/pool/non-free/f/firmware-nonfree/$(extra_archive)
 
