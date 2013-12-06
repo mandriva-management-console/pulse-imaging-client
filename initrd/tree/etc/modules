@@ -3,8 +3,6 @@
 # misc dependencies
 8390
 crc-ccitt
-crypto
-crypto_algapi
 crypto_hash
 crc32c
 i2c-core
@@ -17,6 +15,9 @@ mlx4_core
 ssb
 uio
 hwmon
+pps_core
+ptp
+ptp_pch
 
 # PHYs
 libphy
@@ -91,10 +92,9 @@ tg3
 8139cp
 r8168
 r8169
-r8101
+#r8101 doesn't build anymore
 
 # Alx
-# http://projects.mandriva.org/issues/2084
 alx
 
 # Texas Instrument
@@ -184,7 +184,6 @@ mlx4_en
 vmxnet3
 vxge
 virtio_net
-hv_netvsc
 
 # ServerEngines
 be2net

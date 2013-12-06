@@ -20,8 +20,8 @@
 # MA 02110-1301, USA.
 #
 project = pulse2-imaging-client
-baseversion=1.4.0
-linux_version = 3.6.11
+baseversion=1.5.1
+linux_version = 3.10.22
 revision := $(shell if [ -d $(PWD)/.svn ]; then \
 		      rev=`echo $Rev$ | tr -cd [[:digit:]]`; \
 		    elif [ -d $(topdir)/.git ]; then \

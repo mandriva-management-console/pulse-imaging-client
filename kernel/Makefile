@@ -79,6 +79,8 @@ install-local: /dev/ram0
 	     -o -path '$(extra_srcdir)/drivers/i2c/*.ko' \
 	     -o -path '$(extra_srcdir)/drivers/uio/*.ko' \
 	     -o -path '$(extra_srcdir)/drivers/hwmon/hwmon.ko' \
+	     -o -path '$(extra_srcdir)/drivers/ptp/*.ko' \
+	     -o -path '$(extra_srcdir)/drivers/pps/*.ko' \
 	     -o -path '$(extra_srcdir)/crypto/*.ko' \
 	     -o -path '$(extra_srcdir)/lib/*.ko'`; do \
 	       $(install_DATA) $$mod $(DESTDIR)$(initramfsdir)/lib/modules/; \
