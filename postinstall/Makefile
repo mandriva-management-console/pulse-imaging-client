@@ -23,7 +23,7 @@
 # Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA 02110-1301, USA.
 #
-SUBDIRS = chntpw fuse ntfs3g ddrescue
+SUBDIRS = dmidecode chntpw fuse ntfs3g ddrescue
 
 topdir = $(abspath ..)
 include $(topdir)/common.mk
