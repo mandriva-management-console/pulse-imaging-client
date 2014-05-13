@@ -74,6 +74,7 @@ install-local: /dev/ram0
 	# initrd common modules
 	for mod in `find $(extra_srcdir) \
 	     -path '$(extra_srcdir)/drivers/net/*.ko' \
+	     -o -path '$(extra_srcdir)/drivers/net/usb/*.ko' \
 	     -o -path '$(extra_srcdir)/drivers/pcmcia/*.ko' \
 	     -o -path '$(extra_srcdir)/drivers/ssb/*.ko' \
 	     -o -path '$(extra_srcdir)/drivers/i2c/*.ko' \
