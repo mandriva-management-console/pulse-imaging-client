@@ -32,8 +32,8 @@ SUBDIRS = rdev . modules firmware
 
 include $(topdir)/version.mk
 
-extra_archive = linux-$(linux_version).tar.bz2
-extra_uri = http://ftp.free.fr/mirrors/ftp.kernel.org/linux/kernel/v3.x/$(extra_archive)
+extra_archive = linux-$(linux_version).tar.gz
+extra_uri = https://www.kernel.org/pub/linux/kernel/v3.x/$(extra_archive)
 linux_configdir = dot-configs
 linux_config = $(extra_srcdir)/.config
 linux_image = $(extra_srcdir)/arch/$(ARCHITECTURE)/boot/bzImage
