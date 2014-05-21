@@ -222,3 +222,19 @@ stmmac
 # can be required by other modules (filesystems, etc ...)
 crc16
 
+# USB network adapters / usbnet must be loaded first ! 
+usbnet
+asix
+ax88179_178a
+catc
+cx82310_eth
+dm9601
+kaweth
+mcs7830
+pegasus
+r8152
+rtl8150
+smsc75xx
+smsc95xx
+sr9700
+sr9800
