@@ -3,23 +3,23 @@
 # misc dependencies
 8390
 crc-ccitt
-crc32c
+#crc32c
 i2c-core
 i2c-algo-bit
 libcrc32c
-libphy
+#libphy
 mdio
 mii
 mlx4_core
 ssb
 uio
 hwmon
-pps_core
-ptp
+#pps_core
+#ptp
 ptp_pch
 
 # PHYs
-libphy
+#libphy
 realtek
 davicom
 national
