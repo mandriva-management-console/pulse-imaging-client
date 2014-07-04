@@ -39,7 +39,7 @@ fi
 
 
 # get the wait value from the server
-WAIT=`echo -en "T;$1;$T Mc:$MAC" | nc -p 1001 $SRV 1001`
+WAIT=`echo -en "T;$1;$T Mc:$MAC" | nc -p 1001 -w 2 $SRV 1001`
 
 [ -z $WAIT ] && exit 0
 [ $WAIT -eq 0 ] && exit 0
