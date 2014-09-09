@@ -14,8 +14,8 @@ mlx4_core
 ssb
 uio
 hwmon
-#pps_core
-#ptp
+pps_core
+ptp
 ptp_pch
 
 # PHYs
@@ -89,7 +89,7 @@ tg3
 # keep the following two in that order !
 8139too
 8139cp
-r8168
+#r8168
 r8169
 #r8101 doesn't build anymore
 

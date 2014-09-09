@@ -24,7 +24,7 @@ topdir = $(abspath ../../..)
 
 module = e1000e.ko
 module_path = $(extra_srcdir)/src/$(module)
-module_version = 3.0.4.1
+module_version = 3.1.0.2
 extra_archive = e1000e-$(module_version).tar.gz
 extra_uri = http://freefr.dl.sourceforge.net/project/e1000/e1000e%20stable/$(module_version)/$(extra_archive)
 module_builddir = src
